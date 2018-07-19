@@ -1,0 +1,3 @@
+[submodule "contrib/monero-core-custom"]
+	path = contrib/monero-core-custom
+	url = https://github.com/mymonero/monero-core-custom
