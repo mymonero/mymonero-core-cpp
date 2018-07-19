@@ -52,10 +52,10 @@ namespace monero
 		//
 		// TODO: migrate these methods to use nettype
 		//
-		DecodedAddress_RetVals decodedAddress(string addressString, bool isTestnet);
-		bool isSubAddress(string addressString, bool isTestnet);
-		bool isIntegratedAddress(string addressString, bool isTestnet);
+		DecodedAddress_RetVals decodedAddress(const string &addressString, bool isTestnet);
+		bool isSubAddress(const string &addressString, bool isTestnet);
+		bool isIntegratedAddress(const string &addressString, bool isTestnet);
 		//
-		string new_integratedAddrFromStdAddr(string std_address_string, string short_paymentID, bool isTestnet);
+		optional<string> new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID, bool isTestnet);
 	}
 }

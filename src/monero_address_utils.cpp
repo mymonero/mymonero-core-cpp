@@ -42,81 +42,77 @@ using namespace epee;
 #include "monero_paymentID_utils.hpp"
 //
 // Accessors - Implementations
-DecodedAddress_RetVals address_utils::decodedAddress(string addressString, bool isTestnet)
+DecodedAddress_RetVals address_utils::decodedAddress(const string &addressString, bool isTestnet)
 {
 	DecodedAddress_RetVals retVals; // init
 	//
-//	cryptonote::address_parse_info info;
-//	bool didSucceed = cryptonote::get_account_address_from_str(info, isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET, std::string(addressString.UTF8String));
-//	if (didSucceed == false) {
-//		retVals.errStr_orNil = NSLocalizedString(@"Invalid address", nil);
-//		//
-//		return retVals;
-//	}
-//	cryptonote::account_public_address address = info.address;
-//	std::string pub_viewKey_hexString = string_tools::pod_to_hex(address.m_view_public_key);
-//	std::string pub_spendKey_hexString = string_tools::pod_to_hex(address.m_spend_public_key);
-//	//
-//	NSString *pub_viewKey_NSString = [NSString stringWithUTF8String:pub_viewKey_hexString.c_str()];
-//	NSString *pub_spendKey_NSString = [NSString stringWithUTF8String:pub_spendKey_hexString.c_str()];
-//	NSString *paymentID_NSString_orNil = nil;
-//	if (info.has_payment_id == true) {
-//		crypto::hash8 payment_id = info.payment_id;
-//		std::string payment_id_hexString = string_tools::pod_to_hex(payment_id);
-//		paymentID_NSString_orNil = [NSString stringWithUTF8String:payment_id_hexString.c_str()];
-//	}
-//	{
-//		retVals.pub_viewKey_NSString = pub_viewKey_NSString;
-//		retVals.pub_spendKey_NSString = pub_spendKey_NSString;
-//		retVals.paymentID_NSString_orNil = paymentID_NSString_orNil;
-//		retVals.isSubaddress = info.is_subaddress;
-//	}
+	cryptonote::address_parse_info info;
+	bool didSucceed = cryptonote::get_account_address_from_str(
+		info,
+		isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET,
+		addressString
+	);
+	if (didSucceed == false) {
+		retVals.errStr = "Invalid address"; // TODO: return code
+		//
+		return retVals;
+	}
+	cryptonote::account_public_address address = info.address;
+	std::string pub_viewKey_hexString = string_tools::pod_to_hex(address.m_view_public_key);
+	std::string pub_spendKey_hexString = string_tools::pod_to_hex(address.m_spend_public_key);
+	{
+		retVals.pub_viewKey_string = std::move(pub_viewKey_hexString);
+		retVals.pub_spendKey_string = std::move(pub_spendKey_hexString);
+		if (info.has_payment_id == true) {
+			crypto::hash8 payment_id = info.payment_id;
+			retVals.paymentID_string = string_tools::pod_to_hex(payment_id);
+		}
+		retVals.isSubaddress = info.is_subaddress;
+	}
 	return retVals;
 }
-bool address_utils::isSubAddress(string addressString, bool isTestnet)
+bool address_utils::isSubAddress(const string &addressString, bool isTestnet)
 {
 	DecodedAddress_RetVals retVals = decodedAddress(addressString, isTestnet);
 	//
 	return retVals.isSubaddress;
 }
-bool address_utils::isIntegratedAddress(string addressString, bool isTestnet)
+bool address_utils::isIntegratedAddress(const string &addressString, bool isTestnet)
 {
 	DecodedAddress_RetVals retVals = decodedAddress(addressString, isTestnet);
 	//
 	return retVals.paymentID_string != boost::none;
 }
 //
-string address_utils::new_integratedAddrFromStdAddr(string std_address_string, string short_paymentID, bool isTestnet)
+optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID_string, bool isTestnet)
 {
-//	std::string payment_id__string = std::string(short_paymentID.UTF8String);
-//	crypto::hash8 payment_id_short;
-//	bool didParse = monero_paymentID_utils::parse_short_payment_id(payment_id__string, payment_id_short);
-//	if (!didParse) {
-//		return nil;
-//	}
-//	cryptonote::address_parse_info info;
-//	bool didSucceed = cryptonote::get_account_address_from_str(info, isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET, std::string(std_address_NSString.UTF8String));
-//	if (didSucceed == false) {
-//		return nil;
-//	}
-//	if (info.is_subaddress) {
-//		NSString *msg = [NSString stringWithFormat:@"%@ must not be called with a subaddress", NSStringFromSelector(_cmd)];
-//		NSAssert(false, msg);
-//		[NSException raise:@"Illegal address value" format:@"%@", msg];
-//		//
-//		return nil;
-//	}
-//	if (info.has_payment_id != false) {
-//		// could even throw / fatalError here
-//		return nil; // that was not a std_address!
-//	}
-//	std::string int_address_string = cryptonote::get_account_integrated_address_as_str(
-//		isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET,
-//		info.address,
-//		payment_id_short
-//	);
-//	NSString *int_address_NSString = [NSString stringWithUTF8String:int_address_string.c_str()];
-//	//
-//	return int_address_NSString;
-	return "TODO";
+	crypto::hash8 payment_id_short;
+	bool didParse = monero_paymentID_utils::parse_short_payment_id(short_paymentID_string, payment_id_short);
+	if (!didParse) {
+		return none;
+	}
+	cryptonote::address_parse_info info;
+	bool didSucceed = cryptonote::get_account_address_from_str(
+		info,
+		isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET,
+		std_address_string
+	);
+	if (didSucceed == false) {
+		return none;
+	}
+	if (info.is_subaddress) {
+		BOOST_THROW_EXCEPTION(runtime_error("new_integratedAddrFromStdAddr must not be called with a subaddress"));
+		//
+		return none;
+	}
+	if (info.has_payment_id != false) {
+		// could even throw / fatalError here
+		return none; // that was not a std_address!
+	}
+	std::string int_address_string = cryptonote::get_account_integrated_address_as_str(
+		isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET,
+		info.address,
+		payment_id_short
+	);
+	return int_address_string;
 }

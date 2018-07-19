@@ -47,7 +47,7 @@ using namespace std;
 //
 // Test suites
  #include "../src/monero_address_utils.hpp"
-BOOST_AUTO_TEST_CASE(mockedPlainStringDoc_insert)
+BOOST_AUTO_TEST_CASE(decodeAddress)
 {
 	BOOST_REQUIRE(true);
 	std::cout << "Testing...." << std::endl;

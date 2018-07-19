@@ -52,6 +52,7 @@ include_directories("${MONERO_SRC}/epee/include")
 include_directories("${MONERO_SRC}/common")
 include_directories("${MONERO_SRC}/vtlogger")
 include_directories("${MONERO_SRC}/crypto")
+include_directories("${MONERO_SRC}/cryptonote_basic")
 include_directories("test")
 
 # keeping test files in a separate source directory 
@@ -62,8 +63,8 @@ set(
     #
     src/monero_address_utils.hpp
     src/monero_address_utils.cpp
-    # src/monero_paymentID_utils.hpp
-    # src/monero_paymentID_utils.cpp
+    src/monero_paymentID_utils.hpp
+    src/monero_paymentID_utils.cpp
     # src/monero_wallet_utils.hpp
     # src/monero_wallet_utils.cpp
     src/tools__ret_vals.hpp
@@ -75,7 +76,12 @@ set(
     ${MONERO_SRC}/crypto/crypto-ops.c
     ${MONERO_SRC}/crypto/crypto-ops-data.c
     ${MONERO_SRC}/crypto/keccak.c
+    ${MONERO_SRC}/crypto/random.c
     ${MONERO_SRC}/common/base58.cpp
+    ${MONERO_SRC}/epee/src/hex.cpp
+    ${MONERO_SRC}/epee/src/string_tools.cpp
+    ${MONERO_SRC}/epee/src/memwipe.c
+    ${MONERO_SRC}/epee/src/wipeable_string.cpp
 )
 
 #Run through each source
