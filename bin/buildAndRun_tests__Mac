@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+mkdir -p build;
+
+cd build && 
+cmake  .. -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl &&
+cmake --build . &&
+CTEST_OUTPUT_ON_FAILURE=1 ctest -VV
