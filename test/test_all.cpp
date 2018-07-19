@@ -46,7 +46,7 @@ using namespace std;
 // Shared code
 //
 // Test suites
-// #include "../src/monero_address_utils.hpp"
+ #include "../src/monero_address_utils.hpp"
 BOOST_AUTO_TEST_CASE(mockedPlainStringDoc_insert)
 {
 	BOOST_REQUIRE(true);

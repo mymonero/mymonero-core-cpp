@@ -29,22 +29,33 @@
 //  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //
+#include <string>
+#include <boost/optional.hpp>
+using namespace std;
+using namespace boost;
+//
 #include "tools__ret_vals.hpp"
 //
-struct Monero_DecodedAddress_RetVals: tools::RetVals_base
-{ // TODO: inherit from tools__ret_vals
-	optional<string> errStr;
-	//
-	string pub_viewKey_string;
-	string pub_spendKey_string;
-	bool isSubaddress;
-	optional<string> paymentID_string;
-};
-//
-//
-Monero_DecodedAddress_RetVals decodedAddress(string addressString, bool isTestnet);
-+ (BOOL)isSubAddress:(NSString *)addressString isTestnet:(BOOL)isTestnet;
-+ (BOOL)isIntegratedAddress:(NSString *)addressString isTestnet:(BOOL)isTestnet;
-//
-+ (NSString *)new_integratedAddrFromStdAddr:(NSString *)std_address_NSString andShortPID:(NSString *)short_paymentID isTestnet:(BOOL)isTestnet;
-+ (NSString *)new_integratedAddrFromStdAddr:(NSString *)std_address_NSString andShortPID:(NSString *)short_paymentID; // mainnet
+namespace monero
+{
+	namespace address_utils
+	{
+		struct DecodedAddress_RetVals: tools::RetVals_base
+		{ // TODO: inherit from tools__ret_vals
+			optional<string> errStr;
+			//
+			string pub_viewKey_string;
+			string pub_spendKey_string;
+			bool isSubaddress;
+			optional<string> paymentID_string;
+		};
+		//
+		// TODO: migrate these methods to use nettype
+		//
+		DecodedAddress_RetVals decodedAddress(string addressString, bool isTestnet);
+		bool isSubAddress(string addressString, bool isTestnet);
+		bool isIntegratedAddress(string addressString, bool isTestnet);
+		//
+		string new_integratedAddrFromStdAddr(string std_address_string, string short_paymentID, bool isTestnet);
+	}
+}

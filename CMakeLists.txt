@@ -43,8 +43,15 @@ find_package(Boost COMPONENTS
     wserialization REQUIRED
 )
 
+set(MONERO_SRC "contrib/monero-core-custom")
+
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories("src")
+include_directories(${MONERO_SRC})
+include_directories("${MONERO_SRC}/epee/include")
+include_directories("${MONERO_SRC}/common")
+include_directories("${MONERO_SRC}/vtlogger")
+include_directories("${MONERO_SRC}/crypto")
 include_directories("test")
 
 # keeping test files in a separate source directory 
@@ -53,14 +60,22 @@ file(GLOB TEST_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/test_*.cpp)
 set(
     SRC_FILES
     #
-    # src/monero_address_utils.hpp
-    # src/monero_address_utils.cpp
+    src/monero_address_utils.hpp
+    src/monero_address_utils.cpp
     # src/monero_paymentID_utils.hpp
     # src/monero_paymentID_utils.cpp
     # src/monero_wallet_utils.hpp
     # src/monero_wallet_utils.cpp
     src/tools__ret_vals.hpp
     src/tools__ret_vals.cpp
+    #
+    ${MONERO_SRC}/cryptonote_basic/cryptonote_basic_impl.cpp
+    ${MONERO_SRC}/crypto/crypto.cpp
+    ${MONERO_SRC}/crypto/hash.c
+    ${MONERO_SRC}/crypto/crypto-ops.c
+    ${MONERO_SRC}/crypto/crypto-ops-data.c
+    ${MONERO_SRC}/crypto/keccak.c
+    ${MONERO_SRC}/common/base58.cpp
 )
 
 #Run through each source
