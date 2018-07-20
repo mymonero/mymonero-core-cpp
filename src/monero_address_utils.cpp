@@ -53,7 +53,7 @@ DecodedAddress_RetVals address_utils::decodedAddress(const string &addressString
 		addressString
 	);
 	if (didSucceed == false) {
-		retVals.errStr = "Invalid address"; // TODO: return code
+		retVals.err_str = "Invalid address"; // TODO: return code
 		//
 		return retVals;
 	}

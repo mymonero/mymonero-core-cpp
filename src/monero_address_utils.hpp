@@ -42,10 +42,8 @@ namespace monero
 	{
 		struct DecodedAddress_RetVals: tools::RetVals_base
 		{ // TODO: inherit from tools__ret_vals
-			optional<string> errStr;
-			//
-			string pub_viewKey_string;
-			string pub_spendKey_string;
+			optional<string> pub_viewKey_string;
+			optional<string> pub_spendKey_string;
 			bool isSubaddress;
 			optional<string> paymentID_string;
 		};

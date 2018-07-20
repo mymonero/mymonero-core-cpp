@@ -49,6 +49,15 @@ using namespace std;
  #include "../src/monero_address_utils.hpp"
 BOOST_AUTO_TEST_CASE(decodeAddress)
 {
-	BOOST_REQUIRE(true);
-	std::cout << "Testing...." << std::endl;
+	string address = "43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg";
+	auto result = monero::address_utils::decodedAddress(address, false);
+	if (result.err_str) {
+		std::cout << *result.err_str << endl;
+		BOOST_REQUIRE(!result.err_str);
+	}
+	BOOST_REQUIRE(result.pub_viewKey_string != none);
+	BOOST_REQUIRE(result.pub_spendKey_string != none);
+	BOOST_REQUIRE(result.isSubaddress == false);
+	BOOST_REQUIRE(result.paymentID_string == none);
+	std::cout << "Decoded: " << address << std::endl;
 }

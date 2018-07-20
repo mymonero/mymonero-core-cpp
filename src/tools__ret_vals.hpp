@@ -33,13 +33,15 @@
 //
 #include <string>
 #include <boost/optional.hpp>
+using namespace std;
+using namespace boost;
 //
 namespace tools
 {
 	struct RetVals_base
 	{
 		bool did_error = false;
-		boost::optional<std::string> err_string = boost::none;
+		optional<string> err_str = none;
 		//
 		// derive *_RetVals structs from this type and add your own members
 	};
