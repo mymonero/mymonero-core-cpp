@@ -34,9 +34,10 @@
 #define monero_wallet_utils_hpp
 
 #include <boost/optional.hpp>
-#include "crypto.h"
+#include "serialization/binary_archive.h"
 #include "cryptonote_basic.h"
 #include "cryptonote_basic_impl.h"
+
 #include "electrum-words.h"
 #include "mnemonics/singleton.h"
 #include "mnemonics/english.h"
@@ -46,6 +47,28 @@ using namespace tools;
 //
 namespace monero_wallet_utils
 {
+	//
+	// 16B keys
+	POD_CLASS ec_nonscalar_16Byte {
+		// extension to support old deprecated 16B/13-word seeds
+		char data[16];
+	};
+	using legacy16B_secret_key = tools::scrubbed<ec_nonscalar_16Byte>;
+	void coerce_valid_sec_key_from(
+		const legacy16B_secret_key &legacy16B_mymonero_sec_seed,
+		crypto::secret_key &dst__sec_seed
+	);
+	static_assert(sizeof(legacy16B_secret_key) == 16, "Invalid structure size");
+	inline std::ostream &operator <<(std::ostream &o, const legacy16B_secret_key &v) {
+		epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
+	}
+	const static legacy16B_secret_key null_legacy16B_skey = boost::value_initialized<legacy16B_secret_key>();
+	const static unsigned long sec_seed_hex_string_length = sizeof(crypto::secret_key) * 2;
+	const static unsigned long legacy16B__sec_seed_hex_string_length = sizeof(legacy16B_secret_key) * 2;
+	//
+	bool words_to_bytes(std::string words, legacy16B_secret_key& dst, std::string &language_name);
+	bool bytes_to_words(const legacy16B_secret_key& src, std::string& words, const std::string &language_name);
+ 	//
 	//
 	// Accounts
 	struct MnemonicDecodedSeed_RetVals: RetVals_base
@@ -61,6 +84,12 @@ namespace monero_wallet_utils
 		//
 		MnemonicDecodedSeed_RetVals &retVals
 	);
+	//
+	struct SeedDecodedMnemonic_RetVals: RetVals_base
+	{
+		boost::optional<std::string> mnemonic_string = boost::none;
+	};
+	SeedDecodedMnemonic_RetVals mnemonic_string_from_seed_hex_string(std::string seed_string, std::string wordsetName);
 	//
 	// Convenience functions - Wallets
 	struct WalletDescription
@@ -112,5 +141,35 @@ namespace monero_wallet_utils
 		WalletComponentsValidationResults &outputs
 	);
 }
+
+
+#define MONEROWALLETUTILS_MAKE_COMPARABLE(type) \
+namespace monero_wallet_utils { \
+inline bool operator==(const type &_v1, const type &_v2) { \
+return std::memcmp(&_v1, &_v2, sizeof(type)) == 0; \
+} \
+inline bool operator!=(const type &_v1, const type &_v2) { \
+return std::memcmp(&_v1, &_v2, sizeof(type)) != 0; \
+} \
+}
+
+#define MONEROWALLETUTILS_MAKE_HASHABLE(type) \
+MONEROWALLETUTILS_MAKE_COMPARABLE(type) \
+namespace monero_wallet_utils { \
+static_assert(sizeof(std::size_t) <= sizeof(type), "Size of " #type " must be at least that of size_t"); \
+inline std::size_t hash_value(const type &_v) { \
+return reinterpret_cast<const std::size_t &>(_v); \
+} \
+} \
+namespace std { \
+template<> \
+struct hash<monero_wallet_utils::type> { \
+std::size_t operator()(const monero_wallet_utils::type &_v) const { \
+return reinterpret_cast<const std::size_t &>(_v); \
+} \
+}; \
+}
+
+MONEROWALLETUTILS_MAKE_HASHABLE(legacy16B_secret_key)
 
 #endif /* monero_wallet_utils_hpp */

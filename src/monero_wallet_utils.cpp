@@ -32,7 +32,10 @@
 //
 #include "monero_wallet_utils.hpp"
 #include <boost/algorithm/string.hpp>
+#include "cryptonote_basic.h"
+#include "device/device.hpp"
 #include "cryptonote_basic/account.h"
+#include "keccak.h"
 //
 #include "string_tools.h"
 using namespace epee;
@@ -44,19 +47,63 @@ extern "C" {
 using namespace monero_wallet_utils;
 using namespace crypto; // for extension
 //
+// 16 byte seeds
+void cn_pad_by_fast_hash__C(const uint8_t *in, size_t inlen, uint8_t *md, int mdlen)
+{
+	keccak(in, inlen, md, mdlen);
+}
+inline void cn_pad_by_fast_hash(const uint8_t *indata, std::size_t inlen, uint8_t *outdata, std::size_t outlen)
+{
+	cn_pad_by_fast_hash__C(indata, inlen, outdata, (int)outlen);
+}
+void monero_wallet_utils::coerce_valid_sec_key_from(
+	const legacy16B_secret_key &legacy16B_mymonero_sec_seed,
+	secret_key &dst__sec_seed
+) { // cn_fast_hash legacy16B_sec_seed in order to 'pad' it to 256 bits so it can be chopped to ec_scalar
+	static_assert(!epee::has_padding<legacy16B_secret_key>(), "potential hash of padding data");
+	static_assert(!epee::has_padding<secret_key>(), "writing to struct with extra data");
+	cn_pad_by_fast_hash((uint8_t *)&legacy16B_mymonero_sec_seed, sizeof(legacy16B_secret_key),
+						(uint8_t *)&dst__sec_seed, sizeof(secret_key));
+}
+bool monero_wallet_utils::words_to_bytes(
+	std::string words, 
+	legacy16B_secret_key& dst, 
+	std::string &language_name
+) {
+	std::string s;
+	if (!crypto::ElectrumWords::words_to_bytes(words, s, sizeof(dst), true, language_name)) {
+		return false;
+	}
+	if (s.size() != sizeof(dst)) {
+		return false;
+	}
+	memcpy(dst.data, s.data(), sizeof(dst.data));
+	return true;
+}
+bool monero_wallet_utils::bytes_to_words(
+	const legacy16B_secret_key& src, 
+	std::string& words, 
+	const std::string &language_name
+) {
+	return crypto::ElectrumWords::bytes_to_words(
+		src.data, sizeof(src),
+		words, language_name
+	);
+}
+//
+//
 bool monero_wallet_utils::new_wallet(
     std::string mnemonic_language,
 	WalletDescriptionRetVals &retVals,
 	bool isTestnet
-)
-{
+) {
 	retVals = {};
 	//
 	cryptonote::account_base account{}; // this initializes the wallet and should call the default constructor
 	crypto::secret_key nonLegacy32B_sec_seed = account.generate();
 	//
 	const cryptonote::account_keys& keys = account.get_keys();
-	std::string address_string = account.get_public_address_str(isTestnet); // getting the string here instead of leaving it to the consumer b/c get_public_address_str could potentially change in implementation (see TODO) so it's not right to duplicate that here
+	std::string address_string = account.get_public_address_str(isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET); // getting the string here instead of leaving it to the consumer b/c get_public_address_str could potentially change in implementation (see TODO) so it's not right to duplicate that here
 	//
 	std::string mnemonic_string;
 	bool r = crypto::ElectrumWords::bytes_to_words(nonLegacy32B_sec_seed, mnemonic_string, std::move(mnemonic_language));
@@ -68,8 +115,7 @@ bool monero_wallet_utils::new_wallet(
 		//
 		return false;
 	}
-	retVals.optl__desc =
-	{
+	retVals.optl__desc = WalletDescription{
 		string_tools::pod_to_hex(nonLegacy32B_sec_seed),
 		//
 		address_string,
@@ -84,6 +130,9 @@ bool monero_wallet_utils::new_wallet(
 	return true;
 }
 //
+const uint32_t stable_32B_seed_mnemonic_word_count = 25;
+const uint32_t legacy_16B_seed_mnemonic_word_count = 13;
+
 bool monero_wallet_utils::decoded_seed(
 	std::string mnemonic_string,
 	std::string mnemonic_language,
@@ -108,7 +157,7 @@ bool monero_wallet_utils::decoded_seed(
 	crypto::secret_key sec_seed;
 	std::string sec_seed_string; // TODO/FIXME: needed this for shared ref outside of if branch below… not intending extra default constructor call but not sure how to get around it yet
 	bool from_legacy16B_lw_seed = false;
-	if (word_count == crypto::ElectrumWords::stable_32B_seed_mnemonic_word_count) {
+	if (word_count == stable_32B_seed_mnemonic_word_count) {
 		from_legacy16B_lw_seed = false; // to be clear
 		bool r = crypto::ElectrumWords::words_to_bytes(mnemonic_string, sec_seed, mnemonic_language);
 		if (!r) {
@@ -118,17 +167,17 @@ bool monero_wallet_utils::decoded_seed(
 			return false;
 		}
 		sec_seed_string = string_tools::pod_to_hex(sec_seed);
-	} else if (word_count == crypto::ElectrumWords::legacy_16B_seed_mnemonic_word_count) {
+	} else if (word_count == legacy_16B_seed_mnemonic_word_count) {
 		from_legacy16B_lw_seed = true;
-		crypto::legacy16B_secret_key legacy16B_sec_seed;
-		bool r = crypto::ElectrumWords::words_to_bytes(mnemonic_string, legacy16B_sec_seed, mnemonic_language); // special 16 byte function
+		legacy16B_secret_key legacy16B_sec_seed;
+		bool r = words_to_bytes(mnemonic_string, legacy16B_sec_seed, mnemonic_language); // special 16 byte function
 		if (!r) {
 			retVals.did_error = true;
 			retVals.err_string = "Invalid 13-word mnemonic";
 			//
 			return false;
 		}
-		crypto::coerce_valid_sec_key_from(legacy16B_sec_seed, sec_seed);
+		coerce_valid_sec_key_from(legacy16B_sec_seed, sec_seed);
 		sec_seed_string = string_tools::pod_to_hex(legacy16B_sec_seed); // <- NOTE: we are returning the _LEGACY_ seed as the string… this is important so we don't lose the fact it was 16B/13-word originally!
 	} else {
 		retVals.did_error = true;
@@ -142,6 +191,48 @@ bool monero_wallet_utils::decoded_seed(
 	retVals.from_legacy16B_lw_seed = from_legacy16B_lw_seed;
 	//
 	return true;
+}
+//
+SeedDecodedMnemonic_RetVals monero_wallet_utils::mnemonic_string_from_seed_hex_string(
+	std::string sec_hexString,
+	std::string mnemonic_language // aka wordset name
+) {
+	SeedDecodedMnemonic_RetVals retVals = {};
+	//
+//	std::string mnemonic_string;
+//	uint32_t sec_hexString_length = sec_hexString.size();
+//	//
+//	bool r = false;
+//	if (sec_hexString_length == sec_seed_hex_string_length) { // normal seed
+//		crypto::secret_key sec_seed;
+//		r = string_tools::hex_to_pod(sec_hexString, sec_seed);
+//		if (!r) {
+//			retVals.did_error = true;
+//			retVals.err_string = "Invalid seed";
+//			return retVals;
+//		}
+//		r = crypto::ElectrumWords::bytes_to_words(sec_seed, mnemonic_string, mnemonic_language);
+//	} else if (sec_hexString_length == legacy16B__sec_seed_hex_string_length) {
+//		legacy16B_secret_key legacy16B_sec_seed;
+//		r = string_tools::hex_to_pod(sec_hexString, legacy16B_sec_seed);
+//		if (!r) {
+//			retVals.did_error = true;
+//			retVals.err_string = "Invalid seed";
+//			return retVals;
+//		}
+//		r = bytes_to_words(legacy16B_sec_seed, mnemonic_string, mnemonic_language); // called with the legacy16B version
+//	} else {
+//		retVals.did_error = true;
+//		retVals.err_string = "Invalid seed length";
+//		return retVals;
+//	}
+//	if (!r) {
+//		retVals.did_error = true;
+//		retVals.err_string = "Couldn't get mnemonic from hex seed";
+//		return retVals;
+//	}
+//	retVals.mnemonic_string = mnemonic_string; // TODO: should/can we just send retVals.mnemonic_string to bytes_to_words ?
+	return retVals;
 }
 //
 bool monero_wallet_utils::wallet_with(
@@ -167,11 +258,10 @@ bool monero_wallet_utils::wallet_with(
 		decodedSeed_retVals.from_legacy16B_lw_seed // assumed set if r
 	);
 	const cryptonote::account_keys& keys = account.get_keys();
-	retVals.optl__desc =
-	{
+	retVals.optl__desc = WalletDescription{
 		*decodedSeed_retVals.optl__sec_seed_string, // assumed non nil if r
 		//
-		account.get_public_address_str(isTestnet),
+		account.get_public_address_str(isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET),
 		//
 		keys.m_spend_secret_key,
 		keys.m_view_secret_key,
@@ -195,7 +285,7 @@ bool monero_wallet_utils::validate_wallet_components_with(
 	cryptonote::address_parse_info decoded_address_info;
 	r = cryptonote::get_account_address_from_str(
 		decoded_address_info,
-		inputs.isTestnet,
+		inputs.isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET,
 		inputs.address_string
 	);
 	if (r == false) {
@@ -267,7 +357,7 @@ bool monero_wallet_utils::validate_wallet_components_with(
 			unsigned long sec_seed_string_length = (*inputs.optl__sec_seed_string).length();
 			crypto::secret_key sec_seed;
 			bool from_legacy16B_lw_seed = false;
-			if (sec_seed_string_length == crypto::sec_seed_hex_string_length) { // normal seed
+			if (sec_seed_string_length == sec_seed_hex_string_length) { // normal seed
 				from_legacy16B_lw_seed = false; // to be clear
 				bool r = string_tools::hex_to_pod((*inputs.optl__sec_seed_string), sec_seed);
 				if (!r) {
@@ -276,9 +366,9 @@ bool monero_wallet_utils::validate_wallet_components_with(
 					//
 					return false;
 				}
-			} else if (sec_seed_string_length == crypto::legacy16B__sec_seed_hex_string_length) {
+			} else if (sec_seed_string_length == legacy16B__sec_seed_hex_string_length) {
 				from_legacy16B_lw_seed = true;
-				crypto::legacy16B_secret_key legacy16B_sec_seed;
+				legacy16B_secret_key legacy16B_sec_seed;
 				bool r = string_tools::hex_to_pod((*inputs.optl__sec_seed_string), legacy16B_sec_seed);
 				if (!r) {
 					outputs.did_error = true;
@@ -286,7 +376,7 @@ bool monero_wallet_utils::validate_wallet_components_with(
 					//
 					return false;
 				}
-				crypto::coerce_valid_sec_key_from(legacy16B_sec_seed, sec_seed);
+				coerce_valid_sec_key_from(legacy16B_sec_seed, sec_seed);
 			}
 			cryptonote::account_base expected_account{}; // this initializes the wallet and should call the default constructor
 			expected_account.generate(sec_seed, true/*recover*/, false/*two_random*/, from_legacy16B_lw_seed);

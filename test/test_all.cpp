@@ -41,6 +41,7 @@
 #include <iterator>
 #include <sstream>
 using namespace std;
+#include "string_tools.h"
 // using namespace boost;
 //
 // Shared code
@@ -51,13 +52,41 @@ BOOST_AUTO_TEST_CASE(decodeAddress)
 {
 	string address = "43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg";
 	auto result = monero::address_utils::decodedAddress(address, false);
-	if (result.err_str) {
-		std::cout << *result.err_str << endl;
-		BOOST_REQUIRE(!result.err_str);
+	if (result.err_string) {
+		std::cout << *result.err_string << endl;
+		BOOST_REQUIRE(!result.err_string);
 	}
 	BOOST_REQUIRE(result.pub_viewKey_string != none);
 	BOOST_REQUIRE(result.pub_spendKey_string != none);
 	BOOST_REQUIRE(result.isSubaddress == false);
 	BOOST_REQUIRE(result.paymentID_string == none);
 	std::cout << "Decoded: " << address << std::endl;
+}
+//
+//
+#include "../src/monero_paymentID_utils.hpp"
+BOOST_AUTO_TEST_CASE(paymentID)
+{
+	string paymentID_string = monero_paymentID_utils::new_short_plain_paymentID_string();
+	std::cout << "paymentID_string: " << paymentID_string << std::endl;
+	BOOST_REQUIRE_MESSAGE(paymentID_string.size() == 16, "Expected payment ID to be of length 16");
+	//
+	crypto::hash parsed__payment_id;
+	bool didParse = monero_paymentID_utils::parse_payment_id(paymentID_string, parsed__payment_id);
+	BOOST_REQUIRE_MESSAGE(didParse, "Couldn't parse payment ID");
+	std::string parsed__payment_id_as_string = epee::string_tools::pod_to_hex(parsed__payment_id);
+	BOOST_REQUIRE_MESSAGE(paymentID_string.compare(parsed__payment_id_as_string), "Expected parsed payment ID to equal original payment ID");
+	std::cout << "parsed__payment_id: " << parsed__payment_id << std::endl;
+}
+//
+//
+#include "../src/monero_key_image_utils.hpp"
+BOOST_AUTO_TEST_CASE(keyImage)
+{
+}
+//
+//
+#include "../src/monero_wallet_utils.hpp"
+BOOST_AUTO_TEST_CASE(wallet)
+{
 }

@@ -41,7 +41,7 @@ namespace tools
 	struct RetVals_base
 	{
 		bool did_error = false;
-		optional<string> err_str = none;
+		optional<string> err_string = none;
 		//
 		// derive *_RetVals structs from this type and add your own members
 	};

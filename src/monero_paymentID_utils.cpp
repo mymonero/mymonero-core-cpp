@@ -42,6 +42,10 @@ crypto::hash8 monero_paymentID_utils::new_short_plain_paymentID()
 {
 	return crypto::rand<crypto::hash8>();
 }
+std::string monero_paymentID_utils::new_short_plain_paymentID_string()
+{
+	return string_tools::pod_to_hex(monero_paymentID_utils::new_short_plain_paymentID());
+}
 //
 bool monero_paymentID_utils::parse_long_payment_id(const std::string& payment_id_str, crypto::hash& payment_id)
 {
