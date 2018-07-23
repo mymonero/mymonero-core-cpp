@@ -33,7 +33,7 @@
 //
 #include "monero_transfer_utils.hpp"
 //#include "monero_fork_rules.hpp"
-//#include "wallet_errors.h
+#include "wallet_errors.h"
 //
 //using namespace std;
 //using namespace crypto;
