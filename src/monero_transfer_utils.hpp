@@ -61,13 +61,13 @@ namespace monero_transfer_utils
 	size_t estimate_rct_tx_size(int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof);
 	size_t estimate_tx_size(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof);
 	//
-	bool is_transfer_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, bool is_testnet = false);
-	bool is_tx_spendtime_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, bool is_testnet = false);
+	bool is_transfer_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, cryptonote::network_type nettype = cryptonote::MAINNET);
+	bool is_tx_spendtime_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, cryptonote::network_type nettype = cryptonote::MAINNET);
 	//
 	uint32_t fixed_ringsize(); // not mixinsize, which would be ringsize-1
 	uint32_t fixed_mixinsize(); // not ringsize, which would be mixinsize+1
 	//
-	std::string new_dummy_address_string_for_rct_tx(bool isTestnet = false);
+	std::string new_dummy_address_string_for_rct_tx(cryptonote::network_type nettype = cryptonote::MAINNET);
 	//
 	uint32_t default_priority();
 }

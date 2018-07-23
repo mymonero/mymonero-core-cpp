@@ -38,13 +38,26 @@
 //using namespace std;
 //using namespace crypto;
 //using namespace epee;
-//using namespace cryptonote;
+using namespace cryptonote;
 //using namespace tools; // for error::
 using namespace monero_transfer_utils;
 //using namespace monero_fork_rules;
 //
+// Protocol / Defaults
+uint32_t monero_transfer_utils::fixed_ringsize()
+{
+	return 7; // TODO/FIXME: temporary…… for lightwallet code!
+}
+uint32_t monero_transfer_utils::fixed_mixinsize()
+{
+	return monero_transfer_utils::fixed_ringsize() - 1;
+}
+uint32_t monero_transfer_utils::default_priority()
+{
+	return 1; // lowest (TODO: declare centrally)
+}
 //
-// monero_transfer_utils - General functions
+// Fee estimation
 uint64_t monero_transfer_utils::get_upper_transaction_size_limit(uint64_t upper_transaction_size_limit__or_0_for_default, use_fork_rules_fn_type use_fork_rules_fn)
 {
 	if (upper_transaction_size_limit__or_0_for_default > 0)
@@ -173,9 +186,9 @@ bool monero_transfer_utils::is_transfer_unlocked(
 	uint64_t unlock_time,
 	uint64_t block_height,
 	uint64_t blockchain_size, /* extracting wallet2->m_blockchain.size() / m_local_bc_height */
-	bool is_testnet
+	network_type nettype
 ) {
-	if(!is_tx_spendtime_unlocked(unlock_time, block_height, blockchain_size, is_testnet))
+	if(!is_tx_spendtime_unlocked(unlock_time, block_height, blockchain_size, nettype))
 		return false;
 
 	if(block_height + CRYPTONOTE_DEFAULT_TX_SPENDABLE_AGE > blockchain_size)
@@ -187,12 +200,12 @@ bool monero_transfer_utils::is_tx_spendtime_unlocked(
 	uint64_t unlock_time,
 	uint64_t block_height,
 	uint64_t blockchain_size,
-	bool is_testnet
+	network_type nettype
 ) {
 	if(unlock_time < CRYPTONOTE_MAX_BLOCK_NUMBER)
 	{
 		//interpret as block index
-		if(block_height-1 + CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_BLOCKS >= unlock_time)
+		if(blockchain_size-1 + CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_BLOCKS >= unlock_time)
 			return true;
 		else
 			return false;
@@ -202,7 +215,7 @@ bool monero_transfer_utils::is_tx_spendtime_unlocked(
 		uint64_t current_time = static_cast<uint64_t>(time(NULL));
 		// XXX: this needs to be fast, so we'd need to get the starting heights
 		// from the daemon to be correct once voting kicks in
-		uint64_t v2height = is_testnet ? 624634 : 1009827;
+		uint64_t v2height = nettype == TESTNET ? 624634 : nettype == STAGENET ? (uint64_t)-1/*TODO*/ : 1009827;
 		uint64_t leeway = block_height < v2height ? CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_SECONDS_V1 : CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_SECONDS_V2;
 		if(current_time + leeway >= unlock_time)
 			return true;
@@ -211,23 +224,12 @@ bool monero_transfer_utils::is_tx_spendtime_unlocked(
 	}
 	return false;
 }
-
-uint32_t monero_transfer_utils::fixed_ringsize()
-{
-	return 7; // TODO/FIXME: temporary…… for lightwallet code!
-}
-uint32_t monero_transfer_utils::fixed_mixinsize()
-{
-	return monero_transfer_utils::fixed_ringsize() - 1;
-}
-std::string monero_transfer_utils::new_dummy_address_string_for_rct_tx(bool isTestnet)
+//
+// Constructing transactions
+std::string monero_transfer_utils::new_dummy_address_string_for_rct_tx(network_type nettype)
 {
 	cryptonote::account_base account;
 	account.generate();
 	//
-	return account.get_public_address_str(isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET);
-}
-uint32_t monero_transfer_utils::default_priority()
-{
-	return 1; // lowest (TODO: declare)
+	return account.get_public_address_str(nettype);
 }
