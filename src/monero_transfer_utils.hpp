@@ -43,8 +43,6 @@ using namespace tools;
 //
 // used to choose when to stop adding outputs to a tx
 #define APPROXIMATE_INPUT_BYTES 80
-// used to target a given block size (additional outputs may be added on top to build fee)
-#define TX_SIZE_TARGET(bytes) (bytes*2/3)
 //
 namespace monero_transfer_utils
 {
