@@ -75,6 +75,8 @@ set(
     src/monero_key_image_utils.cpp
     src/monero_transfer_utils.hpp
     src/monero_transfer_utils.cpp
+    src/monero_fork_rules.hpp
+    src/monero_fork_rules.cpp
     src/monero_wallet_utils.hpp
     src/monero_wallet_utils.cpp
     src/tools__ret_vals.hpp

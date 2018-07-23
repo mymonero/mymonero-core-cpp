@@ -90,3 +90,19 @@ BOOST_AUTO_TEST_CASE(keyImage)
 BOOST_AUTO_TEST_CASE(wallet)
 {
 }
+//
+//
+#include "../src/monero_transfer_utils.hpp"
+#include "../src/monero_fork_rules.hpp"
+BOOST_AUTO_TEST_CASE(transfers__fee)
+{
+	monero_fork_rules::use_fork_rules_fn_type use_fork_rules_fn = [] (uint8_t version, int64_t early_blocks) -> bool
+	{
+		return monero_fork_rules::lightwallet_hardcoded__use_fork_rules(version, early_blocks);
+	};
+	uint64_t fee_per_kb = 9000000;
+	uint32_t priority = 2;
+	uint64_t est_fee = monero_transfer_utils::estimated_tx_network_fee(fee_per_kb, priority, cryptonote::MAINNET, use_fork_rules_fn);
+	std::cout << "est_fee with fee_per_kb " << fee_per_kb << ": " << est_fee << std::endl;
+	BOOST_REQUIRE(est_fee > 0);
+}

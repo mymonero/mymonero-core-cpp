@@ -37,6 +37,7 @@
 #include "cryptonote_basic.h"
 #include "cryptonote_format_utils.h"
 #include "cryptonote_tx_utils.h"
+#include "monero_fork_rules.hpp"
 //
 using namespace tools;
 #include "tools__ret_vals.hpp"
@@ -47,17 +48,21 @@ using namespace tools;
 namespace monero_transfer_utils
 {
 	//
-	typedef std::function<bool(uint8_t, int64_t)> use_fork_rules_fn_type;
-	//
-	uint64_t get_upper_transaction_size_limit(uint64_t upper_transaction_size_limit__or_0_for_default, use_fork_rules_fn_type use_fork_rules_fn);
-	uint64_t get_fee_multiplier(uint32_t priority, uint32_t default_priority, int fee_algorithm, use_fork_rules_fn_type use_fork_rules_fn);
-	int get_fee_algorithm(use_fork_rules_fn_type use_fork_rules_fn);
+	uint64_t get_upper_transaction_size_limit(uint64_t upper_transaction_size_limit__or_0_for_default, monero_fork_rules::use_fork_rules_fn_type use_fork_rules_fn);
+	uint64_t get_fee_multiplier(uint32_t priority, uint32_t default_priority, int fee_algorithm, monero_fork_rules::use_fork_rules_fn_type use_fork_rules_fn);
+	int get_fee_algorithm(monero_fork_rules::use_fork_rules_fn_type use_fork_rules_fn);
 	//
 	uint64_t calculate_fee(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier);
 	uint64_t calculate_fee(uint64_t fee_per_kb, const cryptonote::blobdata &blob, uint64_t fee_multiplier);
 	//
 	size_t estimate_rct_tx_size(int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof);
 	size_t estimate_tx_size(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof);
+	uint64_t estimated_tx_network_fee( // convenience function for size + calc
+		uint64_t fee_per_kb,
+		uint32_t priority, // when priority=0, falls back to monero_transfer_utils::default_priority()
+		cryptonote::network_type nettype,
+		monero_fork_rules::use_fork_rules_fn_type use_fork_rules_fn // this is extracted to a function so that implementations can optionally query the daemon (although this presently implies that such a call remains blocking)
+	);
 	//
 	bool is_transfer_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, cryptonote::network_type nettype = cryptonote::MAINNET);
 	bool is_tx_spendtime_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, cryptonote::network_type nettype = cryptonote::MAINNET);

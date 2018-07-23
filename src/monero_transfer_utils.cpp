@@ -32,7 +32,6 @@
 //
 //
 #include "monero_transfer_utils.hpp"
-//#include "monero_fork_rules.hpp"
 #include "wallet_errors.h"
 //
 //using namespace std;
@@ -41,12 +40,12 @@
 using namespace cryptonote;
 //using namespace tools; // for error::
 using namespace monero_transfer_utils;
-//using namespace monero_fork_rules;
+using namespace monero_fork_rules;
 //
 // Protocol / Defaults
 uint32_t monero_transfer_utils::fixed_ringsize()
 {
-	return 7; // TODO/FIXME: temporary…… for lightwallet code!
+	return 7; // best practice is to conform to fixed ring size
 }
 uint32_t monero_transfer_utils::fixed_mixinsize()
 {
@@ -58,8 +57,24 @@ uint32_t monero_transfer_utils::default_priority()
 }
 //
 // Fee estimation
-uint64_t monero_transfer_utils::get_upper_transaction_size_limit(uint64_t upper_transaction_size_limit__or_0_for_default, use_fork_rules_fn_type use_fork_rules_fn)
-{
+uint64_t monero_transfer_utils::estimated_tx_network_fee(
+	uint64_t fee_per_kb,
+	uint32_t priority,
+	network_type nettype,
+	use_fork_rules_fn_type use_fork_rules_fn
+) {
+	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0);
+	uint64_t fee_multiplier = get_fee_multiplier(priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
+	std::vector<uint8_t> extra; // blank extra
+	size_t est_tx_size = estimate_rct_tx_size(2, fixed_mixinsize(), 2, extra.size(), bulletproof); // typically ~14kb post-rct, pre-bulletproofs
+	uint64_t estimated_fee = calculate_fee(fee_per_kb, est_tx_size, fee_multiplier);
+	//
+	return estimated_fee;
+}
+uint64_t monero_transfer_utils::get_upper_transaction_size_limit(
+	uint64_t upper_transaction_size_limit__or_0_for_default,
+	use_fork_rules_fn_type use_fork_rules_fn
+) {
 	if (upper_transaction_size_limit__or_0_for_default > 0)
 		return upper_transaction_size_limit__or_0_for_default;
 	uint64_t full_reward_zone = use_fork_rules_fn(5, 10) ? CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V5 : use_fork_rules_fn(2, 10) ? CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2 : CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1;
@@ -105,7 +120,6 @@ uint64_t monero_transfer_utils::get_fee_multiplier(
 	THROW_WALLET_EXCEPTION_IF (false, error::invalid_priority);
 	return 1;
 }
-//
 int monero_transfer_utils::get_fee_algorithm(use_fork_rules_fn_type use_fork_rules_fn)
 {
 	// changes at v3 and v5
@@ -115,7 +129,6 @@ int monero_transfer_utils::get_fee_algorithm(use_fork_rules_fn_type use_fork_rul
 		return 1;
 	return 0;
 }
-//
 size_t monero_transfer_utils::estimate_rct_tx_size(int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof)
 {
 	size_t size = 0;
