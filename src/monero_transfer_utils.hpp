@@ -126,8 +126,52 @@ namespace monero_transfer_utils
 		givenAnInvalidPubKey			= 14,
 		invalidCommitOrMaskOnOutputRCT	= 15,
 		transactionNotConstructed		= 16,
-		transactionTooBig				= 17
+		transactionTooBig				= 17,
+		notYetImplemented				= 18
 	};
+	static inline string err_msg_from_err_code__create_transaction(CreateTransactionErrorCode code)
+	{
+		switch (code) {
+			case noError:
+				return "No error";
+			case noDestinations:
+				return "No destinations provided";
+			case wrongNumberOfMixOutsProvided:
+				return "Wrong number of mix outputs provided";
+			case notEnoughOutputsForMixing:
+				return "Not enough outputs for mixing";
+			case invalidSecretKeys:
+				return "Invalid secret keys";
+			case outputAmountOverflow:
+				return "Output amount overflow";
+			case inputAmountOverflow:
+				return "Input amount overflow";
+			case mixRCTOutsMissingCommit:
+				return "Mix RCT outs missing commit";
+			case resultFeeNotEqualToGiven:
+				return "Result fee not equal to given fee";
+			case needMoreMoneyThanFound:
+				return "Need more money than found";
+			case invalidDestinationAddress:
+				return "Invalid destination address";
+			case nonZeroPIDWithIntAddress:
+				return "Can't supply a PID with an integrated address";
+			case cantUsePIDWithSubAddress:
+				return "Can't use PID with subaddress";
+			case couldntSetPIDToTXExtra:
+				return "Couldn't set PID to tx extra";
+			case givenAnInvalidPubKey:
+				return "Invalid pub key";
+			case invalidCommitOrMaskOnOutputRCT:
+				return "Invalid commit or mask on output rct";
+			case transactionNotConstructed:
+				return "Transaction not constructed";
+			case transactionTooBig:
+				return "Transaction too big";
+			case notYetImplemented:
+				return "Not yet implemented";
+		}
+	}
 	struct TransactionConstruction_RetVals
 	{
 		CreateTransactionErrorCode errCode;
@@ -149,6 +193,30 @@ namespace monero_transfer_utils
 		uint64_t unlock_time							= 0, // or 0
 		bool rct 										= true,
 		network_type nettype							= MAINNET
+	);
+	//
+	struct Convenience_TransactionConstruction_RetVals
+	{
+		CreateTransactionErrorCode errCode;
+		//
+		optional<string> signed_serialized_tx_string;
+		optional<string> tx_hash_string;
+	};
+	void convenience__create_transaction(
+		Convenience_TransactionConstruction_RetVals &retVals,
+		const string &from_address_string,
+		const string &sec_viewKey_string,
+		const string &sec_spendKey_string,
+		const string &to_address_string,
+		optional<string> payment_id_string,
+		uint64_t amount, // to send
+		uint64_t fee_amount,
+		const std::vector<cryptonote::tx_destination_entry> &dsts, // this must include change or else dummy address
+		vector<SpendableOutput> &outputs,
+		vector<RandomAmountOutputs> &mix_outs,
+		use_fork_rules_fn_type use_fork_rules_fn,
+		uint64_t unlock_time							= 0, // or 0
+		network_type nettype 							= MAINNET
 	);
 }
 

@@ -50,7 +50,7 @@ using namespace monero_fork_rules;
 // Protocol / Defaults
 uint32_t monero_transfer_utils::fixed_ringsize()
 {
-	return 7; // best practice is to conform to fixed ring size
+	return 7; // best practice is to conform to fixed default ring size
 }
 uint32_t monero_transfer_utils::fixed_mixinsize()
 {
@@ -314,10 +314,9 @@ void monero_transfer_utils::create_transaction(
 	bool rct,
 	cryptonote::network_type nettype
 ) {
-	retVals.errCode = noError; // (does this need to be initialized?)
+	retVals.errCode = noError;
 	//
-	// TODO: sort destinations by amount, here, according to 'decompose_destinations'?
-	
+	// TODO: do we need to sort destinations by amount, here, according to 'decompose_destinations'?
 	//
 	uint32_t fake_outputs_count = fixed_mixinsize();
 	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0);
@@ -544,4 +543,123 @@ void monero_transfer_utils::create_transaction(
 	THROW_WALLET_EXCEPTION_IF(use_bulletproofs != bulletproof, error::wallet_internal_error, "Expected tx use_bulletproofs to equal bulletproof flag");
 	//
 	retVals.tx = tx;
+}
+//
+//
+void monero_transfer_utils::convenience__create_transaction(
+	Convenience_TransactionConstruction_RetVals &retVals,
+	const string &from_address_string,
+	const string &sec_viewKey_string,
+	const string &sec_spendKey_string,
+	const string &to_address_string,
+	optional<string> payment_id_string,
+	uint64_t amount, // to send
+	uint64_t fee_amount,
+	const std::vector<cryptonote::tx_destination_entry> &dsts, // this must include change or dummy address
+	vector<SpendableOutput> &outputs,
+	vector<RandomAmountOutputs> &mix_outs,
+	use_fork_rules_fn_type use_fork_rules_fn,
+	uint64_t unlock_time,
+	network_type nettype
+) {
+	retVals.errCode = noError;
+	//
+	cryptonote::address_parse_info from_addr_info;
+	THROW_WALLET_EXCEPTION_IF(!cryptonote::get_account_address_from_str(from_addr_info, nettype, from_address_string), error::wallet_internal_error, "Couldn't parse from-address");
+	cryptonote::account_keys account_keys;
+	{
+		account_keys.m_account_address = from_addr_info.address;
+		//
+		crypto::secret_key sec_viewKey;
+		THROW_WALLET_EXCEPTION_IF(!string_tools::hex_to_pod(sec_viewKey_string, sec_viewKey), error::wallet_internal_error, "Couldn't parse view key");
+		account_keys.m_view_secret_key = sec_viewKey;
+		//
+		crypto::secret_key sec_spendKey;
+		THROW_WALLET_EXCEPTION_IF(!string_tools::hex_to_pod(sec_spendKey_string, sec_spendKey), error::wallet_internal_error, "Couldn't parse spend key");
+		account_keys.m_spend_secret_key = sec_spendKey;
+	}
+	//
+	cryptonote::address_parse_info to_addr_info;
+	THROW_WALLET_EXCEPTION_IF(!cryptonote::get_account_address_from_str(to_addr_info, nettype, to_address_string), error::wallet_internal_error, "Couldn't parse to-address");
+	//
+	std::vector<uint8_t> extra;
+	bool payment_id_seen = false;
+	{ // Detect hash8 or hash32 char hex string as pid and configure 'extra' accordingly
+		bool r = false;
+		if (payment_id_string != none) {
+			crypto::hash payment_id;
+			r = monero_paymentID_utils::parse_long_payment_id(*payment_id_string, payment_id);
+			if (r) {
+				std::string extra_nonce;
+				cryptonote::set_payment_id_to_tx_extra_nonce(extra_nonce, payment_id);
+				r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
+			} else {
+				crypto::hash8 payment_id8;
+				r = monero_paymentID_utils::parse_short_payment_id(*payment_id_string, payment_id8);
+				if (r) {
+					std::string extra_nonce;
+					cryptonote::set_encrypted_payment_id_to_tx_extra_nonce(extra_nonce, payment_id8);
+					r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
+				}
+			}
+			payment_id_seen = true;
+		} else {
+			if (to_addr_info.is_subaddress && payment_id_seen) {
+				retVals.errCode = cantUsePIDWithSubAddress; // Never use a subaddress with a payment ID
+				return;
+			}
+			if (to_addr_info.has_payment_id) {
+				if (payment_id_seen) {
+					retVals.errCode = nonZeroPIDWithIntAddress; // can't use int addr at same time as supplying manual pid
+					return;
+				}
+				if (to_addr_info.is_subaddress) {
+					THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Unexpected is_subaddress && has_payment_id"); // should never happen
+					return;
+				}
+				std::string extra_nonce;
+				cryptonote::set_encrypted_payment_id_to_tx_extra_nonce(extra_nonce, to_addr_info.payment_id);
+				bool r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
+				if (!r) {
+					retVals.errCode = couldntSetPIDToTXExtra;
+					return;
+				}
+				payment_id_seen = true;
+			}
+		}
+	}
+	//
+	uint32_t subaddr_account_idx = 0;
+	std::unordered_map<crypto::public_key, cryptonote::subaddress_index> subaddresses;
+	subaddresses[account_keys.m_account_address.m_spend_public_key] = {0,0};
+	//
+	TransactionConstruction_RetVals actualCall_retVals;
+	create_transaction(
+		actualCall_retVals,
+		account_keys,
+		subaddr_account_idx,
+		subaddresses,
+		dsts,
+		outputs,
+		mix_outs,
+		fee_amount,
+		extra,
+		use_fork_rules_fn,
+		unlock_time,
+		true, // rct
+		nettype
+	);
+	if (actualCall_retVals.errCode != noError) {
+		retVals.errCode = actualCall_retVals.errCode; // pass-through
+		return; // already set the error
+	}
+	auto txBlob = t_serializable_object_to_blob(actualCall_retVals.tx);
+	size_t txBlob_byteLength = txBlob.size();
+	//	cout << "txBlob: " << txBlob << endl;
+	cout << "txBlob_byteLength: " << txBlob_byteLength << endl;
+	THROW_WALLET_EXCEPTION_IF(txBlob_byteLength <= 0, error::wallet_internal_error, "Expected tx blob byte length > 0");
+	//
+	// tx hash
+	retVals.tx_hash_string = epee::string_tools::pod_to_hex(cryptonote::get_transaction_hash(actualCall_retVals.tx));
+	retVals.signed_serialized_tx_string = epee::string_tools::buff_to_hex_nodelimer(cryptonote::tx_to_blob(actualCall_retVals.tx));
 }
