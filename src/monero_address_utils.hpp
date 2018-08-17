@@ -34,6 +34,7 @@
 using namespace std;
 using namespace boost;
 //
+#include "cryptonote_config.h"
 #include "tools__ret_vals.hpp"
 //
 namespace monero
@@ -50,10 +51,10 @@ namespace monero
 		//
 		// TODO: migrate these methods to use nettype
 		//
-		DecodedAddress_RetVals decodedAddress(const string &addressString, bool isTestnet);
-		bool isSubAddress(const string &addressString, bool isTestnet);
-		bool isIntegratedAddress(const string &addressString, bool isTestnet);
+		DecodedAddress_RetVals decodedAddress(const string &addressString, cryptonote::network_type nettype);
+		bool isSubAddress(const string &addressString, cryptonote::network_type nettype);
+		bool isIntegratedAddress(const string &addressString, cryptonote::network_type nettype);
 		//
-		optional<string> new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID, bool isTestnet);
+		optional<string> new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID, cryptonote::network_type nettype);
 	}
 }

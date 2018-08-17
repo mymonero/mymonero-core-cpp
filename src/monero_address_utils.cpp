@@ -42,14 +42,14 @@ using namespace epee;
 #include "monero_paymentID_utils.hpp"
 //
 // Accessors - Implementations
-DecodedAddress_RetVals address_utils::decodedAddress(const string &addressString, bool isTestnet)
+DecodedAddress_RetVals address_utils::decodedAddress(const string &addressString, cryptonote::network_type nettype)
 {
 	DecodedAddress_RetVals retVals; // init
 	//
 	cryptonote::address_parse_info info;
 	bool didSucceed = cryptonote::get_account_address_from_str(
 		info,
-		isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET,
+		nettype,
 		addressString
 	);
 	if (didSucceed == false) {
@@ -72,20 +72,20 @@ DecodedAddress_RetVals address_utils::decodedAddress(const string &addressString
 	}
 	return retVals;
 }
-bool address_utils::isSubAddress(const string &addressString, bool isTestnet)
+bool address_utils::isSubAddress(const string &addressString, cryptonote::network_type nettype)
 {
-	DecodedAddress_RetVals retVals = decodedAddress(addressString, isTestnet);
+	DecodedAddress_RetVals retVals = decodedAddress(addressString, nettype);
 	//
 	return retVals.isSubaddress;
 }
-bool address_utils::isIntegratedAddress(const string &addressString, bool isTestnet)
+bool address_utils::isIntegratedAddress(const string &addressString, cryptonote::network_type nettype)
 {
-	DecodedAddress_RetVals retVals = decodedAddress(addressString, isTestnet);
+	DecodedAddress_RetVals retVals = decodedAddress(addressString, nettype);
 	//
 	return retVals.paymentID_string != boost::none;
 }
 //
-optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID_string, bool isTestnet)
+optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID_string, cryptonote::network_type nettype)
 {
 	crypto::hash8 payment_id_short;
 	bool didParse = monero_paymentID_utils::parse_short_payment_id(short_paymentID_string, payment_id_short);
@@ -95,7 +95,7 @@ optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_
 	cryptonote::address_parse_info info;
 	bool didSucceed = cryptonote::get_account_address_from_str(
 		info,
-		isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET,
+		nettype,
 		std_address_string
 	);
 	if (didSucceed == false) {
@@ -111,7 +111,7 @@ optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_
 		return none; // that was not a std_address!
 	}
 	std::string int_address_string = cryptonote::get_account_integrated_address_as_str(
-		isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET,
+		nettype,
 		info.address,
 		payment_id_short
 	);

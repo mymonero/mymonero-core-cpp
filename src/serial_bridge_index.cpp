@@ -38,6 +38,7 @@
 //
 #include "monero_fork_rules.hpp"
 #include "monero_transfer_utils.hpp"
+#include "monero_address_utils.hpp" // TODO: split this/these out into a different namespaces or file so this file can scale (leave file for shared utils)
 #include "wallet_errors.h"
 //
 //
@@ -49,7 +50,7 @@ using namespace monero_fork_rules;
 //
 using namespace serial_bridge;
 //
-network_type nettype_from_string(string nettype_string)
+network_type serial_bridge::nettype_from_string(const string &nettype_string)
 { // TODO: possibly move this to network_type declaration
 	if (nettype_string == "MAINNET") {
 		return MAINNET;
@@ -65,6 +66,40 @@ network_type nettype_from_string(string nettype_string)
 	THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Unrecognized nettype_string")
 	return UNDEFINED;
 }
+string serial_bridge::string_from_nettype(network_type nettype)
+{
+	switch (nettype) {
+		case MAINNET:
+			return "MAINNET";
+		case TESTNET:
+			return "TESTNET";
+		case STAGENET:
+			return "STAGENET";
+		case FAKECHAIN:
+			return "FAKECHAIN";
+		case UNDEFINED:
+			return "UNDEFINED";
+		default:
+			THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Unrecognized nettype for string conversion")
+			return "UNDEFINED";
+	}
+}
+//
+// Shared - Parsing - Args
+bool parsed_json_root(const string &args_string, boost::property_tree::ptree &json_root)
+{
+	std::stringstream ss;
+	ss << args_string;
+	try {
+		boost::property_tree::read_json(ss, json_root);
+	} catch (std::exception const& e) {
+		THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Invalid JSON");
+		return false;
+	}
+	return true;
+}
+//
+// Shared - Factories - Return values
 string error_ret_json_from_message(string err_msg)
 {
 	boost::property_tree::ptree root;
@@ -84,16 +119,90 @@ string error_ret_json_from_code(int code)
 	return ss.str();
 }
 //
-string serial_bridge::create_transaction(std::string args_string)
+string serial_bridge::decode_address(const string &args_string)
 {
-	std::stringstream ss;
-	ss << args_string;
 	boost::property_tree::ptree json_root;
-	try {
-		boost::property_tree::read_json(ss, json_root);
-	} catch (std::exception const& e) {
-		THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Invalid JSON");
-		return error_ret_json_from_message("Invalid JSON"); // TODO: centralize
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	network_type nettype = nettype_from_string(json_root.get<string>("nettype_string"));
+	auto retVals = monero::address_utils::decodedAddress(json_root.get<string>("address"), nettype);
+	if (retVals.did_error) {
+		return error_ret_json_from_message(*(retVals.err_string));
+	}
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__decode_address__isSubaddress(), retVals.isSubaddress);
+	root.put(ret_json_key__decode_address__pub_viewKey_string(), std::move(*(retVals.pub_viewKey_string)));
+	root.put(ret_json_key__decode_address__pub_spendKey_string(), std::move(*(retVals.pub_spendKey_string)));
+	if (retVals.paymentID_string != none) {
+		root.put(ret_json_key__decode_address__paymentID_string(), std::move(*(retVals.paymentID_string)));
+	}
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
+}
+string serial_bridge::is_subaddress(const string &args_string)
+{
+	
+}
+string serial_bridge::is_integrated_address(const string &args_string)
+{
+	
+}
+string serial_bridge::new_integrated_address(const string &args_string)
+{
+	// standard addr + short pid
+}
+string serial_bridge::new_fake_address_for_rct_tx(const string &args_string)
+{
+	// TODO: probably take random scalar as an argument
+}
+string serial_bridge::new_payment_id(const string &args_string)
+{
+	
+}
+//
+string serial_bridge::newly_created_wallet(const string &args_string)
+{
+	
+}
+string serial_bridge::mnemonic_from_seed(const string &args_string)
+{
+	
+}
+string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
+{
+	
+}
+string serial_bridge::verified_components_for_login(const string &args_string)
+{
+	
+}
+//
+string serial_bridge::estimate_rct_size(const string &args_string)
+{
+	
+}
+string serial_bridge::calculate_fee(const string &args_string)
+{
+	
+}
+//
+string serial_bridge::generate_key_image(const string &args_string)
+{
+	
+}
+//
+//
+// TODO: probably take transaction secret key as an argument so we don't have to worry about randomness there
+string serial_bridge::create_transaction(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
 	}
 	network_type nettype = nettype_from_string(json_root.get<string>("nettype_string"));
 	//
