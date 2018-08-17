@@ -68,8 +68,11 @@ namespace serial_bridge
 	string string_from_nettype(network_type nettype);
 	//
 	// JSON keys - Ret vals
+	// - - Error
 	static inline string ret_json_key__any__err_msg() { return "err_msg"; } // optional
 	static inline string ret_json_key__any__err_code() { return "err_code"; } // optional
+	// - - Shared
+	static inline string ret_json_key__generic_retVal() { return "retVal"; } 
 	// - - create_transaction
 	static inline string ret_json_key__create_transaction__serialized_signed_tx() { return "serialized_signed_tx"; }
 	static inline string ret_json_key__create_transaction__tx_hash() { return "tx_hash"; }
@@ -78,6 +81,7 @@ namespace serial_bridge
 	static inline string ret_json_key__decode_address__pub_spendKey_string() { return "pub_spendKey_string"; }
 	static inline string ret_json_key__decode_address__paymentID_string() { return "paymentID_string"; } // optional
 	static inline string ret_json_key__decode_address__isSubaddress() { return "isSubaddress"; }
+	
 	// JSON keys - Args
 	// TODO:
 	//	static inline string args_json_key__

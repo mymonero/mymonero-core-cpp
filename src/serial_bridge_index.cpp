@@ -145,11 +145,35 @@ string serial_bridge::decode_address(const string &args_string)
 }
 string serial_bridge::is_subaddress(const string &args_string)
 {
-	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	network_type nettype = nettype_from_string(json_root.get<string>("nettype_string"));
+	bool retVal = monero::address_utils::isSubAddress(json_root.get<string>("address"), nettype);
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), retVal);
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 string serial_bridge::is_integrated_address(const string &args_string)
 {
-	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	network_type nettype = nettype_from_string(json_root.get<string>("nettype_string"));
+	bool retVal = monero::address_utils::isIntegratedAddress(json_root.get<string>("address"), nettype);
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), retVal);
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 string serial_bridge::new_integrated_address(const string &args_string)
 {

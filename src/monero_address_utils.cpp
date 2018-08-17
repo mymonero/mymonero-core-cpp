@@ -75,13 +75,17 @@ DecodedAddress_RetVals address_utils::decodedAddress(const string &addressString
 bool address_utils::isSubAddress(const string &addressString, cryptonote::network_type nettype)
 {
 	DecodedAddress_RetVals retVals = decodedAddress(addressString, nettype);
-	//
+	if (retVals.did_error) {
+		return false; // just treat it as a no
+	}
 	return retVals.isSubaddress;
 }
 bool address_utils::isIntegratedAddress(const string &addressString, cryptonote::network_type nettype)
 {
 	DecodedAddress_RetVals retVals = decodedAddress(addressString, nettype);
-	//
+	if (retVals.did_error) {
+		return false; // just treat it as a no
+	}
 	return retVals.paymentID_string != boost::none;
 }
 //

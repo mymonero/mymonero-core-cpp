@@ -488,3 +488,53 @@ BOOST_AUTO_TEST_CASE(bridged__decode_address)
 	BOOST_REQUIRE(*isSubaddress == false);
 	cout << "bridged: isSubaddress: " << *isSubaddress << endl;
 }
+//
+BOOST_AUTO_TEST_CASE(bridged__is_subaddress)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("nettype_string", string_from_nettype(MAINNET)); // TODO: specify this by constant and transform fn
+	root.put("address", "4L6Gcy9TAHqPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPaL41VrjstLM5WevLZx");
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::is_subaddress(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<bool> isSubaddress = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(isSubaddress != none);
+	BOOST_REQUIRE(*isSubaddress == false);
+	cout << "bridged: isSubaddress: " << *isSubaddress << endl;
+}
+//
+BOOST_AUTO_TEST_CASE(bridged__is_integrated_address)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("nettype_string", string_from_nettype(MAINNET)); // TODO: specify this by constant and transform fn
+	root.put("address", "4L6Gcy9TAHqPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPaL41VrjstLM5WevLZx");
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::is_integrated_address(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<bool> isIntegratedAddress = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(isIntegratedAddress != none);
+	BOOST_REQUIRE(*isIntegratedAddress == true);
+	cout << "bridged: isIntegratedAddress: " << *isIntegratedAddress << endl;
+}
