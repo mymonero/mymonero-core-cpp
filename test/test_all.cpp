@@ -731,8 +731,43 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
 	cout << "bridged: seed_and_keys_from_mnemonic: sec_spendKey_string: " << *sec_spendKey_string << endl;
 }
-BOOST_AUTO_TEST_CASE(bridged__verified_components_for_login)
+
+BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login)
 {
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("address_string", "43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg");
+	root.put("sec_viewKey_string", "7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104");
+	root.put("sec_spendKey_string", "4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803");
+	root.put("seed_string", "9c973aa296b79bbf452781dd3d32ad7f");
+	root.put("nettype_string", string_from_nettype(MAINNET));
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::validate_components_for_login(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<bool> isValid = ret_tree.get_optional<bool>(ret_json_key__isValid());
+	BOOST_REQUIRE(isValid == true);
+	cout << "bridged: validate_components_for_login: isValid: " << isValid << endl;
+	optional<bool> isInViewOnlyMode = ret_tree.get_optional<bool>(ret_json_key__isInViewOnlyMode());
+	BOOST_REQUIRE(isInViewOnlyMode == false);
+	cout << "bridged: validate_components_for_login: isInViewOnlyMode: " << isInViewOnlyMode << endl;
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
+	BOOST_REQUIRE(pub_viewKey_string != none);
+	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
+	cout << "bridged: validate_components_for_login: pub_viewKey_string: " << *pub_viewKey_string << endl;
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
+	BOOST_REQUIRE(pub_spendKey_string != none);
+	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
+	cout << "bridged: validate_components_for_login: pub_spendKey_string: " << *pub_spendKey_string << endl;
 }
 
 BOOST_AUTO_TEST_CASE(bridged__estimate_rct_size)

@@ -316,9 +316,38 @@ string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
 	//
 	return ret_ss.str();
 }
-string serial_bridge::verified_components_for_login(const string &args_string)
+string serial_bridge::validate_components_for_login(const string &args_string)
 {
-	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	monero_wallet_utils::WalletComponentsValidationResults retVals;
+	bool r = monero_wallet_utils::validate_wallet_components_with( // returns !did_error
+		json_root.get<string>("address_string"),
+		json_root.get<string>("sec_viewKey_string"),
+		json_root.get<string>("sec_spendKey_string"),
+		json_root.get<string>("seed_string"),
+		nettype_from_string(json_root.get<string>("nettype_string")),
+		retVals
+	);
+	bool did_error = retVals.did_error;
+	if (!r) {
+		THROW_WALLET_EXCEPTION_IF(!did_error, error::wallet_internal_error, "Illegal fail flag but !did_error");
+		return error_ret_json_from_message(*retVals.err_string);
+	}
+	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__isValid(), retVals.isValid);
+	root.put(ret_json_key__isInViewOnlyMode(), retVals.isInViewOnlyMode);
+	root.put(ret_json_key__pub_viewKey_string(), std::move(retVals.pub_viewKey_string));
+	root.put(ret_json_key__pub_spendKey_string(), std::move(retVals.pub_spendKey_string));
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 //
 string serial_bridge::estimate_rct_size(const string &args_string)

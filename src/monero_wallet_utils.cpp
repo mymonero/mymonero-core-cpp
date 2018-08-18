@@ -92,7 +92,7 @@ bool monero_wallet_utils::bytes_to_words(
 }
 //
 bool monero_wallet_utils::new_wallet(
-    std::string mnemonic_language,
+    const string &mnemonic_language,
 	WalletDescriptionRetVals &retVals,
 	cryptonote::network_type nettype
 ) {
@@ -133,8 +133,8 @@ const uint32_t stable_32B_seed_mnemonic_word_count = 25;
 const uint32_t legacy_16B_seed_mnemonic_word_count = 13;
 
 bool monero_wallet_utils::decoded_seed(
-	std::string mnemonic_string,
-	std::string mnemonic_language,
+	string mnemonic_string,
+	string mnemonic_language,
 	MnemonicDecodedSeed_RetVals &retVals
 ) {
 	retVals = {};
@@ -235,8 +235,8 @@ SeedDecodedMnemonic_RetVals monero_wallet_utils::mnemonic_string_from_seed_hex_s
 }
 //
 bool monero_wallet_utils::wallet_with(
-	std::string mnemonic_string,
-	std::string mnemonic_language,
+	const string &mnemonic_string,
+	const string &mnemonic_language,
 	WalletDescriptionRetVals &retVals,
 	cryptonote::network_type nettype
 ) {
@@ -272,34 +272,37 @@ bool monero_wallet_utils::wallet_with(
 	return true;
 }
 
-bool monero_wallet_utils::validate_wallet_components_with(
-	const WalletComponentsToValidate &inputs,
-	WalletComponentsValidationResults &outputs
-)
-{ // TODO: how can the err_strings be prepared for localization?
-	outputs = {};
+bool monero_wallet_utils::validate_wallet_components_with( // returns !did_error
+	const string &address_string,
+	const string &sec_viewKey_string,
+	optional<string> sec_spendKey_string,
+	optional<string> sec_seed_string,
+	cryptonote::network_type nettype,
+	WalletComponentsValidationResults &retVals
+) { // TODO: how can the err_strings be prepared for localization?
+	retVals = {};
 	bool r = false;
 	//
 	// Address
 	cryptonote::address_parse_info decoded_address_info;
 	r = cryptonote::get_account_address_from_str(
 		decoded_address_info,
-		inputs.nettype,
-		inputs.address_string
+		nettype,
+		address_string
 	);
 	if (r == false) {
-		outputs.did_error = true;
-		outputs.err_string = "Invalid address";
+		retVals.did_error = true;
+		retVals.err_string = "Invalid address";
 		//
 		return false;
 	}
 	//
 	// View key:
 	crypto::secret_key sec_viewKey;
-	r = string_tools::hex_to_pod(inputs.sec_viewKey_string, sec_viewKey);
+	r = string_tools::hex_to_pod(sec_viewKey_string, sec_viewKey);
 	if (r == false) {
-		outputs.did_error = true;
-		outputs.err_string = "Invalid view key";
+		retVals.did_error = true;
+		retVals.err_string = "Invalid view key";
 		//
 		return false;
 	}
@@ -307,29 +310,29 @@ bool monero_wallet_utils::validate_wallet_components_with(
 	crypto::public_key expected_pub_viewKey;
 	r = crypto::secret_key_to_public_key(sec_viewKey, expected_pub_viewKey);
 	if (r == false) {
-		outputs.did_error = true;
-		outputs.err_string = "Invalid view key";
+		retVals.did_error = true;
+		retVals.err_string = "Invalid view key";
 		//
 		return false;
 	}
 	if (decoded_address_info.address.m_view_public_key != expected_pub_viewKey) {
-		outputs.did_error = true;
-		outputs.err_string = "View key does not match address";
+		retVals.did_error = true;
+		retVals.err_string = "View key does not match address";
 		//
 		return false;
 	}
 	//
 	// View-only vs spend-key/seed
-	outputs.isInViewOnlyMode = true; // setting the ground state
+	retVals.isInViewOnlyMode = true; // setting the ground state
 	//
 	crypto::secret_key sec_spendKey; // may be initialized
-	if (inputs.optl__sec_spendKey_string) {
+	if (sec_spendKey_string != none) {
 		// First check if spend key content actually exists before passing to valid_sec_key_from - so that a spend key decode error can be treated as a failure instead of detecting empty spend keys too
-		if ((*inputs.optl__sec_spendKey_string).empty() == false) {
-			r = string_tools::hex_to_pod(*inputs.optl__sec_spendKey_string, sec_spendKey);
+		if ((*sec_spendKey_string).empty() == false) {
+			r = string_tools::hex_to_pod(*sec_spendKey_string, sec_spendKey);
 			if (r == false) { // this is an actual parse error exit condition
-				outputs.did_error = true;
-				outputs.err_string = "Invalid spend key";
+				retVals.did_error = true;
+				retVals.err_string = "Invalid spend key";
 				//
 				return false;
 			}
@@ -337,41 +340,41 @@ bool monero_wallet_utils::validate_wallet_components_with(
 			crypto::public_key expected_pub_spendKey;
 			r = crypto::secret_key_to_public_key(sec_spendKey, expected_pub_spendKey);
 			if (r == false) {
-				outputs.did_error = true;
-				outputs.err_string = "Invalid spend key";
+				retVals.did_error = true;
+				retVals.err_string = "Invalid spend key";
 				//
 				return false;
 			}
 			if (decoded_address_info.address.m_spend_public_key != expected_pub_spendKey) {
-				outputs.did_error = true;
-				outputs.err_string = "Spend key does not match address";
+				retVals.did_error = true;
+				retVals.err_string = "Spend key does not match address";
 				//
 				return false;
 			}
-			outputs.isInViewOnlyMode = false;
+			retVals.isInViewOnlyMode = false;
 		}
 	}
-	if (inputs.optl__sec_seed_string) {
-		if ((*inputs.optl__sec_seed_string).empty() == false) {
-			unsigned long sec_seed_string_length = (*inputs.optl__sec_seed_string).length();
+	if (sec_seed_string != none) {
+		if ((*sec_seed_string).empty() == false) {
+			unsigned long sec_seed_string_length = (*sec_seed_string).length();
 			crypto::secret_key sec_seed;
 			bool from_legacy16B_lw_seed = false;
 			if (sec_seed_string_length == sec_seed_hex_string_length) { // normal seed
 				from_legacy16B_lw_seed = false; // to be clear
-				bool r = string_tools::hex_to_pod((*inputs.optl__sec_seed_string), sec_seed);
+				bool r = string_tools::hex_to_pod((*sec_seed_string), sec_seed);
 				if (!r) {
-					outputs.did_error = true;
-					outputs.err_string = "Invalid seed";
+					retVals.did_error = true;
+					retVals.err_string = "Invalid seed";
 					//
 					return false;
 				}
 			} else if (sec_seed_string_length == legacy16B__sec_seed_hex_string_length) {
 				from_legacy16B_lw_seed = true;
 				legacy16B_secret_key legacy16B_sec_seed;
-				bool r = string_tools::hex_to_pod((*inputs.optl__sec_seed_string), legacy16B_sec_seed);
+				bool r = string_tools::hex_to_pod((*sec_seed_string), legacy16B_sec_seed);
 				if (!r) {
-					outputs.did_error = true;
-					outputs.err_string = "Invalid seed";
+					retVals.did_error = true;
+					retVals.err_string = "Invalid seed";
 					//
 					return false;
 				}
@@ -382,36 +385,36 @@ bool monero_wallet_utils::validate_wallet_components_with(
 			const cryptonote::account_keys& expected_account_keys = expected_account.get_keys();
 			// TODO: assert sec_spendKey initialized?
 			if (expected_account_keys.m_view_secret_key != sec_viewKey) {
-				outputs.did_error = true;
-				outputs.err_string = "Private view key does not match generated key";
+				retVals.did_error = true;
+				retVals.err_string = "Private view key does not match generated key";
 				//
 				return false;
 			}
 			if (expected_account_keys.m_spend_secret_key != sec_spendKey) {
-				outputs.did_error = true;
-				outputs.err_string = "Private spend key does not match generated key";
+				retVals.did_error = true;
+				retVals.err_string = "Private spend key does not match generated key";
 				//
 				return false;
 			}
 			if (expected_account_keys.m_account_address.m_view_public_key != decoded_address_info.address.m_view_public_key) {
-				outputs.did_error = true;
-				outputs.err_string = "Public view key does not match generated key";
+				retVals.did_error = true;
+				retVals.err_string = "Public view key does not match generated key";
 				//
 				return false;
 			}
 			if (expected_account_keys.m_account_address.m_spend_public_key != decoded_address_info.address.m_spend_public_key) {
-				outputs.did_error = true;
-				outputs.err_string = "Public spend key does not match generated key";
+				retVals.did_error = true;
+				retVals.err_string = "Public spend key does not match generated key";
 				//
 				return false;
 			}
 			//
-			outputs.isInViewOnlyMode = false; // TODO: should this ensure that sec_spendKey is not nil? spendKey should always be available if the seed is…
+			retVals.isInViewOnlyMode = false; // TODO: should this ensure that sec_spendKey is not nil? spendKey should always be available if the seed is…
 		}
 	}
-	outputs.pub_viewKey_string = string_tools::pod_to_hex(decoded_address_info.address.m_view_public_key);
-	outputs.pub_spendKey_string = string_tools::pod_to_hex(decoded_address_info.address.m_spend_public_key);
-	outputs.isValid = true;
+	retVals.pub_viewKey_string = string_tools::pod_to_hex(decoded_address_info.address.m_view_public_key);
+	retVals.pub_spendKey_string = string_tools::pod_to_hex(decoded_address_info.address.m_spend_public_key);
+	retVals.isValid = true;
 	//
 	return true;
 }

@@ -55,7 +55,7 @@ namespace serial_bridge
 	string newly_created_wallet(const string &args_string); // TODO: maybe expose random scalar as arg
 	string mnemonic_from_seed(const string &args_string);
 	string seed_and_keys_from_mnemonic(const string &args_string);
-	string verified_components_for_login(const string &args_string);
+	string validate_components_for_login(const string &args_string);
 	//
 	string estimate_rct_size(const string &args_string);
 	string calculate_fee(const string &args_string);
@@ -86,8 +86,8 @@ namespace serial_bridge
 	static inline string ret_json_key__pub_spendKey_string() { return "pub_spendKey_string"; }
 	static inline string ret_json_key__sec_viewKey_string() { return "sec_viewKey_string"; }
 	static inline string ret_json_key__sec_spendKey_string() { return "sec_spendKey_string"; }
-
-	
+	static inline string ret_json_key__isValid() { return "isValid"; }
+	static inline string ret_json_key__isInViewOnlyMode() { return "isInViewOnlyMode"; }	
 	// JSON keys - Args
 	// TODO:
 	//	static inline string args_json_key__

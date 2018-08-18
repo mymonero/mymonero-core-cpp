@@ -77,13 +77,13 @@ namespace monero_wallet_utils
 	struct MnemonicDecodedSeed_RetVals: RetVals_base
 	{
 		optional<crypto::secret_key> optl__sec_seed = none;
-		optional<std::string> optl__sec_seed_string = none;
-		optional<std::string> optl__mnemonic_string = none;
+		optional<string> optl__sec_seed_string = none;
+		optional<string> optl__mnemonic_string = none;
 		bool from_legacy16B_lw_seed = false;
 	};
 	bool decoded_seed(
 		string mnemonic_string,
-		string mnemonic_language_string,
+		string mnemonic_language,
 		//
 		MnemonicDecodedSeed_RetVals &retVals
 	);
@@ -116,35 +116,31 @@ namespace monero_wallet_utils
 		boost::optional<WalletDescription> optl__desc = boost::none;
 	};
 	bool new_wallet(
-		std::string mnemonic_language,
+		const string &mnemonic_language,
 		WalletDescriptionRetVals &retVals,
 		cryptonote::network_type nettype = cryptonote::MAINNET
 	);
 	bool wallet_with(
-		std::string mnemonic_string,
-		std::string mnemonic_language,
+		const string &mnemonic_string,
+		const string &mnemonic_language,
 		WalletDescriptionRetVals &retVals,
 		cryptonote::network_type nettype = cryptonote::MAINNET
 	);
 	//
-	struct WalletComponentsToValidate
-	{
-		std::string address_string; // Required
-		std::string sec_viewKey_string; // Required
-		const std::string *optl__sec_spendKey_string;
-		const std::string *optl__sec_seed_string;
-		cryptonote::network_type nettype;
-	};
 	struct WalletComponentsValidationResults: RetVals_base
 	{
 		bool isValid; // this will naturally remain false if did_error=true
-		std::string pub_spendKey_string;
-		std::string pub_viewKey_string;
+		string pub_spendKey_string;
+		string pub_viewKey_string;
 		bool isInViewOnlyMode; // !sec_seed && !sec_spendKey
 	};
 	bool validate_wallet_components_with( // returns !did_error
-		const WalletComponentsToValidate &inputs,
-		WalletComponentsValidationResults &outputs
+		const string &address_string,
+		const string &sec_viewKey_string,
+		optional<string> sec_spendKey_string,
+		optional<string> sec_seed_string,
+		cryptonote::network_type nettype,
+		WalletComponentsValidationResults &retVals
 	);
 }
 
