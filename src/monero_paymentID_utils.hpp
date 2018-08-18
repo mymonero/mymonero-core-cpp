@@ -40,7 +40,7 @@ namespace monero_paymentID_utils
 {
 	//
 	// Generating Payment IDs
-	crypto::hash8 new_short_plain_paymentID(); // This is favored - its length will be detected and encrypted automatically on send
+	crypto::hash8 new_short_plain_paymentID();
 	std::string new_short_plain_paymentID_string();
 	//
 	// Parsing and Detecting Payment IDs

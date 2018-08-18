@@ -91,11 +91,10 @@ bool monero_wallet_utils::bytes_to_words(
 	);
 }
 //
-//
 bool monero_wallet_utils::new_wallet(
     std::string mnemonic_language,
 	WalletDescriptionRetVals &retVals,
-	bool isTestnet
+	cryptonote::network_type nettype
 ) {
 	retVals = {};
 	//
@@ -103,7 +102,7 @@ bool monero_wallet_utils::new_wallet(
 	crypto::secret_key nonLegacy32B_sec_seed = account.generate();
 	//
 	const cryptonote::account_keys& keys = account.get_keys();
-	std::string address_string = account.get_public_address_str(isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET); // getting the string here instead of leaving it to the consumer b/c get_public_address_str could potentially change in implementation (see TODO) so it's not right to duplicate that here
+	std::string address_string = account.get_public_address_str(nettype); // getting the string here instead of leaving it to the consumer b/c get_public_address_str could potentially change in implementation (see TODO) so it's not right to duplicate that here
 	//
 	std::string mnemonic_string;
 	bool r = crypto::ElectrumWords::bytes_to_words(nonLegacy32B_sec_seed, mnemonic_string, std::move(mnemonic_language));
@@ -194,44 +193,44 @@ bool monero_wallet_utils::decoded_seed(
 }
 //
 SeedDecodedMnemonic_RetVals monero_wallet_utils::mnemonic_string_from_seed_hex_string(
-	std::string sec_hexString,
-	std::string mnemonic_language // aka wordset name
+	const std::string &sec_hexString,
+	const std::string &mnemonic_language // aka wordset name
 ) {
 	SeedDecodedMnemonic_RetVals retVals = {};
 	//
-//	std::string mnemonic_string;
-//	uint32_t sec_hexString_length = sec_hexString.size();
-//	//
-//	bool r = false;
-//	if (sec_hexString_length == sec_seed_hex_string_length) { // normal seed
-//		crypto::secret_key sec_seed;
-//		r = string_tools::hex_to_pod(sec_hexString, sec_seed);
-//		if (!r) {
-//			retVals.did_error = true;
-//			retVals.err_string = "Invalid seed";
-//			return retVals;
-//		}
-//		r = crypto::ElectrumWords::bytes_to_words(sec_seed, mnemonic_string, mnemonic_language);
-//	} else if (sec_hexString_length == legacy16B__sec_seed_hex_string_length) {
-//		legacy16B_secret_key legacy16B_sec_seed;
-//		r = string_tools::hex_to_pod(sec_hexString, legacy16B_sec_seed);
-//		if (!r) {
-//			retVals.did_error = true;
-//			retVals.err_string = "Invalid seed";
-//			return retVals;
-//		}
-//		r = bytes_to_words(legacy16B_sec_seed, mnemonic_string, mnemonic_language); // called with the legacy16B version
-//	} else {
-//		retVals.did_error = true;
-//		retVals.err_string = "Invalid seed length";
-//		return retVals;
-//	}
-//	if (!r) {
-//		retVals.did_error = true;
-//		retVals.err_string = "Couldn't get mnemonic from hex seed";
-//		return retVals;
-//	}
-//	retVals.mnemonic_string = mnemonic_string; // TODO: should/can we just send retVals.mnemonic_string to bytes_to_words ?
+	std::string mnemonic_string;
+	uint32_t sec_hexString_length = sec_hexString.size();
+	//
+	bool r = false;
+	if (sec_hexString_length == sec_seed_hex_string_length) { // normal seed
+		crypto::secret_key sec_seed;
+		r = string_tools::hex_to_pod(sec_hexString, sec_seed);
+		if (!r) {
+			retVals.did_error = true;
+			retVals.err_string = "Invalid seed";
+			return retVals;
+		}
+		r = crypto::ElectrumWords::bytes_to_words(sec_seed, mnemonic_string, mnemonic_language);
+	} else if (sec_hexString_length == legacy16B__sec_seed_hex_string_length) {
+		legacy16B_secret_key legacy16B_sec_seed;
+		r = string_tools::hex_to_pod(sec_hexString, legacy16B_sec_seed);
+		if (!r) {
+			retVals.did_error = true;
+			retVals.err_string = "Invalid seed";
+			return retVals;
+		}
+		r = bytes_to_words(legacy16B_sec_seed, mnemonic_string, mnemonic_language); // called with the legacy16B version
+	} else {
+		retVals.did_error = true;
+		retVals.err_string = "Invalid seed length";
+		return retVals;
+	}
+	if (!r) {
+		retVals.did_error = true;
+		retVals.err_string = "Couldn't get mnemonic from hex seed";
+		return retVals;
+	}
+	retVals.mnemonic_string = mnemonic_string; // TODO: should/can we just send retVals.mnemonic_string to bytes_to_words ?
 	return retVals;
 }
 //
@@ -239,7 +238,7 @@ bool monero_wallet_utils::wallet_with(
 	std::string mnemonic_string,
 	std::string mnemonic_language,
 	WalletDescriptionRetVals &retVals,
-	bool isTestnet
+	cryptonote::network_type nettype
 ) {
 	retVals = {};
 	//
@@ -261,7 +260,7 @@ bool monero_wallet_utils::wallet_with(
 	retVals.optl__desc = WalletDescription{
 		*decodedSeed_retVals.optl__sec_seed_string, // assumed non nil if r
 		//
-		account.get_public_address_str(isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET),
+		account.get_public_address_str(nettype),
 		//
 		keys.m_spend_secret_key,
 		keys.m_view_secret_key,
@@ -285,7 +284,7 @@ bool monero_wallet_utils::validate_wallet_components_with(
 	cryptonote::address_parse_info decoded_address_info;
 	r = cryptonote::get_account_address_from_str(
 		decoded_address_info,
-		inputs.isTestnet ? cryptonote::TESTNET : cryptonote::MAINNET,
+		inputs.nettype,
 		inputs.address_string
 	);
 	if (r == false) {

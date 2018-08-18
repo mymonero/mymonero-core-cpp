@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(bridged__transfers__create)
 	string amount_string = "10000000000";
 	//
 	boost::property_tree::ptree root;
-	root.put("nettype_string", string_from_nettype(MAINNET)); // TODO: specify this by constant and transform fn
+	root.put("nettype_string", string_from_nettype(MAINNET));
 	root.put("from_address_string", from_address_string);
 	root.put("sec_viewKey_string", "7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104");
 	root.put("sec_spendKey_string", "4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803");
@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE(bridged__decode_address)
 	using namespace serial_bridge;
 	//
 	boost::property_tree::ptree root;
-	root.put("nettype_string", string_from_nettype(MAINNET)); // TODO: specify this by constant and transform fn
+	root.put("nettype_string", string_from_nettype(MAINNET));
 	root.put("address", "4L6Gcy9TAHqPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPaL41VrjstLM5WevLZx");
 	//
 	stringstream args_ss;
@@ -471,19 +471,19 @@ BOOST_AUTO_TEST_CASE(bridged__decode_address)
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__decode_address__pub_viewKey_string());
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
 	cout << "bridged: pub_viewKey_string: " << *pub_viewKey_string << endl;
-	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__decode_address__pub_spendKey_string());
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
-	cout << "bridged: pub_viewKey_string: " << *pub_spendKey_string << endl;
-	optional<string> paymentID_string = ret_tree.get_optional<string>(ret_json_key__decode_address__paymentID_string());
+	cout << "bridged: pub_spendKey_string: " << *pub_spendKey_string << endl;
+	optional<string> paymentID_string = ret_tree.get_optional<string>(ret_json_key__paymentID_string());
 	BOOST_REQUIRE(paymentID_string != none);
 	BOOST_REQUIRE((*paymentID_string).size() > 0);
 	cout << "bridged: paymentID_string: " << *paymentID_string << endl;
-	optional<bool> isSubaddress = ret_tree.get_optional<bool>(ret_json_key__decode_address__isSubaddress());
+	optional<bool> isSubaddress = ret_tree.get_optional<bool>(ret_json_key__isSubaddress());
 	BOOST_REQUIRE(isSubaddress != none);
 	BOOST_REQUIRE(*isSubaddress == false);
 	cout << "bridged: isSubaddress: " << *isSubaddress << endl;
@@ -494,7 +494,7 @@ BOOST_AUTO_TEST_CASE(bridged__is_subaddress)
 	using namespace serial_bridge;
 	//
 	boost::property_tree::ptree root;
-	root.put("nettype_string", string_from_nettype(MAINNET)); // TODO: specify this by constant and transform fn
+	root.put("nettype_string", string_from_nettype(MAINNET));
 	root.put("address", "4L6Gcy9TAHqPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPaL41VrjstLM5WevLZx");
 	//
 	stringstream args_ss;
@@ -508,10 +508,10 @@ BOOST_AUTO_TEST_CASE(bridged__is_subaddress)
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<bool> isSubaddress = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
-	BOOST_REQUIRE(isSubaddress != none);
-	BOOST_REQUIRE(*isSubaddress == false);
-	cout << "bridged: isSubaddress: " << *isSubaddress << endl;
+	optional<bool> value = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(value != none);
+	BOOST_REQUIRE(*value == false);
+	cout << "bridged: isSubaddress: " << *value << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__is_integrated_address)
@@ -519,7 +519,7 @@ BOOST_AUTO_TEST_CASE(bridged__is_integrated_address)
 	using namespace serial_bridge;
 	//
 	boost::property_tree::ptree root;
-	root.put("nettype_string", string_from_nettype(MAINNET)); // TODO: specify this by constant and transform fn
+	root.put("nettype_string", string_from_nettype(MAINNET));
 	root.put("address", "4L6Gcy9TAHqPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPaL41VrjstLM5WevLZx");
 	//
 	stringstream args_ss;
@@ -533,8 +533,179 @@ BOOST_AUTO_TEST_CASE(bridged__is_integrated_address)
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<bool> isIntegratedAddress = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
-	BOOST_REQUIRE(isIntegratedAddress != none);
-	BOOST_REQUIRE(*isIntegratedAddress == true);
-	cout << "bridged: isIntegratedAddress: " << *isIntegratedAddress << endl;
+	optional<bool> value = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(value != none);
+	BOOST_REQUIRE(*value == true);
+	cout << "bridged: isIntegratedAddress: " << *value << endl;
+}
+//
+#include <boost/algorithm/string/predicate.hpp>
+BOOST_AUTO_TEST_CASE(bridged__new_integrated_address)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("nettype_string", string_from_nettype(MAINNET));
+	root.put("address", "43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg");
+	root.put("short_pid", "b79f8efc81f58f67");
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::new_integrated_address(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> value = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(value != none);
+	BOOST_REQUIRE((*value).size() > 0);
+	BOOST_REQUIRE(boost::equal(*value, string("4DhdwdSDgoS9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqmCzkMP1DMV6WCiNCdsp")));
+	cout << "bridged: integratedAddress: " << *value << endl;
+}
+//
+BOOST_AUTO_TEST_CASE(bridged__new_fake_address_for_rct_tx)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("nettype_string", string_from_nettype(MAINNET));
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::new_fake_address_for_rct_tx(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> value = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(value != none);
+	BOOST_REQUIRE((*value).size() > 0);
+	cout << "bridged: fake address for rct tx: " << *value << endl;
+}
+//
+BOOST_AUTO_TEST_CASE(bridged__new_short_payment_id)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::new_payment_id(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> value = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(value != none);
+	BOOST_REQUIRE((*value).size() > 0);
+	cout << "bridged: payment id: " << *value << endl;
+}
+//
+BOOST_AUTO_TEST_CASE(bridged__new_wallet)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("nettype_string", string_from_nettype(MAINNET));
+	root.put("wordset_name", "English");
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::newly_created_wallet(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> mnemonic_string = ret_tree.get_optional<string>(ret_json_key__mnemonic_string());
+	BOOST_REQUIRE(mnemonic_string != none);
+	BOOST_REQUIRE((*mnemonic_string).size() > 0);
+	cout << "bridged: new wallet: mnemonic: " << *mnemonic_string << endl;
+	optional<string> sec_seed_string = ret_tree.get_optional<string>(ret_json_key__sec_seed_string());
+	BOOST_REQUIRE(sec_seed_string != none);
+	BOOST_REQUIRE((*sec_seed_string).size() > 0);
+	cout << "bridged: new wallet: sec_seed: " << *sec_seed_string << endl;
+	optional<string> address_string = ret_tree.get_optional<string>(ret_json_key__address_string());
+	BOOST_REQUIRE(address_string != none);
+	BOOST_REQUIRE((*address_string).size() > 0);
+	cout << "bridged: new wallet: address: " << *address_string << endl;
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
+	BOOST_REQUIRE(pub_viewKey_string != none);
+	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
+	cout << "bridged: new wallet: pub_viewKey_string: " << *pub_viewKey_string << endl;
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
+	BOOST_REQUIRE(pub_spendKey_string != none);
+	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
+	cout << "bridged: new wallet: pub_spendKey_string: " << *pub_spendKey_string << endl;
+	optional<string> sec_viewKey_string = ret_tree.get_optional<string>(ret_json_key__sec_viewKey_string());
+	BOOST_REQUIRE(sec_viewKey_string != none);
+	BOOST_REQUIRE((*sec_viewKey_string).size() > 0);
+	cout << "bridged: new wallet: sec_viewKey_string: " << *sec_viewKey_string << endl;
+	optional<string> sec_spendKey_string = ret_tree.get_optional<string>(ret_json_key__sec_spendKey_string());
+	BOOST_REQUIRE(sec_spendKey_string != none);
+	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
+	cout << "bridged: new wallet: sec_spendKey_string: " << *sec_spendKey_string << endl;
+}
+//
+BOOST_AUTO_TEST_CASE(bridged__mnemonic_from_seed)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("seed_string", "9c973aa296b79bbf452781dd3d32ad7f");
+	root.put("wordset_name", "English");
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::mnemonic_from_seed(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> mnemonic_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(mnemonic_string != none);
+	BOOST_REQUIRE((*mnemonic_string).size() > 0);
+	cout << "bridged: mnemonic from seed: mnemonic: " << *mnemonic_string << endl;
+}
+BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
+{
+
+}
+BOOST_AUTO_TEST_CASE(bridged__verified_components_for_login)
+{
+}
+
+BOOST_AUTO_TEST_CASE(bridged__estimate_rct_size)
+{
+
+}
+//
+BOOST_AUTO_TEST_CASE(bridged__calculate_fee)
+{
+
+}
+
+BOOST_AUTO_TEST_CASE(bridged__generate_key_image)
+{
+
 }

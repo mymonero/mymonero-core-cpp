@@ -47,6 +47,9 @@ using namespace tools;
 //
 namespace monero_wallet_utils
 {
+	using namespace std;
+	using namespace boost;
+	using namespace tools;
 	//
 	// 16B keys
 	POD_CLASS ec_nonscalar_16Byte {
@@ -73,30 +76,33 @@ namespace monero_wallet_utils
 	// Accounts
 	struct MnemonicDecodedSeed_RetVals: RetVals_base
 	{
-		boost::optional<crypto::secret_key> optl__sec_seed = boost::none;
-		boost::optional<std::string> optl__sec_seed_string = boost::none;
-		boost::optional<std::string> optl__mnemonic_string = boost::none;
+		optional<crypto::secret_key> optl__sec_seed = none;
+		optional<std::string> optl__sec_seed_string = none;
+		optional<std::string> optl__mnemonic_string = none;
 		bool from_legacy16B_lw_seed = false;
 	};
 	bool decoded_seed(
-		std::string mnemonic_string,
-		std::string mnemonic_language_string,
+		string mnemonic_string,
+		string mnemonic_language_string,
 		//
 		MnemonicDecodedSeed_RetVals &retVals
 	);
 	//
 	struct SeedDecodedMnemonic_RetVals: RetVals_base
 	{
-		boost::optional<std::string> mnemonic_string = boost::none;
+		optional<string> mnemonic_string = none;
 	};
-	SeedDecodedMnemonic_RetVals mnemonic_string_from_seed_hex_string(std::string seed_string, std::string wordsetName);
+	SeedDecodedMnemonic_RetVals mnemonic_string_from_seed_hex_string(
+		const string &seed_string,
+		const string &wordsetName
+	);
 	//
 	// Convenience functions - Wallets
 	struct WalletDescription
 	{
-		std::string sec_seed_string; // as string bc it might by legacy 16B style aside from crypto::secret_key
+		string sec_seed_string; // as string bc it might by legacy 16B style aside from crypto::secret_key
 		//
-		std::string address_string;
+		string address_string;
 		//
 		crypto::secret_key sec_spendKey;
 		crypto::secret_key sec_viewKey;
@@ -112,13 +118,13 @@ namespace monero_wallet_utils
 	bool new_wallet(
 		std::string mnemonic_language,
 		WalletDescriptionRetVals &retVals,
-		bool isTestnet = false
+		cryptonote::network_type nettype = cryptonote::MAINNET
 	);
 	bool wallet_with(
 		std::string mnemonic_string,
 		std::string mnemonic_language,
 		WalletDescriptionRetVals &retVals,
-		bool isTestnet = false
+		cryptonote::network_type nettype = cryptonote::MAINNET
 	);
 	//
 	struct WalletComponentsToValidate
@@ -127,7 +133,7 @@ namespace monero_wallet_utils
 		std::string sec_viewKey_string; // Required
 		const std::string *optl__sec_spendKey_string;
 		const std::string *optl__sec_seed_string;
-		bool isTestnet;
+		cryptonote::network_type nettype;
 	};
 	struct WalletComponentsValidationResults: RetVals_base
 	{

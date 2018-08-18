@@ -42,17 +42,17 @@ namespace serial_bridge
 	using namespace cryptonote;
 	//
 	// Bridging Functions - these take and return JSON strings
-	string create_transaction(const string &args_string); // TODO: probably expose tx key as arg
+	string create_transaction(const string &args_string); // TODO: maybe expose tx key as arg
 	//
 	string decode_address(const string &args_string);
 	string is_subaddress(const string &args_string);
 	string is_integrated_address(const string &args_string);
 	//
 	string new_integrated_address(const string &args_string);
-	string new_fake_address_for_rct_tx(const string &args_string); // TODO: probably expose random scalar as arg
+	string new_fake_address_for_rct_tx(const string &args_string); // TODO: maybe expose random scalar as arg
 	string new_payment_id(const string &args_string);
 	//
-	string newly_created_wallet(const string &args_string); // TODO: probably expose random scalar as arg
+	string newly_created_wallet(const string &args_string); // TODO: maybe expose random scalar as arg
 	string mnemonic_from_seed(const string &args_string);
 	string seed_and_keys_from_mnemonic(const string &args_string);
 	string verified_components_for_login(const string &args_string);
@@ -76,11 +76,17 @@ namespace serial_bridge
 	// - - create_transaction
 	static inline string ret_json_key__create_transaction__serialized_signed_tx() { return "serialized_signed_tx"; }
 	static inline string ret_json_key__create_transaction__tx_hash() { return "tx_hash"; }
-	// - - decode_address
-	static inline string ret_json_key__decode_address__pub_viewKey_string() { return "pub_viewKey_string"; }
-	static inline string ret_json_key__decode_address__pub_spendKey_string() { return "pub_spendKey_string"; }
-	static inline string ret_json_key__decode_address__paymentID_string() { return "paymentID_string"; } // optional
-	static inline string ret_json_key__decode_address__isSubaddress() { return "isSubaddress"; }
+	// - - decode_address, etc
+	static inline string ret_json_key__paymentID_string() { return "paymentID_string"; } // optional
+	static inline string ret_json_key__isSubaddress() { return "isSubaddress"; }
+	static inline string ret_json_key__mnemonic_string() { return "mnemonic_string"; }
+	static inline string ret_json_key__sec_seed_string() { return "sec_seed_string"; }
+	static inline string ret_json_key__address_string() { return "address_string"; }
+	static inline string ret_json_key__pub_viewKey_string() { return "pub_viewKey_string"; }
+	static inline string ret_json_key__pub_spendKey_string() { return "pub_spendKey_string"; }
+	static inline string ret_json_key__sec_viewKey_string() { return "sec_viewKey_string"; }
+	static inline string ret_json_key__sec_spendKey_string() { return "sec_spendKey_string"; }
+
 	
 	// JSON keys - Args
 	// TODO:

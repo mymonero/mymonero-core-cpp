@@ -31,30 +31,35 @@
 //
 #include <string>
 #include <boost/optional.hpp>
-using namespace std;
-using namespace boost;
 //
 #include "cryptonote_config.h"
+#include "cryptonote_basic/account.h"
+
 #include "tools__ret_vals.hpp"
 //
 namespace monero
 {
 	namespace address_utils
 	{
+		using namespace std;
+		using namespace boost;
+		using namespace cryptonote;
+		
 		struct DecodedAddress_RetVals: tools::RetVals_base
-		{ // TODO: inherit from tools__ret_vals
+		{
 			optional<string> pub_viewKey_string;
 			optional<string> pub_spendKey_string;
 			bool isSubaddress;
 			optional<string> paymentID_string;
 		};
 		//
-		// TODO: migrate these methods to use nettype
-		//
-		DecodedAddress_RetVals decodedAddress(const string &addressString, cryptonote::network_type nettype);
-		bool isSubAddress(const string &addressString, cryptonote::network_type nettype);
-		bool isIntegratedAddress(const string &addressString, cryptonote::network_type nettype);
+		DecodedAddress_RetVals decodedAddress(const string &addressString, network_type nettype);
+		bool isSubAddress(const string &addressString, network_type nettype);
+		bool isIntegratedAddress(const string &addressString, network_type nettype);
 		//
 		optional<string> new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID, cryptonote::network_type nettype);
+		//
+		account_public_address new_fake_address_for_rct_tx();
+		string new_fake_address_string_for_rct_tx(network_type nettype);
 	}
 }

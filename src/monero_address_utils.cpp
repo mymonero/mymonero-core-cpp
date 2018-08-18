@@ -35,6 +35,8 @@ using namespace address_utils;
 //
 #include "cryptonote_basic/cryptonote_basic_impl.h"
 #include "string_tools.h"
+#include "cryptonote_basic/account.h"
+using namespace cryptonote;
 //
 #include "tools__ret_vals.hpp"
 using namespace epee;
@@ -107,7 +109,6 @@ optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_
 	}
 	if (info.is_subaddress) {
 		BOOST_THROW_EXCEPTION(runtime_error("new_integratedAddrFromStdAddr must not be called with a subaddress"));
-		//
 		return none;
 	}
 	if (info.has_payment_id != false) {
@@ -120,4 +121,15 @@ optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_
 		payment_id_short
 	);
 	return int_address_string;
+}
+account_public_address address_utils::new_fake_address_for_rct_tx()
+{
+	cryptonote::account_base dummy;
+	dummy.generate();
+	//
+	return dummy.get_keys().m_account_address;
+}
+string address_utils::new_fake_address_string_for_rct_tx(network_type nettype)
+{
+	return get_account_address_as_str(nettype, false/*subaddress*/, new_fake_address_for_rct_tx());
 }

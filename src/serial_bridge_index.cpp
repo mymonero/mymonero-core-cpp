@@ -39,7 +39,10 @@
 #include "monero_fork_rules.hpp"
 #include "monero_transfer_utils.hpp"
 #include "monero_address_utils.hpp" // TODO: split this/these out into a different namespaces or file so this file can scale (leave file for shared utils)
+#include "monero_paymentID_utils.hpp"
+#include "monero_wallet_utils.hpp"
 #include "wallet_errors.h"
+#include "string_tools.h"
 //
 //
 using namespace std;
@@ -126,17 +129,16 @@ string serial_bridge::decode_address(const string &args_string)
 		// it will already have thrown an exception
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	network_type nettype = nettype_from_string(json_root.get<string>("nettype_string"));
-	auto retVals = monero::address_utils::decodedAddress(json_root.get<string>("address"), nettype);
+	auto retVals = monero::address_utils::decodedAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
 	if (retVals.did_error) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__decode_address__isSubaddress(), retVals.isSubaddress);
-	root.put(ret_json_key__decode_address__pub_viewKey_string(), std::move(*(retVals.pub_viewKey_string)));
-	root.put(ret_json_key__decode_address__pub_spendKey_string(), std::move(*(retVals.pub_spendKey_string)));
+	root.put(ret_json_key__isSubaddress(), retVals.isSubaddress);
+	root.put(ret_json_key__pub_viewKey_string(), std::move(*(retVals.pub_viewKey_string)));
+	root.put(ret_json_key__pub_spendKey_string(), std::move(*(retVals.pub_spendKey_string)));
 	if (retVals.paymentID_string != none) {
-		root.put(ret_json_key__decode_address__paymentID_string(), std::move(*(retVals.paymentID_string)));
+		root.put(ret_json_key__paymentID_string(), std::move(*(retVals.paymentID_string)));
 	}
 	stringstream ret_ss;
 	boost::property_tree::write_json(ret_ss, root);
@@ -150,8 +152,7 @@ string serial_bridge::is_subaddress(const string &args_string)
 		// it will already have thrown an exception
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	network_type nettype = nettype_from_string(json_root.get<string>("nettype_string"));
-	bool retVal = monero::address_utils::isSubAddress(json_root.get<string>("address"), nettype);
+	bool retVal = monero::address_utils::isSubAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), retVal);
 	stringstream ret_ss;
@@ -166,8 +167,7 @@ string serial_bridge::is_integrated_address(const string &args_string)
 		// it will already have thrown an exception
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	network_type nettype = nettype_from_string(json_root.get<string>("nettype_string"));
-	bool retVal = monero::address_utils::isIntegratedAddress(json_root.get<string>("address"), nettype);
+	bool retVal = monero::address_utils::isIntegratedAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), retVal);
 	stringstream ret_ss;
@@ -177,24 +177,112 @@ string serial_bridge::is_integrated_address(const string &args_string)
 }
 string serial_bridge::new_integrated_address(const string &args_string)
 {
-	// standard addr + short pid
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	optional<string> retVal = monero::address_utils::new_integratedAddrFromStdAddr(json_root.get<string>("address"), json_root.get<string>("short_pid"), nettype_from_string(json_root.get<string>("nettype_string")));
+	boost::property_tree::ptree root;
+	if (retVal != none) {
+		root.put(ret_json_key__generic_retVal(), std::move(*retVal));
+	}
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 string serial_bridge::new_fake_address_for_rct_tx(const string &args_string)
 {
-	// TODO: probably take random scalar as an argument
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	optional<string> retVal = monero::address_utils::new_fake_address_string_for_rct_tx(
+		nettype_from_string(json_root.get<string>("nettype_string"))
+	);
+	boost::property_tree::ptree root;
+	if (retVal != none) {
+		root.put(ret_json_key__generic_retVal(), std::move(*retVal));
+	}
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 string serial_bridge::new_payment_id(const string &args_string)
 {
-	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	optional<string> retVal = monero_paymentID_utils::new_short_plain_paymentID_string();
+	boost::property_tree::ptree root;
+	if (retVal != none) {
+		root.put(ret_json_key__generic_retVal(), std::move(*retVal));
+	}
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 //
 string serial_bridge::newly_created_wallet(const string &args_string)
 {
-	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	monero_wallet_utils::WalletDescriptionRetVals retVals;
+	bool r = monero_wallet_utils::new_wallet(
+		json_root.get<string>("wordset_name"),
+		retVals,
+		nettype_from_string(json_root.get<string>("nettype_string"))
+	);
+	bool did_error = retVals.did_error;
+	if (!r) {
+		THROW_WALLET_EXCEPTION_IF(!did_error, error::wallet_internal_error, "Illegal fail flag with !did_error");
+		return error_ret_json_from_message(*(retVals.err_string));
+	}
+	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__mnemonic_string(), (*(retVals.optl__desc)).mnemonic_string);
+	root.put(ret_json_key__sec_seed_string(), (*(retVals.optl__desc)).sec_seed_string);
+	root.put(ret_json_key__address_string(), (*(retVals.optl__desc)).address_string);
+	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
+	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
+	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
+	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 string serial_bridge::mnemonic_from_seed(const string &args_string)
 {
-	
+	// seed_string, wordset_name
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	monero_wallet_utils::SeedDecodedMnemonic_RetVals retVals = monero_wallet_utils::mnemonic_string_from_seed_hex_string(
+		json_root.get<string>("seed_string"),
+		json_root.get<string>("wordset_name")
+	);
+	boost::property_tree::ptree root;
+	if (retVals.err_string != none) {
+		error_ret_json_from_message(*(retVals.err_string));
+	}
+	root.put(ret_json_key__generic_retVal(), *(retVals.mnemonic_string));
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
 {
