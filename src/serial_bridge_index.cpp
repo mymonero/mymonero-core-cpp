@@ -264,7 +264,6 @@ string serial_bridge::newly_created_wallet(const string &args_string)
 }
 string serial_bridge::mnemonic_from_seed(const string &args_string)
 {
-	// seed_string, wordset_name
 	boost::property_tree::ptree json_root;
 	if (!parsed_json_root(args_string, json_root)) {
 		// it will already have thrown an exception
@@ -286,7 +285,36 @@ string serial_bridge::mnemonic_from_seed(const string &args_string)
 }
 string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
 {
-	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	monero_wallet_utils::WalletDescriptionRetVals retVals;
+	bool r = monero_wallet_utils::wallet_with(
+		json_root.get<string>("mnemonic_string"),
+		json_root.get<string>("wordset_name"),
+		retVals
+	);
+	bool did_error = retVals.did_error;
+	if (!r) {
+		THROW_WALLET_EXCEPTION_IF(!did_error, error::wallet_internal_error, "Illegal fail flag but !did_error");
+		return error_ret_json_from_message(*retVals.err_string);
+	}
+	monero_wallet_utils::WalletDescription walletDescription = *(retVals.optl__desc);
+	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__sec_seed_string(), (*(retVals.optl__desc)).sec_seed_string);
+	root.put(ret_json_key__address_string(), (*(retVals.optl__desc)).address_string);
+	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
+	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
+	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
+	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 string serial_bridge::verified_components_for_login(const string &args_string)
 {

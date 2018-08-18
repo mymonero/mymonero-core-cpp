@@ -689,7 +689,47 @@ BOOST_AUTO_TEST_CASE(bridged__mnemonic_from_seed)
 }
 BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 {
-
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("mnemonic_string", "foxe selfish hum nexus juven dodeg pepp ember biscuti elap jazz vibrate biscui");
+	root.put("wordset_name", "English");
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::seed_and_keys_from_mnemonic(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> sec_seed_string = ret_tree.get_optional<string>(ret_json_key__sec_seed_string());
+	BOOST_REQUIRE(sec_seed_string != none);
+	BOOST_REQUIRE((*sec_seed_string).size() > 0);
+	cout << "bridged: seed_and_keys_from_mnemonic: sec_seed: " << *sec_seed_string << endl;
+	optional<string> address_string = ret_tree.get_optional<string>(ret_json_key__address_string());
+	BOOST_REQUIRE(address_string != none);
+	BOOST_REQUIRE((*address_string).size() > 0);
+	cout << "bridged: seed_and_keys_from_mnemonic: address: " << *address_string << endl;
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
+	BOOST_REQUIRE(pub_viewKey_string != none);
+	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
+	cout << "bridged: seed_and_keys_from_mnemonic: pub_viewKey_string: " << *pub_viewKey_string << endl;
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
+	BOOST_REQUIRE(pub_spendKey_string != none);
+	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
+	cout << "bridged: seed_and_keys_from_mnemonic: pub_spendKey_string: " << *pub_spendKey_string << endl;
+	optional<string> sec_viewKey_string = ret_tree.get_optional<string>(ret_json_key__sec_viewKey_string());
+	BOOST_REQUIRE(sec_viewKey_string != none);
+	BOOST_REQUIRE((*sec_viewKey_string).size() > 0);
+	cout << "bridged: seed_and_keys_from_mnemonic: sec_viewKey_string: " << *sec_viewKey_string << endl;
+	optional<string> sec_spendKey_string = ret_tree.get_optional<string>(ret_json_key__sec_spendKey_string());
+	BOOST_REQUIRE(sec_spendKey_string != none);
+	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
+	cout << "bridged: seed_and_keys_from_mnemonic: sec_spendKey_string: " << *sec_spendKey_string << endl;
 }
 BOOST_AUTO_TEST_CASE(bridged__verified_components_for_login)
 {
