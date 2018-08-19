@@ -687,6 +687,7 @@ BOOST_AUTO_TEST_CASE(bridged__mnemonic_from_seed)
 	BOOST_REQUIRE((*mnemonic_string).size() > 0);
 	cout << "bridged__mnemonic_from_seed: mnemonic: " << *mnemonic_string << endl;
 }
+//
 BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 {
 	using namespace serial_bridge;
@@ -858,5 +859,29 @@ BOOST_AUTO_TEST_CASE(bridged__calculate_fee)
 
 BOOST_AUTO_TEST_CASE(bridged__generate_key_image)
 {
-
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("sec_viewKey_string", "7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104");
+	root.put("sec_spendKey_string", "4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803");
+	root.put("pub_spendKey_string", "3eb884d3440d71326e27cc07a861b873e72abd339feb654660c36a008a0028b3");
+	root.put("tx_pub_key", "fc7f85bf64c6e4f6aa612dbc8ddb1bb77a9283656e9c2b9e777c9519798622b2");
+	root.put("out_index", "0");
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::generate_key_image(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> key_image_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(key_image_string != none);
+	BOOST_REQUIRE((*key_image_string).size() > 0);
+	BOOST_REQUIRE(*key_image_string == "ae30ee23051dc0bdf10303fbd3b7d8035a958079eb66516b1740f2c9b02c804e");
+	cout << "bridged__generate_key_image: " << *key_image_string << endl;
 }

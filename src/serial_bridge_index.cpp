@@ -41,6 +41,7 @@
 #include "monero_address_utils.hpp" // TODO: split this/these out into a different namespaces or file so this file can scale (leave file for shared utils)
 #include "monero_paymentID_utils.hpp"
 #include "monero_wallet_utils.hpp"
+#include "monero_key_image_utils.hpp"
 #include "wallet_errors.h"
 #include "string_tools.h"
 //
@@ -424,7 +425,41 @@ string serial_bridge::estimated_tx_network_fee(const string &args_string)
 //
 string serial_bridge::generate_key_image(const string &args_string)
 {
-	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	crypto::secret_key sec_viewKey{};
+	crypto::secret_key sec_spendKey{};
+	crypto::public_key pub_spendKey{};
+	crypto::public_key tx_pub_key{};
+	{
+		bool r = false;
+		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("sec_viewKey_string")), sec_viewKey);
+		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid secret view key");
+		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("sec_spendKey_string")), sec_spendKey);
+		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid secret spend key");
+		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("pub_spendKey_string")), pub_spendKey);
+		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid public spend key");
+		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("tx_pub_key")), tx_pub_key);
+		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid tx pub key");
+	}
+	monero_key_image_utils::KeyImageRetVals retVals;
+	bool r = monero_key_image_utils::new__key_image(
+		pub_spendKey, sec_spendKey, sec_viewKey, tx_pub_key,
+		stoull(json_root.get<string>("out_index")),
+		retVals
+	);
+	if (!r) {
+		return error_ret_json_from_message("Unable to generate key image"); // TODO: return error string? (unwrap optional)
+	}
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(retVals.calculated_key_image));
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 //
 //
