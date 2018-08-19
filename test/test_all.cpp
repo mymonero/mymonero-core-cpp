@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(decodeAddress)
 	BOOST_REQUIRE(result.pub_spendKey_string != none);
 	BOOST_REQUIRE(result.isSubaddress == false);
 	BOOST_REQUIRE(result.paymentID_string == none);
-	std::cout << "Decoded: " << address << std::endl;
+	std::cout << "decodeAddress: " << address << std::endl;
 }
 //
 //
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(decodeAddress)
 BOOST_AUTO_TEST_CASE(paymentID)
 {
 	string paymentID_string = monero_paymentID_utils::new_short_plain_paymentID_string();
-	std::cout << "paymentID_string: " << paymentID_string << std::endl;
+	std::cout << "paymentID: paymentID_string: " << paymentID_string << std::endl;
 	BOOST_REQUIRE_MESSAGE(paymentID_string.size() == 16, "Expected payment ID to be of length 16");
 	//
 	crypto::hash parsed__payment_id;
@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(paymentID)
 	BOOST_REQUIRE_MESSAGE(didParse, "Couldn't parse payment ID");
 	std::string parsed__payment_id_as_string = epee::string_tools::pod_to_hex(parsed__payment_id);
 	BOOST_REQUIRE_MESSAGE(paymentID_string.compare(parsed__payment_id_as_string), "Expected parsed payment ID to equal original payment ID");
-	std::cout << "parsed__payment_id: " << parsed__payment_id << std::endl;
+	std::cout << "paymentID: parsed__payment_id: " << parsed__payment_id << std::endl;
 }
 //
 //
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(transfers__fee)
 	uint64_t fee_per_kb = 9000000;
 	uint32_t priority = 2;
 	uint64_t est_fee = monero_transfer_utils::estimated_tx_network_fee(fee_per_kb, priority, use_fork_rules_fn);
-	std::cout << "est_fee with fee_per_kb " << fee_per_kb << ": " << est_fee << std::endl;
+	std::cout << "transfers__fee: est_fee with fee_per_kb " << fee_per_kb << ": " << est_fee << std::endl;
 	BOOST_REQUIRE(est_fee > 0);
 }
 BOOST_AUTO_TEST_CASE(transfers__create)
@@ -139,8 +139,8 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 		BOOST_REQUIRE(string_tools::hex_to_pod(sec_spendKey_string, sec_spendKey));
 		account_keys.m_spend_secret_key = sec_spendKey;
 	}
-	cout << "spend sec key: " << string_tools::pod_to_hex(account_keys.m_spend_secret_key) << endl;
-	cout << "spend pub key: " << string_tools::pod_to_hex(from_addr_info.address.m_spend_public_key) << endl;
+	cout << "transfers__create: spend sec key: " << string_tools::pod_to_hex(account_keys.m_spend_secret_key) << endl;
+	cout << "transfers__create: spend pub key: " << string_tools::pod_to_hex(from_addr_info.address.m_spend_public_key) << endl;
 	//
 	optional<string> payment_id_string = string("b79f8efc81f58f67");
 	uint64_t amount = 10000000000;
@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 	uint32_t subaddr_account_idx = 0;
 	std::unordered_map<crypto::public_key, cryptonote::subaddress_index> subaddresses;
 	subaddresses[account_keys.m_account_address.m_spend_public_key] = {0,0};
-	cout << "account_keys.m_account_address.m_spend_public_key: " << string_tools::pod_to_hex(account_keys.m_account_address.m_spend_public_key) << endl;
+	cout << "transfers__create: account_keys.m_account_address.m_spend_public_key: " << string_tools::pod_to_hex(account_keys.m_account_address.m_spend_public_key) << endl;
 	//
 	monero_transfer_utils::create_transaction(
 		retVals,
@@ -306,15 +306,15 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 	auto txBlob = t_serializable_object_to_blob(retVals.tx);
 	size_t txBlob_byteLength = txBlob.size();
 //	cout << "txBlob: " << txBlob << endl;
-	cout << "txBlob_byteLength: " << txBlob_byteLength << endl;
+	cout << "transfers__create: txBlob_byteLength: " << txBlob_byteLength << endl;
 	BOOST_REQUIRE(txBlob_byteLength > 0);
 
 	// tx hash
 	auto tx_hash_string = epee::string_tools::pod_to_hex(cryptonote::get_transaction_hash(retVals.tx));
 	auto signed_serialized_tx_string = epee::string_tools::buff_to_hex_nodelimer(cryptonote::tx_to_blob(retVals.tx));
 
-	cout << "tx_hash_string: " << tx_hash_string << endl;
-	cout << "signed_serialized_tx_string: " << signed_serialized_tx_string << endl;
+	cout << "transfers__create: tx_hash_string: " << tx_hash_string << endl;
+	cout << "transfers__create: signed_serialized_tx_string: " << signed_serialized_tx_string << endl;
 }
 //
 //
@@ -446,10 +446,10 @@ BOOST_AUTO_TEST_CASE(bridged__transfers__create)
 	optional<string> serialized_signed_tx = ret_tree.get_optional<string>(ret_json_key__create_transaction__serialized_signed_tx());
 	BOOST_REQUIRE(serialized_signed_tx != none);
 	BOOST_REQUIRE((*serialized_signed_tx).size() > 0);
-	cout << "bridged: serialized_signed_tx: " << *serialized_signed_tx << endl;
+	cout << "bridged__transfers__create: serialized_signed_tx: " << *serialized_signed_tx << endl;
 	BOOST_REQUIRE(tx_hash != none);
 	BOOST_REQUIRE((*tx_hash).size() > 0);
-	cout << "bridged: tx_hash: " << *tx_hash << endl;
+	cout << "bridged__transfers__create: tx_hash: " << *tx_hash << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__decode_address)
@@ -474,19 +474,19 @@ BOOST_AUTO_TEST_CASE(bridged__decode_address)
 	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
-	cout << "bridged: pub_viewKey_string: " << *pub_viewKey_string << endl;
+	cout << "bridged__decode_address: pub_viewKey_string: " << *pub_viewKey_string << endl;
 	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
-	cout << "bridged: pub_spendKey_string: " << *pub_spendKey_string << endl;
+	cout << "bridged__decode_address: pub_spendKey_string: " << *pub_spendKey_string << endl;
 	optional<string> paymentID_string = ret_tree.get_optional<string>(ret_json_key__paymentID_string());
 	BOOST_REQUIRE(paymentID_string != none);
 	BOOST_REQUIRE((*paymentID_string).size() > 0);
-	cout << "bridged: paymentID_string: " << *paymentID_string << endl;
+	cout << "bridged__decode_address: paymentID_string: " << *paymentID_string << endl;
 	optional<bool> isSubaddress = ret_tree.get_optional<bool>(ret_json_key__isSubaddress());
 	BOOST_REQUIRE(isSubaddress != none);
 	BOOST_REQUIRE(*isSubaddress == false);
-	cout << "bridged: isSubaddress: " << *isSubaddress << endl;
+	cout << "bridged__decode_address: isSubaddress: " << *isSubaddress << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__is_subaddress)
@@ -511,7 +511,7 @@ BOOST_AUTO_TEST_CASE(bridged__is_subaddress)
 	optional<bool> value = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE(*value == false);
-	cout << "bridged: isSubaddress: " << *value << endl;
+	cout << "bridged__is_subaddress: " << *value << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__is_integrated_address)
@@ -536,7 +536,7 @@ BOOST_AUTO_TEST_CASE(bridged__is_integrated_address)
 	optional<bool> value = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE(*value == true);
-	cout << "bridged: isIntegratedAddress: " << *value << endl;
+	cout << "bridged__is_integrated_address: " << *value << endl;
 }
 //
 #include <boost/algorithm/string/predicate.hpp>
@@ -564,7 +564,7 @@ BOOST_AUTO_TEST_CASE(bridged__new_integrated_address)
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE((*value).size() > 0);
 	BOOST_REQUIRE(boost::equal(*value, string("4DhdwdSDgoS9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqmCzkMP1DMV6WCiNCdsp")));
-	cout << "bridged: integratedAddress: " << *value << endl;
+	cout << "bridged__new_integrated_address: " << *value << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__new_fake_address_for_rct_tx)
@@ -588,7 +588,7 @@ BOOST_AUTO_TEST_CASE(bridged__new_fake_address_for_rct_tx)
 	optional<string> value = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE((*value).size() > 0);
-	cout << "bridged: fake address for rct tx: " << *value << endl;
+	cout << "bridged__new_fake_address_for_rct_tx: " << *value << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__new_short_payment_id)
@@ -611,7 +611,7 @@ BOOST_AUTO_TEST_CASE(bridged__new_short_payment_id)
 	optional<string> value = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE((*value).size() > 0);
-	cout << "bridged: payment id: " << *value << endl;
+	cout << "bridged__new_short_payment_id: " << *value << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__new_wallet)
@@ -636,31 +636,31 @@ BOOST_AUTO_TEST_CASE(bridged__new_wallet)
 	optional<string> mnemonic_string = ret_tree.get_optional<string>(ret_json_key__mnemonic_string());
 	BOOST_REQUIRE(mnemonic_string != none);
 	BOOST_REQUIRE((*mnemonic_string).size() > 0);
-	cout << "bridged: new wallet: mnemonic: " << *mnemonic_string << endl;
+	cout << "bridged__new_wallet: mnemonic: " << *mnemonic_string << endl;
 	optional<string> sec_seed_string = ret_tree.get_optional<string>(ret_json_key__sec_seed_string());
 	BOOST_REQUIRE(sec_seed_string != none);
 	BOOST_REQUIRE((*sec_seed_string).size() > 0);
-	cout << "bridged: new wallet: sec_seed: " << *sec_seed_string << endl;
+	cout << "bridged__new_wallet: sec_seed: " << *sec_seed_string << endl;
 	optional<string> address_string = ret_tree.get_optional<string>(ret_json_key__address_string());
 	BOOST_REQUIRE(address_string != none);
 	BOOST_REQUIRE((*address_string).size() > 0);
-	cout << "bridged: new wallet: address: " << *address_string << endl;
+	cout << "bridged__new_wallet: address: " << *address_string << endl;
 	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
-	cout << "bridged: new wallet: pub_viewKey_string: " << *pub_viewKey_string << endl;
+	cout << "bridged__new_wallet: pub_viewKey_string: " << *pub_viewKey_string << endl;
 	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
-	cout << "bridged: new wallet: pub_spendKey_string: " << *pub_spendKey_string << endl;
+	cout << "bridged__new_wallet: pub_spendKey_string: " << *pub_spendKey_string << endl;
 	optional<string> sec_viewKey_string = ret_tree.get_optional<string>(ret_json_key__sec_viewKey_string());
 	BOOST_REQUIRE(sec_viewKey_string != none);
 	BOOST_REQUIRE((*sec_viewKey_string).size() > 0);
-	cout << "bridged: new wallet: sec_viewKey_string: " << *sec_viewKey_string << endl;
+	cout << "bridged__new_wallet: sec_viewKey_string: " << *sec_viewKey_string << endl;
 	optional<string> sec_spendKey_string = ret_tree.get_optional<string>(ret_json_key__sec_spendKey_string());
 	BOOST_REQUIRE(sec_spendKey_string != none);
 	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
-	cout << "bridged: new wallet: sec_spendKey_string: " << *sec_spendKey_string << endl;
+	cout << "bridged__new_wallet: sec_spendKey_string: " << *sec_spendKey_string << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__mnemonic_from_seed)
@@ -685,7 +685,7 @@ BOOST_AUTO_TEST_CASE(bridged__mnemonic_from_seed)
 	optional<string> mnemonic_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
 	BOOST_REQUIRE(mnemonic_string != none);
 	BOOST_REQUIRE((*mnemonic_string).size() > 0);
-	cout << "bridged: mnemonic from seed: mnemonic: " << *mnemonic_string << endl;
+	cout << "bridged__mnemonic_from_seed: mnemonic: " << *mnemonic_string << endl;
 }
 BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 {
@@ -709,27 +709,27 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	optional<string> sec_seed_string = ret_tree.get_optional<string>(ret_json_key__sec_seed_string());
 	BOOST_REQUIRE(sec_seed_string != none);
 	BOOST_REQUIRE((*sec_seed_string).size() > 0);
-	cout << "bridged: seed_and_keys_from_mnemonic: sec_seed: " << *sec_seed_string << endl;
+	cout << "bridged__seed_and_keys_from_mnemonic: sec_seed: " << *sec_seed_string << endl;
 	optional<string> address_string = ret_tree.get_optional<string>(ret_json_key__address_string());
 	BOOST_REQUIRE(address_string != none);
 	BOOST_REQUIRE((*address_string).size() > 0);
-	cout << "bridged: seed_and_keys_from_mnemonic: address: " << *address_string << endl;
+	cout << "bridged__seed_and_keys_from_mnemonic: address: " << *address_string << endl;
 	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
-	cout << "bridged: seed_and_keys_from_mnemonic: pub_viewKey_string: " << *pub_viewKey_string << endl;
+	cout << "bridged__seed_and_keys_from_mnemonic: pub_viewKey_string: " << *pub_viewKey_string << endl;
 	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
-	cout << "bridged: seed_and_keys_from_mnemonic: pub_spendKey_string: " << *pub_spendKey_string << endl;
+	cout << "bridged__seed_and_keys_from_mnemonic: pub_spendKey_string: " << *pub_spendKey_string << endl;
 	optional<string> sec_viewKey_string = ret_tree.get_optional<string>(ret_json_key__sec_viewKey_string());
 	BOOST_REQUIRE(sec_viewKey_string != none);
 	BOOST_REQUIRE((*sec_viewKey_string).size() > 0);
-	cout << "bridged: seed_and_keys_from_mnemonic: sec_viewKey_string: " << *sec_viewKey_string << endl;
+	cout << "bridged__seed_and_keys_from_mnemonic: sec_viewKey_string: " << *sec_viewKey_string << endl;
 	optional<string> sec_spendKey_string = ret_tree.get_optional<string>(ret_json_key__sec_spendKey_string());
 	BOOST_REQUIRE(sec_spendKey_string != none);
 	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
-	cout << "bridged: seed_and_keys_from_mnemonic: sec_spendKey_string: " << *sec_spendKey_string << endl;
+	cout << "bridged__seed_and_keys_from_mnemonic: sec_spendKey_string: " << *sec_spendKey_string << endl;
 }
 
 BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login)
@@ -756,18 +756,18 @@ BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login)
 	}
 	optional<bool> isValid = ret_tree.get_optional<bool>(ret_json_key__isValid());
 	BOOST_REQUIRE(isValid == true);
-	cout << "bridged: validate_components_for_login: isValid: " << isValid << endl;
+	cout << "bridged__validate_components_for_login: isValid: " << isValid << endl;
 	optional<bool> isInViewOnlyMode = ret_tree.get_optional<bool>(ret_json_key__isInViewOnlyMode());
 	BOOST_REQUIRE(isInViewOnlyMode == false);
-	cout << "bridged: validate_components_for_login: isInViewOnlyMode: " << isInViewOnlyMode << endl;
+	cout << "bridged__validate_components_for_login: isInViewOnlyMode: " << isInViewOnlyMode << endl;
 	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
-	cout << "bridged: validate_components_for_login: pub_viewKey_string: " << *pub_viewKey_string << endl;
+	cout << "bridged__validate_components_for_login: pub_viewKey_string: " << *pub_viewKey_string << endl;
 	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
-	cout << "bridged: validate_components_for_login: pub_spendKey_string: " << *pub_spendKey_string << endl;
+	cout << "bridged__validate_components_for_login: pub_spendKey_string: " << *pub_spendKey_string << endl;
 }
 
 BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
@@ -794,10 +794,10 @@ BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
 	BOOST_REQUIRE((*fee_string).size() > 0);
 	uint64_t fee = stoull(*fee_string);
 	BOOST_REQUIRE(fee == 504000000);
-	cout << "bridged__estimated_tx_network_fee: fee: " << fee << endl;
+	cout << "bridged__estimated_tx_network_fee: " << fee << endl;
 }
 
-BOOST_AUTO_TEST_CASE(bridged__estimate_rct_size)
+BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
 {
 	using namespace serial_bridge;
 	//
@@ -825,9 +825,9 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_rct_size)
 	BOOST_REQUIRE((*size_string).size() > 0);
 	uint64_t size = stoull(*size_string);
 	BOOST_REQUIRE(size == 13762);
-	cout << "bridged__estimate_rct_size: size: " << size << endl;
+	cout << "bridged__estimate_rct_tx_size: " << size << endl;
 }
-//
+
 BOOST_AUTO_TEST_CASE(bridged__calculate_fee)
 {
 	using namespace serial_bridge;
@@ -853,7 +853,7 @@ BOOST_AUTO_TEST_CASE(bridged__calculate_fee)
 	BOOST_REQUIRE((*fee_string).size() > 0);
 	uint64_t fee = stoull(*fee_string);
 	BOOST_REQUIRE(fee == 504000000);
-	cout << "bridged__calculate_fee: fee: " << fee << endl;
+	cout << "bridged__calculate_fee: " << fee << endl;
 }
 
 BOOST_AUTO_TEST_CASE(bridged__generate_key_image)
