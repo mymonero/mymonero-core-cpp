@@ -65,7 +65,6 @@ uint32_t monero_transfer_utils::default_priority()
 uint64_t monero_transfer_utils::estimated_tx_network_fee(
 	uint64_t fee_per_kb,
 	uint32_t priority,
-	network_type nettype,
 	use_fork_rules_fn_type use_fork_rules_fn
 ) {
 	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0);
@@ -192,6 +191,7 @@ size_t monero_transfer_utils::estimate_tx_size(bool use_rct, int n_inputs, int m
 uint64_t monero_transfer_utils::calculate_fee(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier)
 {
 	uint64_t kB = (bytes + 1023) / 1024;
+	//
 	return kB * fee_per_kb * fee_multiplier;
 }
 uint64_t monero_transfer_utils::calculate_fee(uint64_t fee_per_kb, const cryptonote::blobdata &blob, uint64_t fee_multiplier)

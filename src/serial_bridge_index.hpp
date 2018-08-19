@@ -57,9 +57,9 @@ namespace serial_bridge
 	string seed_and_keys_from_mnemonic(const string &args_string);
 	string validate_components_for_login(const string &args_string);
 	//
-	string estimate_rct_size(const string &args_string);
+	string estimate_rct_tx_size(const string &args_string);
 	string calculate_fee(const string &args_string);
-	// TODO: possibly add EstimatedTransaction_networkFee analog
+	string estimated_tx_network_fee(const string &args_string);
 	//
 	string generate_key_image(const string &args_string);
 	//

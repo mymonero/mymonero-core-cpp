@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(transfers__fee)
 	};
 	uint64_t fee_per_kb = 9000000;
 	uint32_t priority = 2;
-	uint64_t est_fee = monero_transfer_utils::estimated_tx_network_fee(fee_per_kb, priority, cryptonote::MAINNET, use_fork_rules_fn);
+	uint64_t est_fee = monero_transfer_utils::estimated_tx_network_fee(fee_per_kb, priority, use_fork_rules_fn);
 	std::cout << "est_fee with fee_per_kb " << fee_per_kb << ": " << est_fee << std::endl;
 	BOOST_REQUIRE(est_fee > 0);
 }
@@ -770,14 +770,90 @@ BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login)
 	cout << "bridged: validate_components_for_login: pub_spendKey_string: " << *pub_spendKey_string << endl;
 }
 
+BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("fee_per_kb", "9000000");
+	root.put("priority", "2");
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::estimated_tx_network_fee(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> fee_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(fee_string != none);
+	BOOST_REQUIRE((*fee_string).size() > 0);
+	uint64_t fee = stoull(*fee_string);
+	BOOST_REQUIRE(fee == 504000000);
+	cout << "bridged__estimated_tx_network_fee: fee: " << fee << endl;
+}
+
 BOOST_AUTO_TEST_CASE(bridged__estimate_rct_size)
 {
-
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("n_inputs", 2);
+	root.put("mixin", monero_transfer_utils::fixed_mixinsize());
+	root.put("n_outputs", 2);
+	std::vector<uint8_t> extra; // blank extra
+	root.put("extra_size", extra.size());
+	root.put("bulletproof", monero_fork_rules::lightwallet_hardeded__use_bulletproofs());
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::estimate_rct_tx_size(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> size_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(size_string != none);
+	BOOST_REQUIRE((*size_string).size() > 0);
+	uint64_t size = stoull(*size_string);
+	BOOST_REQUIRE(size == 13762);
+	cout << "bridged__estimate_rct_size: size: " << size << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__calculate_fee)
 {
-
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("fee_per_kb", "9000000");
+	root.put("num_bytes", "13762");
+	root.put("fee_multiplier", "4"); // aka priority idx 1 / number 2
+	//
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root);
+	auto ret_string = serial_bridge::calculate_fee(args_ss.str());
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> fee_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(fee_string != none);
+	BOOST_REQUIRE((*fee_string).size() > 0);
+	uint64_t fee = stoull(*fee_string);
+	BOOST_REQUIRE(fee == 504000000);
+	cout << "bridged__calculate_fee: fee: " << fee << endl;
 }
 
 BOOST_AUTO_TEST_CASE(bridged__generate_key_image)

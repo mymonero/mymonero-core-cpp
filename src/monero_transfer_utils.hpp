@@ -70,7 +70,6 @@ namespace monero_transfer_utils
 	uint64_t estimated_tx_network_fee( // convenience function for size + calc
 		uint64_t fee_per_kb,
 		uint32_t priority, // when priority=0, falls back to monero_transfer_utils::default_priority()
-		network_type nettype,
 		use_fork_rules_fn_type use_fork_rules_fn // this is extracted to a function so that implementations can optionally query the daemon (although this presently implies that such a call remains blocking)
 	);
 	//

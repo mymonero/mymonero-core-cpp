@@ -350,13 +350,76 @@ string serial_bridge::validate_components_for_login(const string &args_string)
 	return ret_ss.str();
 }
 //
-string serial_bridge::estimate_rct_size(const string &args_string)
+string serial_bridge::estimate_rct_tx_size(const string &args_string)
 {
-	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	uint32_t size = monero_transfer_utils::estimate_rct_tx_size(
+		json_root.get<int>("n_inputs"),
+		json_root.get<int>("mixin"),
+		json_root.get<int>("n_outputs"),
+		json_root.get<int>("extra_size"),
+		json_root.get<bool>("bulletproof")
+	);
+	std::ostringstream o;
+	o << size;
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), o.str());
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 string serial_bridge::calculate_fee(const string &args_string)
 {
-	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	uint64_t fee = monero_transfer_utils::calculate_fee(
+		stoull(json_root.get<string>("fee_per_kb")),
+		stoul(json_root.get<string>("num_bytes")),
+		stoull(json_root.get<string>("fee_multiplier"))
+	);
+	std::ostringstream o;
+	o << fee;
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), o.str());
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
+}
+string serial_bridge::estimated_tx_network_fee(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	uint64_t fee = monero_transfer_utils::estimated_tx_network_fee(
+		stoull(json_root.get<string>("fee_per_kb")),
+		stoul(json_root.get<string>("priority")),
+		[] (uint8_t version, int64_t early_blocks) -> bool
+		{
+			return lightwallet_hardcoded__use_fork_rules(version, early_blocks);
+		}
+	);
+	std::ostringstream o;
+	o << fee;
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), o.str());
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root);
+	//
+	return ret_ss.str();
 }
 //
 string serial_bridge::generate_key_image(const string &args_string)
