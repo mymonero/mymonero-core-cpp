@@ -104,24 +104,30 @@ bool parsed_json_root(const string &args_string, boost::property_tree::ptree &js
 }
 //
 // Shared - Factories - Return values
+string ret_json_from_root(const boost::property_tree::ptree &root)
+{
+	stringstream ret_ss;
+	boost::property_tree::write_json(ret_ss, root, false/*pretty*/);
+	//
+	return ret_ss.str();
+}
 string error_ret_json_from_message(string err_msg)
 {
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__any__err_msg(), err_msg);
-	stringstream ss;
-	boost::property_tree::write_json(ss, root);
 	//
-	return ss.str();
+	return ret_json_from_root(root);
 }
 string error_ret_json_from_code(int code)
 {
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__any__err_code(), code);
-	stringstream ss;
-	boost::property_tree::write_json(ss, root);
 	//
-	return ss.str();
+	return ret_json_from_root(root);
 }
+//
+//
+// Bridge Function Implementations
 //
 string serial_bridge::decode_address(const string &args_string)
 {
@@ -141,10 +147,8 @@ string serial_bridge::decode_address(const string &args_string)
 	if (retVals.paymentID_string != none) {
 		root.put(ret_json_key__paymentID_string(), std::move(*(retVals.paymentID_string)));
 	}
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::is_subaddress(const string &args_string)
 {
@@ -156,10 +160,8 @@ string serial_bridge::is_subaddress(const string &args_string)
 	bool retVal = monero::address_utils::isSubAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), retVal);
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::is_integrated_address(const string &args_string)
 {
@@ -171,10 +173,8 @@ string serial_bridge::is_integrated_address(const string &args_string)
 	bool retVal = monero::address_utils::isIntegratedAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), retVal);
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::new_integrated_address(const string &args_string)
 {
@@ -188,10 +188,8 @@ string serial_bridge::new_integrated_address(const string &args_string)
 	if (retVal != none) {
 		root.put(ret_json_key__generic_retVal(), std::move(*retVal));
 	}
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::new_fake_address_for_rct_tx(const string &args_string)
 {
@@ -207,10 +205,8 @@ string serial_bridge::new_fake_address_for_rct_tx(const string &args_string)
 	if (retVal != none) {
 		root.put(ret_json_key__generic_retVal(), std::move(*retVal));
 	}
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::new_payment_id(const string &args_string)
 {
@@ -224,10 +220,8 @@ string serial_bridge::new_payment_id(const string &args_string)
 	if (retVal != none) {
 		root.put(ret_json_key__generic_retVal(), std::move(*retVal));
 	}
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 //
 string serial_bridge::newly_created_wallet(const string &args_string)
@@ -258,10 +252,8 @@ string serial_bridge::newly_created_wallet(const string &args_string)
 	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
 	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
 	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::mnemonic_from_seed(const string &args_string)
 {
@@ -279,10 +271,8 @@ string serial_bridge::mnemonic_from_seed(const string &args_string)
 		error_ret_json_from_message(*(retVals.err_string));
 	}
 	root.put(ret_json_key__generic_retVal(), *(retVals.mnemonic_string));
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
 {
@@ -312,10 +302,8 @@ string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
 	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
 	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
 	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::validate_components_for_login(const string &args_string)
 {
@@ -345,10 +333,8 @@ string serial_bridge::validate_components_for_login(const string &args_string)
 	root.put(ret_json_key__isInViewOnlyMode(), retVals.isInViewOnlyMode);
 	root.put(ret_json_key__pub_viewKey_string(), std::move(retVals.pub_viewKey_string));
 	root.put(ret_json_key__pub_spendKey_string(), std::move(retVals.pub_spendKey_string));
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 //
 string serial_bridge::estimate_rct_tx_size(const string &args_string)
@@ -370,10 +356,8 @@ string serial_bridge::estimate_rct_tx_size(const string &args_string)
 	//
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), o.str());
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::calculate_fee(const string &args_string)
 {
@@ -392,10 +376,8 @@ string serial_bridge::calculate_fee(const string &args_string)
 	//
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), o.str());
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 string serial_bridge::estimated_tx_network_fee(const string &args_string)
 {
@@ -417,10 +399,8 @@ string serial_bridge::estimated_tx_network_fee(const string &args_string)
 	//
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), o.str());
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 //
 string serial_bridge::generate_key_image(const string &args_string)
@@ -456,10 +436,8 @@ string serial_bridge::generate_key_image(const string &args_string)
 	}
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(retVals.calculated_key_image));
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
 //
 //
@@ -549,8 +527,6 @@ string serial_bridge::create_transaction(const string &args_string)
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__create_transaction__serialized_signed_tx(), std::move(*(retVals.signed_serialized_tx_string)));
 	root.put(ret_json_key__create_transaction__tx_hash(), std::move(*(retVals.tx_hash_string)));
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root);
 	//
-	return ret_ss.str();
+	return ret_json_from_root(root);
 }
