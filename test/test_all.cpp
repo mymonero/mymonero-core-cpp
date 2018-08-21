@@ -319,9 +319,18 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 //
 //
 // Serialization bridge
+//
 #include "../src/serial_bridge_index.hpp"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+//
+string args_string_from_root(const boost::property_tree::ptree &root)
+{
+	stringstream args_ss;
+	boost::property_tree::write_json(args_ss, root, false/*pretty*/);
+	//
+	return args_ss.str();
+}
 BOOST_AUTO_TEST_CASE(bridged__transfers__create)
 {
 	using namespace serial_bridge;
@@ -430,9 +439,7 @@ BOOST_AUTO_TEST_CASE(bridged__transfers__create)
 	}
 	root.add_child("mix_outs", mix_outs);
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::create_transaction(args_ss.str());
+	auto ret_string = serial_bridge::create_transaction(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -460,9 +467,7 @@ BOOST_AUTO_TEST_CASE(bridged__decode_address)
 	root.put("nettype_string", string_from_nettype(MAINNET));
 	root.put("address", "4L6Gcy9TAHqPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPaL41VrjstLM5WevLZx");
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::decode_address(args_ss.str());
+	auto ret_string = serial_bridge::decode_address(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -497,9 +502,7 @@ BOOST_AUTO_TEST_CASE(bridged__is_subaddress)
 	root.put("nettype_string", string_from_nettype(MAINNET));
 	root.put("address", "4L6Gcy9TAHqPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPaL41VrjstLM5WevLZx");
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::is_subaddress(args_ss.str());
+	auto ret_string = serial_bridge::is_subaddress(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -522,9 +525,7 @@ BOOST_AUTO_TEST_CASE(bridged__is_integrated_address)
 	root.put("nettype_string", string_from_nettype(MAINNET));
 	root.put("address", "4L6Gcy9TAHqPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPaL41VrjstLM5WevLZx");
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::is_integrated_address(args_ss.str());
+	auto ret_string = serial_bridge::is_integrated_address(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -549,9 +550,7 @@ BOOST_AUTO_TEST_CASE(bridged__new_integrated_address)
 	root.put("address", "43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg");
 	root.put("short_pid", "b79f8efc81f58f67");
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::new_integrated_address(args_ss.str());
+	auto ret_string = serial_bridge::new_integrated_address(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -574,9 +573,7 @@ BOOST_AUTO_TEST_CASE(bridged__new_fake_address_for_rct_tx)
 	boost::property_tree::ptree root;
 	root.put("nettype_string", string_from_nettype(MAINNET));
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::new_fake_address_for_rct_tx(args_ss.str());
+	auto ret_string = serial_bridge::new_fake_address_for_rct_tx(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -597,9 +594,7 @@ BOOST_AUTO_TEST_CASE(bridged__new_short_payment_id)
 	//
 	boost::property_tree::ptree root;
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::new_payment_id(args_ss.str());
+	auto ret_string = serial_bridge::new_payment_id(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -622,9 +617,7 @@ BOOST_AUTO_TEST_CASE(bridged__new_wallet)
 	root.put("nettype_string", string_from_nettype(MAINNET));
 	root.put("wordset_name", "English");
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::newly_created_wallet(args_ss.str());
+	auto ret_string = serial_bridge::newly_created_wallet(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -671,9 +664,7 @@ BOOST_AUTO_TEST_CASE(bridged__mnemonic_from_seed)
 	root.put("seed_string", "9c973aa296b79bbf452781dd3d32ad7f");
 	root.put("wordset_name", "English");
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::mnemonic_from_seed(args_ss.str());
+	auto ret_string = serial_bridge::mnemonic_from_seed(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -696,9 +687,7 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	root.put("mnemonic_string", "foxe selfish hum nexus juven dodeg pepp ember biscuti elap jazz vibrate biscui");
 	root.put("wordset_name", "English");
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::seed_and_keys_from_mnemonic(args_ss.str());
+	auto ret_string = serial_bridge::seed_and_keys_from_mnemonic(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -744,9 +733,7 @@ BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login)
 	root.put("seed_string", "9c973aa296b79bbf452781dd3d32ad7f");
 	root.put("nettype_string", string_from_nettype(MAINNET));
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::validate_components_for_login(args_ss.str());
+	auto ret_string = serial_bridge::validate_components_for_login(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -779,9 +766,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
 	root.put("fee_per_kb", "9000000");
 	root.put("priority", "2");
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::estimated_tx_network_fee(args_ss.str());
+	auto ret_string = serial_bridge::estimated_tx_network_fee(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -810,9 +795,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
 	root.put("extra_size", extra.size());
 	root.put("bulletproof", monero_fork_rules::lightwallet_hardeded__use_bulletproofs());
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::estimate_rct_tx_size(args_ss.str());
+	auto ret_string = serial_bridge::estimate_rct_tx_size(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -838,9 +821,7 @@ BOOST_AUTO_TEST_CASE(bridged__calculate_fee)
 	root.put("num_bytes", "13762");
 	root.put("fee_multiplier", "4"); // aka priority idx 1 / number 2
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::calculate_fee(args_ss.str());
+	auto ret_string = serial_bridge::calculate_fee(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
@@ -868,9 +849,7 @@ BOOST_AUTO_TEST_CASE(bridged__generate_key_image)
 	root.put("tx_pub_key", "fc7f85bf64c6e4f6aa612dbc8ddb1bb77a9283656e9c2b9e777c9519798622b2");
 	root.put("out_index", "0");
 	//
-	stringstream args_ss;
-	boost::property_tree::write_json(args_ss, root);
-	auto ret_string = serial_bridge::generate_key_image(args_ss.str());
+	auto ret_string = serial_bridge::generate_key_image(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
