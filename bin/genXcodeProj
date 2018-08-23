@@ -5,7 +5,7 @@
 ESCAPEDSRCROOT="$(pwd | sed 's/\//\\\//g')";
 mkdir -p xcode;
 cd xcode && 
-cmake -G Xcode .. -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl &&
+cmake -G Xcode .. &&
 echo "$ 's/$ESCAPEDSRCROOT/\${SRCROOT}/g'" && #remove personally identifying info of proj generator
 LC_CTYPE=C LANG=C find TEST.xcodeproj -type f -print0 -exec sed -i "" 's/'"$ESCAPEDSRCROOT"'/${SRCROOT}/g' {} + &&
 

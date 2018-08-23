@@ -6,12 +6,6 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 project(TEST)
 enable_testing()
 
-#Find openSSL
-find_package(OpenSSL COMPONENTS
-	crypto REQUIRED
-	ssl REQUIRED
-)
-
 #Prep ourselves for compiling boost
 find_package(Boost COMPONENTS 
     unit_test_framework REQUIRED
@@ -138,7 +132,6 @@ foreach(testSrc ${TEST_SRCS})
     target_link_libraries(
         ${testName}
         #
-        OpenSSL::SSL
         ${Boost_LIBRARIES} 
     )
     set_target_properties(

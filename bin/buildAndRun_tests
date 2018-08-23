@@ -3,6 +3,6 @@
 mkdir -p build;
 
 cd build && 
-cmake  .. -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl &&
+cmake  .. &&
 cmake --build . &&
 CTEST_OUTPUT_ON_FAILURE=1 ctest -VV
