@@ -53,6 +53,7 @@ namespace serial_bridge
 	string new_payment_id(const string &args_string);
 	//
 	string newly_created_wallet(const string &args_string); // TODO: maybe expose random scalar as arg
+	string are_equal_mnemonics(const string &args_string);
 	string mnemonic_from_seed(const string &args_string);
 	string seed_and_keys_from_mnemonic(const string &args_string);
 	string validate_components_for_login(const string &args_string);
@@ -80,6 +81,7 @@ namespace serial_bridge
 	static inline string ret_json_key__paymentID_string() { return "paymentID_string"; } // optional
 	static inline string ret_json_key__isSubaddress() { return "isSubaddress"; }
 	static inline string ret_json_key__mnemonic_string() { return "mnemonic_string"; }
+	static inline string ret_json_key__mnemonic_language() { return "mnemonic_language"; }
 	static inline string ret_json_key__sec_seed_string() { return "sec_seed_string"; }
 	static inline string ret_json_key__address_string() { return "address_string"; }
 	static inline string ret_json_key__pub_viewKey_string() { return "pub_viewKey_string"; }

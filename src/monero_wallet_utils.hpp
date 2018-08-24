@@ -50,6 +50,8 @@ namespace monero_wallet_utils
 	using namespace std;
 	using namespace boost;
 	using namespace tools;
+	using namespace crypto;
+	using namespace cryptonote;
 	//
 	// 16B keys
 	POD_CLASS ec_nonscalar_16Byte {
@@ -59,31 +61,33 @@ namespace monero_wallet_utils
 	using legacy16B_secret_key = tools::scrubbed<ec_nonscalar_16Byte>;
 	void coerce_valid_sec_key_from(
 		const legacy16B_secret_key &legacy16B_mymonero_sec_seed,
-		crypto::secret_key &dst__sec_seed
+		secret_key &dst__sec_seed
 	);
 	static_assert(sizeof(legacy16B_secret_key) == 16, "Invalid structure size");
 	inline std::ostream &operator <<(std::ostream &o, const legacy16B_secret_key &v) {
 		epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
 	}
 	const static legacy16B_secret_key null_legacy16B_skey = boost::value_initialized<legacy16B_secret_key>();
-	const static unsigned long sec_seed_hex_string_length = sizeof(crypto::secret_key) * 2;
+	const static unsigned long sec_seed_hex_string_length = sizeof(secret_key) * 2;
 	const static unsigned long legacy16B__sec_seed_hex_string_length = sizeof(legacy16B_secret_key) * 2;
 	//
 	bool words_to_bytes(std::string words, legacy16B_secret_key& dst, std::string &language_name);
 	bool bytes_to_words(const legacy16B_secret_key& src, std::string& words, const std::string &language_name);
+	//
+	bool are_equal_mnemonics(const string &words_a, const string &words_b);
  	//
 	//
 	// Accounts
 	struct MnemonicDecodedSeed_RetVals: RetVals_base
 	{
-		optional<crypto::secret_key> optl__sec_seed = none;
+		optional<secret_key> optl__sec_seed = none;
 		optional<string> optl__sec_seed_string = none;
 		optional<string> optl__mnemonic_string = none;
+		optional<string> mnemonic_language = none;
 		bool from_legacy16B_lw_seed = false;
 	};
 	bool decoded_seed(
-		string mnemonic_string,
-		string mnemonic_language,
+		const string &mnemonic_string,
 		//
 		MnemonicDecodedSeed_RetVals &retVals
 	);
@@ -104,27 +108,27 @@ namespace monero_wallet_utils
 		//
 		string address_string;
 		//
-		crypto::secret_key sec_spendKey;
-		crypto::secret_key sec_viewKey;
-		crypto::public_key pub_spendKey;
-		crypto::public_key pub_viewKey;
+		secret_key sec_spendKey;
+		secret_key sec_viewKey;
+		public_key pub_spendKey;
+		public_key pub_viewKey;
 		//
-		std::string mnemonic_string; // mnemonic_language is not returned because it must be provided to all functions which can return a WalletDescription
+		string mnemonic_string;
+		string mnemonic_language; // this might be redundant if the function returning this WalletDescription itself required the language, such as new_wallet
 	};
 	struct WalletDescriptionRetVals: RetVals_base
 	{
-		boost::optional<WalletDescription> optl__desc = boost::none;
+		optional<WalletDescription> optl__desc = boost::none;
 	};
 	bool new_wallet(
 		const string &mnemonic_language,
 		WalletDescriptionRetVals &retVals,
-		cryptonote::network_type nettype = cryptonote::MAINNET
+		network_type nettype = MAINNET
 	);
 	bool wallet_with(
 		const string &mnemonic_string,
-		const string &mnemonic_language,
 		WalletDescriptionRetVals &retVals,
-		cryptonote::network_type nettype = cryptonote::MAINNET
+		network_type nettype = MAINNET
 	);
 	//
 	struct WalletComponentsValidationResults: RetVals_base
@@ -139,7 +143,7 @@ namespace monero_wallet_utils
 		const string &sec_viewKey_string,
 		optional<string> sec_spendKey_string,
 		optional<string> sec_seed_string,
-		cryptonote::network_type nettype,
+		network_type nettype,
 		WalletComponentsValidationResults &retVals
 	);
 }

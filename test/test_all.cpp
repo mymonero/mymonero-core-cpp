@@ -656,6 +656,29 @@ BOOST_AUTO_TEST_CASE(bridged__new_wallet)
 	cout << "bridged__new_wallet: sec_spendKey_string: " << *sec_spendKey_string << endl;
 }
 //
+BOOST_AUTO_TEST_CASE(bridged__are_equal_mnemonics)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("a", "foxe selfish hum nexus juven dodeg pepp ember biscuti elap jazz vibrate biscui");
+	root.put("b", "fox sel hum nex juv dod pep emb bis ela jaz vib bis");
+	//
+	auto ret_string = serial_bridge::are_equal_mnemonics(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<bool> value = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(value != none);
+	BOOST_REQUIRE(*value != false);
+	cout << "bridged__are_equal_mnemonics: " << *value << endl;
+}
+//
 BOOST_AUTO_TEST_CASE(bridged__mnemonic_from_seed)
 {
 	using namespace serial_bridge;
@@ -685,7 +708,6 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	//
 	boost::property_tree::ptree root;
 	root.put("mnemonic_string", "foxe selfish hum nexus juven dodeg pepp ember biscuti elap jazz vibrate biscui");
-	root.put("wordset_name", "English");
 	//
 	auto ret_string = serial_bridge::seed_and_keys_from_mnemonic(args_string_from_root(root));
 	stringstream ret_stream;
@@ -696,6 +718,10 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
+	optional<string> mnemonic_language = ret_tree.get_optional<string>(ret_json_key__mnemonic_language());
+	BOOST_REQUIRE(mnemonic_language != none);
+	BOOST_REQUIRE((*mnemonic_language).size() > 0);
+	cout << "bridged__seed_and_keys_from_mnemonic: mnemonic_language: " << *mnemonic_language << endl;
 	optional<string> sec_seed_string = ret_tree.get_optional<string>(ret_json_key__sec_seed_string());
 	BOOST_REQUIRE(sec_seed_string != none);
 	BOOST_REQUIRE((*sec_seed_string).size() > 0);

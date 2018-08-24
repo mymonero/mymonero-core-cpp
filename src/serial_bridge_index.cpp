@@ -255,6 +255,27 @@ string serial_bridge::newly_created_wallet(const string &args_string)
 	//
 	return ret_json_from_root(root);
 }
+string serial_bridge::are_equal_mnemonics(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	bool equal;
+	try {
+		equal = monero_wallet_utils::are_equal_mnemonics(
+			json_root.get<string>("a"),
+			json_root.get<string>("b")
+		);
+	} catch (std::exception const& e) {
+		return error_ret_json_from_message(e.what());
+	}
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), equal);
+	//
+	return ret_json_from_root(root);
+}
 string serial_bridge::mnemonic_from_seed(const string &args_string)
 {
 	boost::property_tree::ptree json_root;
@@ -268,7 +289,7 @@ string serial_bridge::mnemonic_from_seed(const string &args_string)
 	);
 	boost::property_tree::ptree root;
 	if (retVals.err_string != none) {
-		error_ret_json_from_message(*(retVals.err_string));
+		return error_ret_json_from_message(*(retVals.err_string));
 	}
 	root.put(ret_json_key__generic_retVal(), *(retVals.mnemonic_string));
 	//
@@ -284,7 +305,6 @@ string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
 	monero_wallet_utils::WalletDescriptionRetVals retVals;
 	bool r = monero_wallet_utils::wallet_with(
 		json_root.get<string>("mnemonic_string"),
-		json_root.get<string>("wordset_name"),
 		retVals
 	);
 	bool did_error = retVals.did_error;
@@ -297,6 +317,7 @@ string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
 	//
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__sec_seed_string(), (*(retVals.optl__desc)).sec_seed_string);
+	root.put(ret_json_key__mnemonic_language(), (*(retVals.optl__desc)).mnemonic_language);
 	root.put(ret_json_key__address_string(), (*(retVals.optl__desc)).address_string);
 	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
 	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));

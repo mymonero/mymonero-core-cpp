@@ -35,6 +35,7 @@
 #include "cryptonote_basic.h"
 #include "device/device.hpp"
 #include "cryptonote_basic/account.h"
+#include "wallet_errors.h" // not crazy about including this but it's not that bad
 #include "keccak.h"
 //
 #include "string_tools.h"
@@ -105,7 +106,7 @@ bool monero_wallet_utils::new_wallet(
 	std::string address_string = account.get_public_address_str(nettype); // getting the string here instead of leaving it to the consumer b/c get_public_address_str could potentially change in implementation (see TODO) so it's not right to duplicate that here
 	//
 	std::string mnemonic_string;
-	bool r = crypto::ElectrumWords::bytes_to_words(nonLegacy32B_sec_seed, mnemonic_string, std::move(mnemonic_language));
+	bool r = crypto::ElectrumWords::bytes_to_words(nonLegacy32B_sec_seed, mnemonic_string, mnemonic_language);
 	// ^-- it's OK to directly call ElectrumWords w/ crypto::secret_key as we are generating new wallet, not reading
 	if (!r) {
 		retVals.did_error = true;
@@ -124,28 +125,44 @@ bool monero_wallet_utils::new_wallet(
 		keys.m_account_address.m_spend_public_key,
 		keys.m_account_address.m_view_public_key,
 		//
-		mnemonic_string
+		mnemonic_string,
+		mnemonic_language
 	};
 	return true;
+}
+//
+bool monero_wallet_utils::are_equal_mnemonics(const string &words_a, const string &words_b)
+{
+	bool r;
+	//
+	MnemonicDecodedSeed_RetVals retVals__a;
+	r = decoded_seed(std::move(words_a), retVals__a);
+	THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Can't check equality of invalid mnemonic (a)");
+	//
+	MnemonicDecodedSeed_RetVals retVals__b;
+	r = decoded_seed(std::move(words_b), retVals__b);
+	THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Can't check equality of invalid mnemonic (b)");
+	//
+	return *(retVals__a.optl__sec_seed) == *(retVals__b.optl__sec_seed);
 }
 //
 const uint32_t stable_32B_seed_mnemonic_word_count = 25;
 const uint32_t legacy_16B_seed_mnemonic_word_count = 13;
 
 bool monero_wallet_utils::decoded_seed(
-	string mnemonic_string,
-	string mnemonic_language,
+	const string &mnemonic_string__ref,
 	MnemonicDecodedSeed_RetVals &retVals
 ) {
 	retVals = {};
 	//
 	// sanitize inputs
-	if (mnemonic_string.empty()) {
+	if (mnemonic_string__ref.empty()) {
 		retVals.did_error = true;
 		retVals.err_string = "Please enter a valid seed";
 		//
 		return false;
 	}
+	string mnemonic_string = mnemonic_string__ref; // just going to take a copy rather than require people to pass mutable string in.
 	boost::algorithm::to_lower(mnemonic_string); // critical
 	// TODO: strip wrapping whitespace? anything else?
 	//
@@ -153,8 +170,9 @@ bool monero_wallet_utils::decoded_seed(
 	unsigned long word_count = std::distance(std::istream_iterator<std::string>(stream), std::istream_iterator<std::string>());
 	//	unsigned long word_count = boost::range::distance(boost::algorithm::make_split_iterator(mnemonic_string, boost::algorithm::is_space())); // TODO: get this workin
 	//
-	crypto::secret_key sec_seed;
-	std::string sec_seed_string; // TODO/FIXME: needed this for shared ref outside of if branch below… not intending extra default constructor call but not sure how to get around it yet
+	secret_key sec_seed;
+	string sec_seed_string; // TODO/FIXME: needed this for shared ref outside of if branch below… not intending extra default constructor call but not sure how to get around it yet
+	string mnemonic_language;
 	bool from_legacy16B_lw_seed = false;
 	if (word_count == stable_32B_seed_mnemonic_word_count) {
 		from_legacy16B_lw_seed = false; // to be clear
@@ -184,6 +202,7 @@ bool monero_wallet_utils::decoded_seed(
 		//
 		return false;
 	}
+	retVals.mnemonic_language = mnemonic_language;
 	retVals.optl__sec_seed = sec_seed;
 	retVals.optl__sec_seed_string = sec_seed_string;
 	retVals.optl__mnemonic_string = mnemonic_string; 
@@ -236,14 +255,13 @@ SeedDecodedMnemonic_RetVals monero_wallet_utils::mnemonic_string_from_seed_hex_s
 //
 bool monero_wallet_utils::wallet_with(
 	const string &mnemonic_string,
-	const string &mnemonic_language,
 	WalletDescriptionRetVals &retVals,
 	cryptonote::network_type nettype
 ) {
 	retVals = {};
 	//
 	MnemonicDecodedSeed_RetVals decodedSeed_retVals;
-	bool r = decoded_seed(std::move(mnemonic_string), std::move(mnemonic_language), decodedSeed_retVals);
+	bool r = decoded_seed(mnemonic_string, decodedSeed_retVals);
 	if (!r) {
 		retVals.did_error = true;
 		retVals.err_string = *decodedSeed_retVals.err_string; // TODO: assert?
@@ -268,6 +286,7 @@ bool monero_wallet_utils::wallet_with(
 		keys.m_account_address.m_view_public_key,
 		//
 		*decodedSeed_retVals.optl__mnemonic_string, // assumed non nil if r; copied for return
+		*decodedSeed_retVals.mnemonic_language
 	};
 	return true;
 }
