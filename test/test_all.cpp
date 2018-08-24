@@ -708,6 +708,7 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	//
 	boost::property_tree::ptree root;
 	root.put("mnemonic_string", "foxe selfish hum nexus juven dodeg pepp ember biscuti elap jazz vibrate biscui");
+	root.put("nettype_string", string_from_nettype(MAINNET));
 	//
 	auto ret_string = serial_bridge::seed_and_keys_from_mnemonic(args_string_from_root(root));
 	stringstream ret_stream;

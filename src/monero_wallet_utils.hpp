@@ -123,12 +123,12 @@ namespace monero_wallet_utils
 	bool new_wallet(
 		const string &mnemonic_language,
 		WalletDescriptionRetVals &retVals,
-		network_type nettype = MAINNET
+		network_type nettype
 	);
 	bool wallet_with(
 		const string &mnemonic_string,
 		WalletDescriptionRetVals &retVals,
-		network_type nettype = MAINNET
+		network_type nettype
 	);
 	//
 	struct WalletComponentsValidationResults: RetVals_base

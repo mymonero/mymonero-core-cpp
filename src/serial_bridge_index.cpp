@@ -305,7 +305,8 @@ string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
 	monero_wallet_utils::WalletDescriptionRetVals retVals;
 	bool r = monero_wallet_utils::wallet_with(
 		json_root.get<string>("mnemonic_string"),
-		retVals
+		retVals,
+		nettype_from_string(json_root.get<string>("nettype_string"))
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
