@@ -9,32 +9,32 @@ enable_testing()
 #Prep ourselves for compiling boost
 find_package(Boost COMPONENTS 
     unit_test_framework REQUIRED
-    atomic REQUIRED
-    chrono REQUIRED
-    context REQUIRED
-    date_time REQUIRED
-    exception REQUIRED
-    filesystem REQUIRED
-    graph REQUIRED
-    iostreams REQUIRED
-    math_c99 REQUIRED
-    math_c99f REQUIRED
-    math_c99l REQUIRED
-    math_tr1 REQUIRED
-    math_tr1f REQUIRED
-    math_tr1l REQUIRED
-    prg_exec_monitor REQUIRED
-    program_options REQUIRED
-    random REQUIRED
-    regex REQUIRED
-    serialization REQUIRED
-    signals REQUIRED
+    # atomic REQUIRED
+    # chrono REQUIRED
+    # context REQUIRED
+    # date_time REQUIRED
+    # exception REQUIRED
+    # filesystem REQUIRED
+    # graph REQUIRED
+    # iostreams REQUIRED
+    # math_c99 REQUIRED
+    # math_c99f REQUIRED
+    # math_c99l REQUIRED
+    # math_tr1 REQUIRED
+    # math_tr1f REQUIRED
+    # math_tr1l REQUIRED
+    # prg_exec_monitor REQUIRED
+    # program_options REQUIRED
+    # random REQUIRED
+    # regex REQUIRED
+    # serialization REQUIRED
+    # signals REQUIRED
     system REQUIRED
-    test_exec_monitor REQUIRED
+    # test_exec_monitor REQUIRED
     thread REQUIRED
-    timer REQUIRED
-    wave REQUIRED
-    wserialization REQUIRED
+    # timer REQUIRED
+    # wave REQUIRED
+    # wserialization REQUIRED
 )
 
 set(MONERO_SRC "contrib/monero-core-custom")
