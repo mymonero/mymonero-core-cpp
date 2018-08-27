@@ -239,7 +239,6 @@ string serial_bridge::newly_created_wallet(const string &args_string)
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
-		THROW_WALLET_EXCEPTION_IF(!did_error, error::wallet_internal_error, "Illegal fail flag with !did_error");
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
 	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
@@ -311,7 +310,6 @@ string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
-		THROW_WALLET_EXCEPTION_IF(!did_error, error::wallet_internal_error, "Illegal fail flag but !did_error");
 		return error_ret_json_from_message(*retVals.err_string);
 	}
 	monero_wallet_utils::WalletDescription walletDescription = *(retVals.optl__desc);
@@ -346,7 +344,6 @@ string serial_bridge::validate_components_for_login(const string &args_string)
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
-		THROW_WALLET_EXCEPTION_IF(!did_error, error::wallet_internal_error, "Illegal fail flag but !did_error");
 		return error_ret_json_from_message(*retVals.err_string);
 	}
 	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
