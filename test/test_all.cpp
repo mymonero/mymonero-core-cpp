@@ -619,7 +619,7 @@ BOOST_AUTO_TEST_CASE(bridged__new_wallet)
 	//
 	boost::property_tree::ptree root;
 	root.put("nettype_string", string_from_nettype(MAINNET));
-	root.put("locale_language_code", "en");
+	root.put("locale_language_code", "en-US");
 	//
 	auto ret_string = serial_bridge::newly_created_wallet(args_string_from_root(root));
 	stringstream ret_stream;

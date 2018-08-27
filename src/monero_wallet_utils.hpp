@@ -120,31 +120,37 @@ namespace monero_wallet_utils
 	{
 		optional<WalletDescription> optl__desc = boost::none;
 	};
-	inline optional<string> mnemonic_language_from_code(const string &language_code)
+	inline bool is_prefixed_by(const string &haystack, const string &needle)
 	{
-		if (language_code == "en") {
+		auto res = std::mismatch(needle.begin(), needle.end(), haystack.begin());
+		//
+		return res.first == needle.end();
+	}
+	inline optional<string> mnemonic_language_from_code(const string &language_code)
+	{ // using is_prefixed_by so that e.g. en-US would match as en
+		if (is_prefixed_by(language_code, "en")) {
 			return string("English");
-		} else if (language_code == "nl") { // Dutch language
+		} else if (is_prefixed_by(language_code, "nl")) { // Dutch language
 			return string("Nederlands");
-		} else if (language_code == "fr") {
+		} else if (is_prefixed_by(language_code, "fr")) {
 			return string("Français");
-		} else if (language_code == "es") {
+		} else if (is_prefixed_by(language_code, "es")) {
 			return string("Español");
-		} else if (language_code == "pt") {
+		} else if (is_prefixed_by(language_code, "pt")) {
 			return string("Português");
-		} else if (language_code == "ja") {
+		} else if (is_prefixed_by(language_code, "ja")) {
 			return string("日本語");
-		} else if (language_code == "it") {
+		} else if (is_prefixed_by(language_code, "it")) {
 			return string("Italiano");
-		} else if (language_code == "de") {
+		} else if (is_prefixed_by(language_code, "de")) {
 			return string("Deutsch");
-		} else if (language_code == "ru") {
+		} else if (is_prefixed_by(language_code, "ru")) {
 			return string("русский язык");
-		} else if (language_code == "zh") { // Chinese language, simplified
+		} else if (is_prefixed_by(language_code, "zh")) { // Chinese language, simplified
 			return string("简体中文 (中国)");
-		} else if (language_code == "eo" || language_code == "epo") {
+		} else if (is_prefixed_by(language_code, "eo") || is_prefixed_by(language_code, "epo")) {
 			return string("Esperanto");
-		} else if (language_code == "jbo") {
+		} else if (is_prefixed_by(language_code, "jbo")) {
 			return string("Lojban");
 		} else {
 			return none; // error .. possibly throw?
