@@ -543,6 +543,8 @@ void monero_transfer_utils::create_transaction(
 	THROW_WALLET_EXCEPTION_IF(use_bulletproofs != bulletproof, error::wallet_internal_error, "Expected tx use_bulletproofs to equal bulletproof flag");
 	//
 	retVals.tx = tx;
+	retVals.tx_key = tx_key;
+	retVals.additional_tx_keys = additional_tx_keys;
 }
 //
 //
@@ -653,13 +655,23 @@ void monero_transfer_utils::convenience__create_transaction(
 		retVals.errCode = actualCall_retVals.errCode; // pass-through
 		return; // already set the error
 	}
-	auto txBlob = t_serializable_object_to_blob(actualCall_retVals.tx);
+	auto txBlob = t_serializable_object_to_blob(*actualCall_retVals.tx);
 	size_t txBlob_byteLength = txBlob.size();
 	//	cout << "txBlob: " << txBlob << endl;
 	cout << "txBlob_byteLength: " << txBlob_byteLength << endl;
 	THROW_WALLET_EXCEPTION_IF(txBlob_byteLength <= 0, error::wallet_internal_error, "Expected tx blob byte length > 0");
 	//
 	// tx hash
-	retVals.tx_hash_string = epee::string_tools::pod_to_hex(cryptonote::get_transaction_hash(actualCall_retVals.tx));
-	retVals.signed_serialized_tx_string = epee::string_tools::buff_to_hex_nodelimer(cryptonote::tx_to_blob(actualCall_retVals.tx));
+	retVals.tx_hash_string = epee::string_tools::pod_to_hex(cryptonote::get_transaction_hash(*actualCall_retVals.tx));
+	// signed serialized tx
+	retVals.signed_serialized_tx_string = epee::string_tools::buff_to_hex_nodelimer(cryptonote::tx_to_blob(*actualCall_retVals.tx));
+	// (concatenated) tx key
+	ostringstream oss;
+	{
+		oss << epee::string_tools::pod_to_hex(*actualCall_retVals.tx_key);
+		for (size_t i = 0; i < (*actualCall_retVals.additional_tx_keys).size(); ++i) {
+			oss << epee::string_tools::pod_to_hex((*actualCall_retVals.additional_tx_keys)[i]);
+		}
+	}
+	retVals.tx_key_string = oss.str();
 }

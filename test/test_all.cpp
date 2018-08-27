@@ -303,16 +303,16 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 		BOOST_REQUIRE_MESSAGE(false, "create_transaction failed");
 		return;
 	}
-	auto txBlob = t_serializable_object_to_blob(retVals.tx);
+	auto txBlob = t_serializable_object_to_blob(*retVals.tx);
 	size_t txBlob_byteLength = txBlob.size();
 //	cout << "txBlob: " << txBlob << endl;
 	cout << "transfers__create: txBlob_byteLength: " << txBlob_byteLength << endl;
 	BOOST_REQUIRE(txBlob_byteLength > 0);
 
 	// tx hash
-	auto tx_hash_string = epee::string_tools::pod_to_hex(cryptonote::get_transaction_hash(retVals.tx));
-	auto signed_serialized_tx_string = epee::string_tools::buff_to_hex_nodelimer(cryptonote::tx_to_blob(retVals.tx));
-
+	auto tx_hash_string = epee::string_tools::pod_to_hex(cryptonote::get_transaction_hash(*retVals.tx));
+	auto signed_serialized_tx_string = epee::string_tools::buff_to_hex_nodelimer(cryptonote::tx_to_blob(*retVals.tx));
+	
 	cout << "transfers__create: tx_hash_string: " << tx_hash_string << endl;
 	cout << "transfers__create: signed_serialized_tx_string: " << signed_serialized_tx_string << endl;
 }
@@ -450,6 +450,7 @@ BOOST_AUTO_TEST_CASE(bridged__transfers__create)
 		BOOST_REQUIRE_MESSAGE(false, err_msg);
 	}
 	optional<string> tx_hash = ret_tree.get_optional<string>(ret_json_key__create_transaction__tx_hash());
+	optional<string> tx_key_string = ret_tree.get_optional<string>(ret_json_key__create_transaction__tx_key());
 	optional<string> serialized_signed_tx = ret_tree.get_optional<string>(ret_json_key__create_transaction__serialized_signed_tx());
 	BOOST_REQUIRE(serialized_signed_tx != none);
 	BOOST_REQUIRE((*serialized_signed_tx).size() > 0);
@@ -457,6 +458,9 @@ BOOST_AUTO_TEST_CASE(bridged__transfers__create)
 	BOOST_REQUIRE(tx_hash != none);
 	BOOST_REQUIRE((*tx_hash).size() > 0);
 	cout << "bridged__transfers__create: tx_hash: " << *tx_hash << endl;
+	BOOST_REQUIRE(tx_key_string != none);
+	BOOST_REQUIRE((*tx_key_string).size() > 0);
+	cout << "bridged__transfers__create: tx_key_string: " << *tx_key_string << endl;
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__decode_address)

@@ -549,6 +549,7 @@ string serial_bridge::create_transaction(const string &args_string)
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__create_transaction__serialized_signed_tx(), std::move(*(retVals.signed_serialized_tx_string)));
 	root.put(ret_json_key__create_transaction__tx_hash(), std::move(*(retVals.tx_hash_string)));
+	root.put(ret_json_key__create_transaction__tx_key(), std::move(*(retVals.tx_key_string)));
 	//
 	return ret_json_from_root(root);
 }

@@ -175,7 +175,9 @@ namespace monero_transfer_utils
 	{
 		CreateTransactionErrorCode errCode;
 		//
-		cryptonote::transaction tx;
+		optional<transaction> tx;
+		optional<secret_key> tx_key;
+		optional<vector<secret_key>> additional_tx_keys;
 	};
 	// TODO: add priority
 	void create_transaction(
@@ -200,6 +202,7 @@ namespace monero_transfer_utils
 		//
 		optional<string> signed_serialized_tx_string;
 		optional<string> tx_hash_string;
+		optional<string> tx_key_string; // this includes additional_tx_keys
 	};
 	void convenience__create_transaction(
 		Convenience_TransactionConstruction_RetVals &retVals,

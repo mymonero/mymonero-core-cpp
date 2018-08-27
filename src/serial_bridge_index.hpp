@@ -77,6 +77,7 @@ namespace serial_bridge
 	// - - create_transaction
 	static inline string ret_json_key__create_transaction__serialized_signed_tx() { return "serialized_signed_tx"; }
 	static inline string ret_json_key__create_transaction__tx_hash() { return "tx_hash"; }
+	static inline string ret_json_key__create_transaction__tx_key() { return "tx_key"; }
 	// - - decode_address, etc
 	static inline string ret_json_key__paymentID_string() { return "paymentID_string"; } // optional
 	static inline string ret_json_key__isSubaddress() { return "isSubaddress"; }
