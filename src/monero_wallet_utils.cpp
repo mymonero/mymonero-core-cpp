@@ -92,10 +92,24 @@ bool monero_wallet_utils::bytes_to_words(
 	);
 }
 //
+bool monero_wallet_utils::convenience__new_wallet_with_language_code(
+	const string &locale_language_code,
+	WalletDescriptionRetVals &retVals,
+	network_type nettype
+) {
+	auto mnemonic_language = mnemonic_language_from_code(locale_language_code);
+	if (mnemonic_language == none) {
+		retVals.did_error = true;
+		retVals.err_string = "Unrecognized locale language code";
+		return false;
+	}
+	return new_wallet(*mnemonic_language, retVals, nettype);
+}
+//
 bool monero_wallet_utils::new_wallet(
     const string &mnemonic_language,
 	WalletDescriptionRetVals &retVals,
-	cryptonote::network_type nettype
+	network_type nettype
 ) {
 	retVals = {};
 	//

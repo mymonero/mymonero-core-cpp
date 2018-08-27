@@ -42,17 +42,17 @@ namespace serial_bridge
 	using namespace cryptonote;
 	//
 	// Bridging Functions - these take and return JSON strings
-	string create_transaction(const string &args_string); // TODO: maybe expose tx key as arg
+	string create_transaction(const string &args_string);
 	//
 	string decode_address(const string &args_string);
 	string is_subaddress(const string &args_string);
 	string is_integrated_address(const string &args_string);
 	//
 	string new_integrated_address(const string &args_string);
-	string new_fake_address_for_rct_tx(const string &args_string); // TODO: maybe expose random scalar as arg
+	string new_fake_address_for_rct_tx(const string &args_string);
 	string new_payment_id(const string &args_string);
 	//
-	string newly_created_wallet(const string &args_string); // TODO: maybe expose random scalar as arg
+	string newly_created_wallet(const string &args_string);
 	string are_equal_mnemonics(const string &args_string);
 	string mnemonic_from_seed(const string &args_string);
 	string seed_and_keys_from_mnemonic(const string &args_string);

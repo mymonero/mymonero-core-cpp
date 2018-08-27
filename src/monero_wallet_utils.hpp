@@ -114,12 +114,47 @@ namespace monero_wallet_utils
 		public_key pub_viewKey;
 		//
 		string mnemonic_string;
-		string mnemonic_language; // this might be redundant if the function returning this WalletDescription itself required the language, such as new_wallet
+		string mnemonic_language;
 	};
 	struct WalletDescriptionRetVals: RetVals_base
 	{
 		optional<WalletDescription> optl__desc = boost::none;
 	};
+	inline optional<string> mnemonic_language_from_code(const string &language_code)
+	{
+		if (language_code == "en") {
+			return string("English");
+		} else if (language_code == "nl") { // Dutch language
+			return string("Nederlands");
+		} else if (language_code == "fr") {
+			return string("Français");
+		} else if (language_code == "es") {
+			return string("Español");
+		} else if (language_code == "pt") {
+			return string("Português");
+		} else if (language_code == "ja") {
+			return string("日本語");
+		} else if (language_code == "it") {
+			return string("Italiano");
+		} else if (language_code == "de") {
+			return string("Deutsch");
+		} else if (language_code == "ru") {
+			return string("русский язык");
+		} else if (language_code == "zh") { // Chinese language, simplified
+			return string("简体中文 (中国)");
+		} else if (language_code == "eo" || language_code == "epo") {
+			return string("Esperanto");
+		} else if (language_code == "jbo") {
+			return string("Lojban");
+		} else {
+			return none; // error .. possibly throw?
+		}
+	};
+	bool convenience__new_wallet_with_language_code(
+		const string &locale_language_code,
+		WalletDescriptionRetVals &retVals,
+		network_type nettype
+	);
 	bool new_wallet(
 		const string &mnemonic_language,
 		WalletDescriptionRetVals &retVals,

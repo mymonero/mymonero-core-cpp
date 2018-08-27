@@ -619,7 +619,7 @@ BOOST_AUTO_TEST_CASE(bridged__new_wallet)
 	//
 	boost::property_tree::ptree root;
 	root.put("nettype_string", string_from_nettype(MAINNET));
-	root.put("wordset_name", "English");
+	root.put("locale_language_code", "en");
 	//
 	auto ret_string = serial_bridge::newly_created_wallet(args_string_from_root(root));
 	stringstream ret_stream;
@@ -634,6 +634,10 @@ BOOST_AUTO_TEST_CASE(bridged__new_wallet)
 	BOOST_REQUIRE(mnemonic_string != none);
 	BOOST_REQUIRE((*mnemonic_string).size() > 0);
 	cout << "bridged__new_wallet: mnemonic: " << *mnemonic_string << endl;
+	optional<string> mnemonic_language = ret_tree.get_optional<string>(ret_json_key__mnemonic_language());
+	BOOST_REQUIRE(mnemonic_language != none);
+	BOOST_REQUIRE((*mnemonic_language).size() > 0);
+	cout << "bridged__new_wallet: mnemonic_language: " << *mnemonic_language << endl;
 	optional<string> sec_seed_string = ret_tree.get_optional<string>(ret_json_key__sec_seed_string());
 	BOOST_REQUIRE(sec_seed_string != none);
 	BOOST_REQUIRE((*sec_seed_string).size() > 0);

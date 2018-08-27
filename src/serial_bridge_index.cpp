@@ -232,8 +232,8 @@ string serial_bridge::newly_created_wallet(const string &args_string)
 		return error_ret_json_from_message("Invalid JSON");
 	}
 	monero_wallet_utils::WalletDescriptionRetVals retVals;
-	bool r = monero_wallet_utils::new_wallet(
-		json_root.get<string>("wordset_name"),
+	bool r = monero_wallet_utils::convenience__new_wallet_with_language_code(
+		json_root.get<string>("locale_language_code"),
 		retVals,
 		nettype_from_string(json_root.get<string>("nettype_string"))
 	);
@@ -246,6 +246,7 @@ string serial_bridge::newly_created_wallet(const string &args_string)
 	//
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__mnemonic_string(), (*(retVals.optl__desc)).mnemonic_string);
+	root.put(ret_json_key__mnemonic_language(), (*(retVals.optl__desc)).mnemonic_language);
 	root.put(ret_json_key__sec_seed_string(), (*(retVals.optl__desc)).sec_seed_string);
 	root.put(ret_json_key__address_string(), (*(retVals.optl__desc)).address_string);
 	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
