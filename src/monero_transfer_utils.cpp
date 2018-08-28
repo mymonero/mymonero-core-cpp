@@ -304,6 +304,7 @@ void monero_transfer_utils::create_transaction(
 	const account_keys& sender_account_keys, // this will reference a particular hw::device
 	const uint32_t subaddr_account_idx,
 	const std::unordered_map<crypto::public_key, cryptonote::subaddress_index> &subaddresses,
+	const account_public_address &to_addr,
 	uint64_t sending_amount,
 	uint64_t change_amount,
 	uint64_t fee_amount,
@@ -477,6 +478,11 @@ void monero_transfer_utils::create_transaction(
 	//
 	// TODO: if this is a multisig wallet, create a list of multisig signers we can use
 	std::vector<cryptonote::tx_destination_entry> splitted_dsts;
+	tx_destination_entry to_dst = AUTO_VAL_INIT(to_dst);
+	to_dst.addr = to_addr;
+	to_dst.amount = sending_amount;
+	splitted_dsts.push_back(to_dst);
+	//
 	cryptonote::tx_destination_entry change_dst = AUTO_VAL_INIT(change_dst);
 	change_dst.amount = change_amount;
 	//
@@ -634,6 +640,7 @@ void monero_transfer_utils::convenience__create_transaction(
 		account_keys,
 		subaddr_account_idx,
 		subaddresses,
+		to_addr_info.address,
 		sending_amount,
 		change_amount,
 		fee_amount,

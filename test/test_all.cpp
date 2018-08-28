@@ -276,6 +276,7 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 		account_keys,
 		subaddr_account_idx,
 		subaddresses,
+		to_addr_info.address,
 		sending_amount,
 		112832250000, // change amount
 		fee_amount,
