@@ -355,14 +355,12 @@ BOOST_AUTO_TEST_CASE(bridged__transfers__create)
 		boost::property_tree::ptree dst;
 		dst.put("addr", to_address_string);
 		dst.put("amount", amount_string);
-		dst.put("is_subaddress", false);
 		dsts.push_back(std::make_pair("", dst));
 	}
 	{ // 1. change (otherwise we'd have to supply a dummy addr)
 		boost::property_tree::ptree dst;
 		dst.put("addr", from_address_string);
 		dst.put("amount", "112832250000");
-		dst.put("is_subaddress", false);
 		dsts.push_back(std::make_pair("", dst));
 	}
 	root.add_child("dsts", dsts);

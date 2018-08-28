@@ -479,8 +479,7 @@ string serial_bridge::create_transaction(const string &args_string)
 		cryptonote::address_parse_info de_addr_info;
 		THROW_WALLET_EXCEPTION_IF(!cryptonote::get_account_address_from_str(de_addr_info, nettype, dst_desc.second.get<string>("addr")), error::wallet_internal_error, "Invalid dsts.addr");
 		de.addr = de_addr_info.address;
-		de.is_subaddress = dst_desc.second.get<bool>("is_subaddress");
-		THROW_WALLET_EXCEPTION_IF(de.is_subaddress != de_addr_info.is_subaddress, error::wallet_internal_error, "Expected dsts.is_subaddress = parsed is_subaddress");
+		de.is_subaddress = de_addr_info.is_subaddress;
 		de.amount = stoull(dst_desc.second.get<string>("amount"));
 		//
 		dsts.push_back(de);
