@@ -524,7 +524,7 @@ string serial_bridge::create_transaction(const string &args_string)
 		{
 		   return lightwallet_hardcoded__use_fork_rules(version, early_blocks);
 		},
-		0, // unlock_time
+		stoull(json_root.get<string>("unlock_time")),
 		nettype
 	);
 	if (retVals.errCode != noError) {

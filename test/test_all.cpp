@@ -339,6 +339,7 @@ BOOST_AUTO_TEST_CASE(bridged__transfers__create)
 	root.put("sending_amount", amount_string);
 	root.put("change_amount", "112832250000");
 	root.put("fee_amount", "2167750000");
+	root.put("unlock_time", "0");
 	//
 	boost::property_tree::ptree outputs;
 	{
