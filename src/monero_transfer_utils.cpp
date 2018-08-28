@@ -380,11 +380,10 @@ void monero_transfer_utils::create_transaction(
 				oe.first = mix_out__output.global_index;
 				//
 				crypto::public_key public_key = AUTO_VAL_INIT(public_key);
-				if(!string_tools::validate_hex(64, mix_out__output.public_key)) {
+				if(!string_tools::hex_to_pod(mix_out__output.public_key, public_key)) {
 					retVals.errCode = givenAnInvalidPubKey;
 					return;
 				}
-				string_tools::hex_to_pod(mix_out__output.public_key, public_key);
 				oe.second.dest = rct::pk2rct(public_key);
 				//
 				if (mix_out__output.rct != boost::none) {
@@ -440,8 +439,6 @@ void monero_transfer_utils::create_transaction(
 		}
 		string_tools::hex_to_pod(outputs[out_index].tx_pub_key, tx_pub_key);
 		src.real_out_tx_key = tx_pub_key;
-		//
-		add_tx_pub_key_to_extra(extra, tx_pub_key); // TODO: is this necessary? it doesn't seem to affect is_out_to_acc checks..
 		//
 		src.real_out_additional_tx_keys = get_additional_tx_pub_keys_from_extra(extra);
 		//
@@ -515,9 +512,8 @@ void monero_transfer_utils::create_transaction(
 		retVals.errCode = needMoreMoneyThanFound; // TODO: return actual found_money and needed_money in generalized err params in return val
 		return;
 	}
-	cryptonote::transaction tx;
-	// TODO: need to initialize tx here?
 	//
+	cryptonote::transaction tx;
 	auto sources_copy = sources;
 	crypto::secret_key tx_key;
 	std::vector<crypto::secret_key> additional_tx_keys;
@@ -660,7 +656,7 @@ void monero_transfer_utils::convenience__create_transaction(
 	auto txBlob = t_serializable_object_to_blob(*actualCall_retVals.tx);
 	size_t txBlob_byteLength = txBlob.size();
 	//	cout << "txBlob: " << txBlob << endl;
-	cout << "txBlob_byteLength: " << txBlob_byteLength << endl;
+//	cout << "txBlob_byteLength: " << txBlob_byteLength << endl;
 	THROW_WALLET_EXCEPTION_IF(txBlob_byteLength <= 0, error::wallet_internal_error, "Expected tx blob byte length > 0");
 	//
 	// tx hash
