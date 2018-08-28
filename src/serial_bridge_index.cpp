@@ -118,10 +118,13 @@ string error_ret_json_from_message(string err_msg)
 	//
 	return ret_json_from_root(root);
 }
-string error_ret_json_from_code(int code)
+string error_ret_json_from_code(int code, optional<string> err_msg)
 {
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__any__err_code(), code);
+	if (err_msg != none) {
+		root.put(ret_json_key__any__err_msg(), *err_msg);
+	}
 	//
 	return ret_json_from_root(root);
 }
@@ -539,7 +542,7 @@ string serial_bridge::create_transaction(const string &args_string)
 		nettype
 	);
 	if (retVals.errCode != noError) {
-		return error_ret_json_from_code(retVals.errCode);
+		return error_ret_json_from_code(retVals.errCode, err_msg_from_err_code__create_transaction(retVals.errCode));
 	}
 	THROW_WALLET_EXCEPTION_IF(retVals.signed_serialized_tx_string == boost::none, error::wallet_internal_error, "Not expecting no signed_serialized_tx_string given no error");
 	//
