@@ -338,11 +338,12 @@ void monero_transfer_utils::create_transaction(
 		retVals.errCode = invalidSecretKeys;
 		return;
 	}
-	uint64_t needed_money = sending_amount + change_amount + fee_amount; // TODO: is this correct?
-	if (needed_money > UINT64_MAX) {
+	if (sending_amount > std::numeric_limits<uint64_t>::max() - change_amount
+		|| sending_amount + change_amount > std::numeric_limits<uint64_t>::max() - fee_amount) {
 		retVals.errCode = outputAmountOverflow;
 		return;
 	}
+	uint64_t needed_money = sending_amount + change_amount + fee_amount; // TODO: is this correct?
 	//
 	uint64_t found_money = 0;
 	std::vector<tx_source_entry> sources;
