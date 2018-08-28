@@ -185,10 +185,11 @@ namespace monero_transfer_utils
 		const account_keys& sender_account_keys, // this will reference a particular hw::device
 		const uint32_t subaddr_account_idx, // pass 0 for no subaddrs
 		const std::unordered_map<crypto::public_key, cryptonote::subaddress_index> &subaddresses,
-		const vector<tx_destination_entry> &dsts, // presently, this must include change as well as, if necessary, dummy output
+		uint64_t sending_amount,
+		uint64_t change_amount,
+		uint64_t fee_amount,
 		vector<SpendableOutput> &outputs,
 		vector<RandomAmountOutputs> &mix_outs,
-		uint64_t fee_amount,
 		std::vector<uint8_t> &extra, // this is not declared const b/c it may have the output tx pub key appended to it
 		use_fork_rules_fn_type use_fork_rules_fn,
 		uint64_t unlock_time							= 0, // or 0
@@ -211,9 +212,9 @@ namespace monero_transfer_utils
 		const string &sec_spendKey_string,
 		const string &to_address_string,
 		optional<string> payment_id_string,
-		uint64_t amount, // to send
+		uint64_t sending_amount,
+		uint64_t change_amount,
 		uint64_t fee_amount,
-		const std::vector<cryptonote::tx_destination_entry> &dsts, // this must include change or else dummy address
 		vector<SpendableOutput> &outputs,
 		vector<RandomAmountOutputs> &mix_outs,
 		use_fork_rules_fn_type use_fork_rules_fn,

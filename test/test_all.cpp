@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 	cout << "transfers__create: spend pub key: " << string_tools::pod_to_hex(from_addr_info.address.m_spend_public_key) << endl;
 	//
 	optional<string> payment_id_string = string("b79f8efc81f58f67");
-	uint64_t amount = 10000000000;
+	uint64_t sending_amount = 10000000000;
 	uint64_t fee_amount = 2167750000;
 	string to_address_string("43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg");
 	cryptonote::address_parse_info to_addr_info;
@@ -173,12 +173,7 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 		}
 	}
 	//
-	std::vector<cryptonote::tx_destination_entry> dsts; // without change this would normally require a dummy addr with 0 amount pushed as a fake 'change' output ... that should probably be moved into the function
-	{ // 0. actual destination address
-		cryptonote::tx_destination_entry de;
-		de.addr = to_addr_info.address;
-		de.amount = amount;
-		de.is_subaddress = to_addr_info.is_subaddress;
+	{ // payment id
 		if (to_addr_info.is_subaddress && payment_id_seen) {
 			BOOST_REQUIRE_MESSAGE(false, "Illegal: Never supply a pid with a subaddress."); // TODO: is this true?
 			return;
@@ -201,14 +196,6 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 			}
 			payment_id_seen = true;
 		}
-		dsts.push_back(de);
-	}
-	{ // 1. change
-		cryptonote::tx_destination_entry de;
-		de.addr = from_addr_info.address;
-		de.amount = 112832250000;
-		de.is_subaddress = from_addr_info.is_subaddress; // not
-		dsts.push_back(de);
 	}
 	//
 	vector<SpendableOutput> outputs;
@@ -289,10 +276,11 @@ BOOST_AUTO_TEST_CASE(transfers__create)
 		account_keys,
 		subaddr_account_idx,
 		subaddresses,
-		dsts,
+		sending_amount,
+		112832250000, // change amount
+		fee_amount,
 		outputs,
 		mix_outs,
-		fee_amount,
 		extra,
 		use_fork_rules_fn,
 		0, // unlock_time
@@ -347,23 +335,9 @@ BOOST_AUTO_TEST_CASE(bridged__transfers__create)
 	root.put("sec_spendKey_string", "4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803");
 	root.put("to_address_string", to_address_string);
 	root.put("payment_id_string", "b79f8efc81f58f67");
-	root.put("amount", amount_string);
+	root.put("sending_amount", amount_string);
+	root.put("change_amount", "112832250000");
 	root.put("fee_amount", "2167750000");
-	//
-	boost::property_tree::ptree dsts;
-	{ // 0. actual destination address
-		boost::property_tree::ptree dst;
-		dst.put("addr", to_address_string);
-		dst.put("amount", amount_string);
-		dsts.push_back(std::make_pair("", dst));
-	}
-	{ // 1. change (otherwise we'd have to supply a dummy addr)
-		boost::property_tree::ptree dst;
-		dst.put("addr", from_address_string);
-		dst.put("amount", "112832250000");
-		dsts.push_back(std::make_pair("", dst));
-	}
-	root.add_child("dsts", dsts);
 	//
 	boost::property_tree::ptree outputs;
 	{

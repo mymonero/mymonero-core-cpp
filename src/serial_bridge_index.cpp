@@ -474,20 +474,6 @@ string serial_bridge::create_transaction(const string &args_string)
 	}
 	network_type nettype = nettype_from_string(json_root.get<string>("nettype_string"));
 	//
-	std::vector<cryptonote::tx_destination_entry> dsts;
-	BOOST_FOREACH(boost::property_tree::ptree::value_type &dst_desc, json_root.get_child("dsts"))
-	{
-		assert(dst_desc.first.empty()); // array elements have no names
-		cryptonote::tx_destination_entry de;
-		cryptonote::address_parse_info de_addr_info;
-		THROW_WALLET_EXCEPTION_IF(!cryptonote::get_account_address_from_str(de_addr_info, nettype, dst_desc.second.get<string>("addr")), error::wallet_internal_error, "Invalid dsts.addr");
-		de.addr = de_addr_info.address;
-		de.is_subaddress = de_addr_info.is_subaddress;
-		de.amount = stoull(dst_desc.second.get<string>("amount"));
-		//
-		dsts.push_back(de);
-	}
-	//
 	vector<SpendableOutput> outputs;
 	BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, json_root.get_child("outputs"))
 	{
@@ -529,9 +515,9 @@ string serial_bridge::create_transaction(const string &args_string)
 		json_root.get<string>("sec_spendKey_string"),
 		json_root.get<string>("to_address_string"),
 		json_root.get_optional<string>("payment_id_string"),
-		stoull(json_root.get<string>("amount")), // to send
+		stoull(json_root.get<string>("sending_amount")),
+		stoull(json_root.get<string>("change_amount")),
 		stoull(json_root.get<string>("fee_amount")),
-		dsts,
 		outputs,
 		mix_outs,
 		[] (uint8_t version, int64_t early_blocks) -> bool

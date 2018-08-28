@@ -304,10 +304,11 @@ void monero_transfer_utils::create_transaction(
 	const account_keys& sender_account_keys, // this will reference a particular hw::device
 	const uint32_t subaddr_account_idx,
 	const std::unordered_map<crypto::public_key, cryptonote::subaddress_index> &subaddresses,
-	const vector<tx_destination_entry> &dsts,
+	uint64_t sending_amount,
+	uint64_t change_amount,
+	uint64_t fee_amount,
 	vector<SpendableOutput> &outputs,
 	vector<RandomAmountOutputs> &mix_outs,
-	uint64_t fee_amount,
 	std::vector<uint8_t> &extra,
 	use_fork_rules_fn_type use_fork_rules_fn,
 	uint64_t unlock_time, // or 0
@@ -321,10 +322,6 @@ void monero_transfer_utils::create_transaction(
 	uint32_t fake_outputs_count = fixed_mixinsize();
 	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0);
 	//
-	if (dsts.size() == 0) {
-		retVals.errCode = noDestinations;
-		return;
-	}
 	if (mix_outs.size() != outputs.size() && fake_outputs_count != 0) {
 		retVals.errCode = wrongNumberOfMixOutsProvided;
 		return;
@@ -340,14 +337,12 @@ void monero_transfer_utils::create_transaction(
 		retVals.errCode = invalidSecretKeys;
 		return;
 	}
-	uint64_t needed_money = 0;
-	for (size_t i = 0; i < dsts.size(); i++) {
-		needed_money += dsts[i].amount;
-		if (needed_money > UINT64_MAX) {
-			retVals.errCode = outputAmountOverflow;
-			return;
-		}
+	uint64_t needed_money = sending_amount + change_amount + fee_amount; // TODO: is this correct?
+	if (needed_money > UINT64_MAX) {
+		retVals.errCode = outputAmountOverflow;
+		return;
 	}
+	//
 	uint64_t found_money = 0;
 	std::vector<tx_source_entry> sources;
 	// TODO: log: "Selected transfers: " << outputs
@@ -481,33 +476,31 @@ void monero_transfer_utils::create_transaction(
 	}
 	//
 	// TODO: if this is a multisig wallet, create a list of multisig signers we can use
-	std::vector<cryptonote::tx_destination_entry> splitted_dsts = dsts;
-	cryptonote::tx_destination_entry change_dts = AUTO_VAL_INIT(change_dts);
-	change_dts.amount = found_money - needed_money;
+	std::vector<cryptonote::tx_destination_entry> splitted_dsts;
+	cryptonote::tx_destination_entry change_dst = AUTO_VAL_INIT(change_dst);
+	change_dst.amount = change_amount;
 	//
-	/* This is commented because it's presently supplied by whoever is calling this function.... But there's a good argument for bringing it in, here, especially after MyMonero clients integrate with this code and soon, share an implementation of SendFunds() (the analog of create_transactions_2 + transfer_selected*)
-			if (change_dts.amount == 0) {
-				if (splitted_dsts.size() == 1) {
-					// If the change is 0, send it to a random address, to avoid confusing
-					// the sender with a 0 amount output. We send a 0 amount in order to avoid
-					// letting the destination be able to work out which of the inputs is the
-					// real one in our rings
-					LOG_PRINT_L2("generating dummy address for 0 change");
-					cryptonote::account_base dummy;
-					dummy.generate();
-					change_dts.addr = dummy.get_keys().m_account_address;
-					LOG_PRINT_L2("generated dummy address for 0 change");
-					splitted_dsts.push_back(change_dts);
-				}
-			} else {
-				change_dts.addr = sender_account_keys.m_account_address;
-				splitted_dsts.push_back(change_dts);
-			}
-	 */
+	if (change_dst.amount == 0) {
+		if (splitted_dsts.size() == 1) {
+			// If the change is 0, send it to a random address, to avoid confusing
+			// the sender with a 0 amount output. We send a 0 amount in order to avoid
+			// letting the destination be able to work out which of the inputs is the
+			// real one in our rings
+			LOG_PRINT_L2("generating dummy address for 0 change");
+			cryptonote::account_base dummy;
+			dummy.generate();
+			change_dst.addr = dummy.get_keys().m_account_address;
+			LOG_PRINT_L2("generated dummy address for 0 change");
+			splitted_dsts.push_back(change_dst);
+		}
+	} else {
+		change_dst.addr = sender_account_keys.m_account_address;
+		splitted_dsts.push_back(change_dst);
+	}
 	//
 	// TODO: log: "sources: " << sources
 	if (found_money > needed_money) {
-		if (change_dts.amount != fee_amount) {
+		if (change_dst.amount != fee_amount) {
 			retVals.errCode = resultFeeNotEqualToGiven; // aka "early fee calculation != later"
 			return; // early
 		}
@@ -523,7 +516,7 @@ void monero_transfer_utils::create_transaction(
 	std::vector<crypto::secret_key> additional_tx_keys;
 	bool r = cryptonote::construct_tx_and_get_tx_key(
 		sender_account_keys, subaddresses,
-		sources, splitted_dsts, change_dts.addr, extra,
+		sources, splitted_dsts, change_dst.addr, extra,
 		tx, unlock_time, tx_key, additional_tx_keys,
 		true, bulletproof,
 		/*m_multisig ? &msout : */NULL
@@ -555,9 +548,9 @@ void monero_transfer_utils::convenience__create_transaction(
 	const string &sec_spendKey_string,
 	const string &to_address_string,
 	optional<string> payment_id_string,
-	uint64_t amount, // to send
+	uint64_t sending_amount,
+	uint64_t change_amount,
 	uint64_t fee_amount,
-	const std::vector<cryptonote::tx_destination_entry> &dsts, // this must include change or dummy address
 	vector<SpendableOutput> &outputs,
 	vector<RandomAmountOutputs> &mix_outs,
 	use_fork_rules_fn_type use_fork_rules_fn,
@@ -641,10 +634,11 @@ void monero_transfer_utils::convenience__create_transaction(
 		account_keys,
 		subaddr_account_idx,
 		subaddresses,
-		dsts,
+		sending_amount,
+		change_amount,
+		fee_amount,
 		outputs,
 		mix_outs,
-		fee_amount,
 		extra,
 		use_fork_rules_fn,
 		unlock_time,
