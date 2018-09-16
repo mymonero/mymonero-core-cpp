@@ -340,8 +340,8 @@ string serial_bridge::validate_components_for_login(const string &args_string)
 	bool r = monero_wallet_utils::validate_wallet_components_with( // returns !did_error
 		json_root.get<string>("address_string"),
 		json_root.get<string>("sec_viewKey_string"),
-		json_root.get<string>("sec_spendKey_string"),
-		json_root.get<string>("seed_string"),
+		json_root.get_optional<string>("sec_spendKey_string"),
+		json_root.get_optional<string>("seed_string"),
 		nettype_from_string(json_root.get<string>("nettype_string")),
 		retVals
 	);
@@ -481,7 +481,7 @@ string serial_bridge::create_transaction(const string &args_string)
 		SpendableOutput out{};
 		out.amount = stoull(output_desc.second.get<string>("amount"));
 		out.public_key = output_desc.second.get<string>("public_key");
-		out.rct = output_desc.second.get_optional<string>("rct");
+		out.rct = output_desc.second.get<string>("rct");
 		out.global_index = stoull(output_desc.second.get<string>("global_index"));
 		out.index = stoull(output_desc.second.get<string>("index"));
 		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
@@ -501,7 +501,7 @@ string serial_bridge::create_transaction(const string &args_string)
 			auto amountOutput = RandomAmountOutput{};
 			amountOutput.global_index = stoull(mix_out_output_desc.second.get<string>("global_index")); // this is, I believe, presently supplied as a string by the API, probably to avoid overflow
 			amountOutput.public_key = mix_out_output_desc.second.get<string>("public_key");
-			amountOutput.rct = mix_out_output_desc.second.get_optional<string>("rct");
+			amountOutput.rct = mix_out_output_desc.second.get<string>("rct");
 			amountAndOuts.outputs.push_back(amountOutput);
 		}
 		mix_outs.push_back(amountAndOuts);
