@@ -93,7 +93,7 @@ string serial_bridge::string_from_nettype(network_type nettype)
 // Shared - Parsing - Args
 bool parsed_json_root(const string &args_string, boost::property_tree::ptree &json_root)
 {
-	cout << "args_string: " << args_string << endl;
+//	cout << "args_string: " << args_string << endl;
 	
 	std::stringstream ss;
 	ss << args_string;
