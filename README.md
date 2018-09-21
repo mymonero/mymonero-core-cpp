@@ -148,7 +148,7 @@ In future, the key names could be compressed.
 
 * AKA `create_address` in legacy mymonero-core-js
 
-* Args: `nettype_string: NettypeString`, `mnemonic_string: String`
+* Args: `nettype_string: NettypeString`, `seed_string: String`
 
 * Returns: `err_msg: String` *OR* `address_string: String`, `pub_spendKey_string: String`, `pub_viewKey_string: String`, `sec_viewKey_string: String`, and `sec_spendKey_string: String`
 
