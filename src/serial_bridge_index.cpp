@@ -582,11 +582,11 @@ string serial_bridge::decodeRct(const string &args_string)
 	if (!epee::string_tools::hex_to_pod(json_root.get<string>("sk"), sk)) {
 		return error_ret_json_from_message("Invalid 'sk'");
 	}
-	uint i = stoul(json_root.get<string>("i"));
+	unsigned int i = stoul(json_root.get<string>("i"));
 	// NOTE: this rv structure parsing could be factored but it presently does not implement a number of sub-components of rv, such as .pseudoOuts
 	auto rv_desc = json_root.get_child("rv");
 	rct::rctSig rv = AUTO_VAL_INIT(rv);
-	uint rv_type_int = stoul(rv_desc.get<string>("type"));
+	unsigned int rv_type_int = stoul(rv_desc.get<string>("type"));
 	// got to be a better way to do this
 	if (rv_type_int == rct::RCTTypeNull) {
 		rv.type = rct::RCTTypeNull;
