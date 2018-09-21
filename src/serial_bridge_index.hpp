@@ -54,6 +54,7 @@ namespace serial_bridge
 	//
 	string newly_created_wallet(const string &args_string);
 	string are_equal_mnemonics(const string &args_string);
+	string address_and_keys_from_seed(const string &args_string); // aka legacy mymonero-core-js:create_address
 	string mnemonic_from_seed(const string &args_string);
 	string seed_and_keys_from_mnemonic(const string &args_string);
 	string validate_components_for_login(const string &args_string);
@@ -63,6 +64,11 @@ namespace serial_bridge
 	string estimated_tx_network_fee(const string &args_string);
 	//
 	string generate_key_image(const string &args_string);
+	//
+	string generate_key_derivation(const string &args_string);
+	string derive_public_key(const string &args_string);
+	string derive_subaddress_public_key(const string &args_string);
+	string decodeRct(const string &args_string);
 	//
 	// JSON values
 	network_type nettype_from_string(const string &nettype_string);
@@ -90,7 +96,9 @@ namespace serial_bridge
 	static inline string ret_json_key__sec_viewKey_string() { return "sec_viewKey_string"; }
 	static inline string ret_json_key__sec_spendKey_string() { return "sec_spendKey_string"; }
 	static inline string ret_json_key__isValid() { return "isValid"; }
-	static inline string ret_json_key__isInViewOnlyMode() { return "isInViewOnlyMode"; }	
+	static inline string ret_json_key__isInViewOnlyMode() { return "isInViewOnlyMode"; }
+	static inline string ret_json_key__decodeRct_mask() { return "mask"; }
+	static inline string ret_json_key__decodeRct_amount() { return "amount"; }
 	// JSON keys - Args
 	// TODO:
 	//	static inline string args_json_key__

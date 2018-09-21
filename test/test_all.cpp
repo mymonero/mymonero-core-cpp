@@ -873,3 +873,189 @@ BOOST_AUTO_TEST_CASE(bridged__generate_key_image)
 	BOOST_REQUIRE(*key_image_string == "ae30ee23051dc0bdf10303fbd3b7d8035a958079eb66516b1740f2c9b02c804e");
 	cout << "bridged__generate_key_image: " << *key_image_string << endl;
 }
+//
+BOOST_AUTO_TEST_CASE(bridged__address_and_keys_from_seed)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("seed_string", "9c973aa296b79bbf452781dd3d32ad7f");
+	root.put("nettype_string", string_from_nettype(MAINNET));
+	//
+	auto ret_string = serial_bridge::address_and_keys_from_seed(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> address_string = ret_tree.get_optional<string>(ret_json_key__address_string());
+	BOOST_REQUIRE(address_string != none);
+	BOOST_REQUIRE((*address_string).size() > 0);
+	cout << "bridged__address_and_keys_from_seed: address: " << *address_string << endl;
+	BOOST_REQUIRE(*address_string == "43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg");
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
+	BOOST_REQUIRE(pub_viewKey_string != none);
+	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
+	cout << "bridged__address_and_keys_from_seed: pub_viewKey_string: " << *pub_viewKey_string << endl;
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
+	BOOST_REQUIRE(pub_spendKey_string != none);
+	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
+	cout << "bridged__address_and_keys_from_seed: pub_spendKey_string: " << *pub_spendKey_string << endl;
+	optional<string> sec_viewKey_string = ret_tree.get_optional<string>(ret_json_key__sec_viewKey_string());
+	BOOST_REQUIRE(sec_viewKey_string != none);
+	BOOST_REQUIRE((*sec_viewKey_string).size() > 0);
+	BOOST_REQUIRE(*sec_viewKey_string == "7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104");
+	cout << "bridged__address_and_keys_from_seed: sec_viewKey_string: " << *sec_viewKey_string << endl;
+	optional<string> sec_spendKey_string = ret_tree.get_optional<string>(ret_json_key__sec_spendKey_string());
+	BOOST_REQUIRE(sec_spendKey_string != none);
+	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
+	BOOST_REQUIRE(*sec_spendKey_string == "4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803");
+	cout << "bridged__address_and_keys_from_seed: sec_spendKey_string: " << *sec_spendKey_string << endl;
+}
+//
+BOOST_AUTO_TEST_CASE(bridged__derive_public_key)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("derivation", "591c749f1868c58f37ec3d2a9d2f08e7f98417ac4f8131e3a57c1fd71273ad00");
+	root.put("out_index", "1");
+	root.put("pub", "904e49462268d771cc1649084c35aa1296bfb214880fe2e7f373620a3e2ba597");
+	//
+	auto ret_string = serial_bridge::derive_public_key(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> str = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(str != none);
+	BOOST_REQUIRE((*str).size() > 0);
+	BOOST_REQUIRE(*str == "da26518ddb54cde24ccfc59f36df13bbe9bdfcb4ef1b223d9ab7bef0a50c8be3");
+	cout << "bridged__derive_public_key: " << *str << endl;
+}
+BOOST_AUTO_TEST_CASE(bridged__derive_subaddress_public_key)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("derivation", "591c749f1868c58f37ec3d2a9d2f08e7f98417ac4f8131e3a57c1fd71273ad00");
+	root.put("out_index", "1");
+	root.put("output_key", "904e49462268d771cc1649084c35aa1296bfb214880fe2e7f373620a3e2ba597");
+	//
+	auto ret_string = serial_bridge::derive_subaddress_public_key(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> str = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(str != none);
+	BOOST_REQUIRE((*str).size() > 0);
+	BOOST_REQUIRE(*str == "dfc9e4a0039e913204c1c0f78e954a7ec7ce291d8ffe88265632f0da9d8de1be");
+	cout << "bridged__derive_subaddress_public_key: " << *str << endl;
+}
+BOOST_AUTO_TEST_CASE(bridged__generate_key_derivation)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("pub", "904e49462268d771cc1649084c35aa1296bfb214880fe2e7f373620a3e2ba597");
+	root.put("sec", "52aa4c69b93b780885c9d7f51e6fd5795904962c61a2e07437e130784846f70d");
+	//
+	auto ret_string = serial_bridge::generate_key_derivation(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> derivation = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(derivation != none);
+	BOOST_REQUIRE((*derivation).size() > 0);
+	BOOST_REQUIRE(*derivation == "591c749f1868c58f37ec3d2a9d2f08e7f98417ac4f8131e3a57c1fd71273ad00");
+	cout << "bridged__generate_key_derivation: derivation: " << *derivation << endl;
+}
+//
+BOOST_AUTO_TEST_CASE(bridged__decodeRct)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("i", "1");
+	root.put("sk", "9b1529acb638f497d05677d7505d354b4ba6bc95484008f6362f93160ef3e503");
+	
+	boost::property_tree::ptree rv;
+	{
+		rv.put("type", "1");
+		//
+		boost::property_tree::ptree ecdhInfo;
+		{
+			boost::property_tree::ptree ecdh_info;
+			ecdh_info.put("mask", "3ad9d0b3398691b94558e0f750e07e5e0d7d12411cd70b3841159e6c6b10db02");
+			ecdh_info.put("amount", "b3189d8adb5a26568e497eb8e376a7d7d946ebb1daef4c2c87a2c30b65915506");
+			ecdhInfo.push_back(std::make_pair("", ecdh_info));
+		}
+		{
+			boost::property_tree::ptree ecdh_info;
+			ecdh_info.put("mask", "97b00af8ecba3cb71b9660cc9e1ac110abd21a4c5e50a2c125f964caa96bef0c");
+			ecdh_info.put("amount", "60269d8adb5a26568e497eb8e376a7d7d946ebb1daef4c2c87a2c30b65915506");
+			ecdhInfo.push_back(std::make_pair("", ecdh_info));
+		}
+		{
+			boost::property_tree::ptree ecdh_info;
+			ecdh_info.put("mask", "db67f5066d9455db404aeaf435ad948bc9f27344bc743e3a32583a9e6695cb08");
+			ecdh_info.put("amount", "b3189d8adb5a26568e497eb8e376a7d7d946ebb1daef4c2c87a2c30b65915506");
+			ecdhInfo.push_back(std::make_pair("", ecdh_info));
+		}
+		rv.add_child("ecdhInfo", ecdhInfo);
+		//
+		boost::property_tree::ptree outPk;
+		{
+			boost::property_tree::ptree an_outPk;
+			an_outPk.put("mask", "9adc531a9c79a49a4257f24e5e5ea49c2fc1fb4eef49e00d5e5aba6cb6963a7d");
+			outPk.push_back(std::make_pair("", an_outPk));
+		}
+		{
+			boost::property_tree::ptree an_outPk;
+			an_outPk.put("mask", "89f40499d6786a4027a24d6674d0940146fd12d8bc6007d338f19f05040e7a41");
+			outPk.push_back(std::make_pair("", an_outPk));
+		}
+		{
+			boost::property_tree::ptree an_outPk;
+			an_outPk.put("mask", "f413d28bd5ffdc020528bcb2c19919d7484fbc9c3dd30de34ecff5b8a904e7f6");
+			outPk.push_back(std::make_pair("", an_outPk));
+		}
+		rv.add_child("outPk", outPk);
+	}
+	root.add_child("rv", rv);
+	//
+	auto ret_string = serial_bridge::decodeRct(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	string mask_string = ret_tree.get<string>(ret_json_key__decodeRct_mask());
+	BOOST_REQUIRE(mask_string.size() > 0);
+	cout << "bridged__decodeRct: mask_string: " << mask_string << endl;
+	BOOST_REQUIRE(mask_string == "3f59c741c9ad560bfea92f42449a180bc8362f1b5ddd957e3b5772dbaf7f840e");
+	string amount_string = ret_tree.get<string>(ret_json_key__decodeRct_amount());
+	BOOST_REQUIRE(amount_string.size() > 0);
+	cout << "bridged__decodeRct: amount_string: " << amount_string << endl;
+	BOOST_REQUIRE(amount_string == "4501"); // FIXME is this correct?
+}

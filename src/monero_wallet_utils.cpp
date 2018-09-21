@@ -304,7 +304,58 @@ bool monero_wallet_utils::wallet_with(
 	};
 	return true;
 }
-
+bool monero_wallet_utils::address_and_keys_from_seed(
+	const string &sec_seed_string,
+	network_type nettype,
+	ComponentsFromSeed_RetVals &retVals
+) {
+	retVals = {};
+	//
+	unsigned long sec_seed_string_length = sec_seed_string.length();
+	//
+	crypto::secret_key sec_seed;
+	// Possibly factor this info shared function:
+	bool from_legacy16B_lw_seed = false;
+	if (sec_seed_string_length == sec_seed_hex_string_length) { // normal seed
+		from_legacy16B_lw_seed = false; // to be clear
+		bool r = string_tools::hex_to_pod(sec_seed_string, sec_seed);
+		if (!r) {
+			retVals.did_error = true;
+			retVals.err_string = "Invalid seed";
+			//
+			return false;
+		}
+	} else if (sec_seed_string_length == legacy16B__sec_seed_hex_string_length) {
+		from_legacy16B_lw_seed = true;
+		legacy16B_secret_key legacy16B_sec_seed;
+		bool r = string_tools::hex_to_pod(sec_seed_string, legacy16B_sec_seed);
+		if (!r) {
+			retVals.did_error = true;
+			retVals.err_string = "Invalid seed";
+			//
+			return false;
+		}
+		coerce_valid_sec_key_from(legacy16B_sec_seed, sec_seed);
+	}
+	//
+	cryptonote::account_base account{}; // this initializes the wallet and should call the default constructor
+	account.generate(
+		sec_seed,
+		true/*recover*/,
+		false/*two_random*/,
+		from_legacy16B_lw_seed // assumed set if r
+	);
+	const cryptonote::account_keys& keys = account.get_keys();
+	retVals.optl__val = ComponentsFromSeed{
+		account.get_public_address_str(nettype),
+		//
+		keys.m_spend_secret_key,
+		keys.m_view_secret_key,
+		keys.m_account_address.m_spend_public_key,
+		keys.m_account_address.m_view_public_key,
+	};
+	return true;
+}
 bool monero_wallet_utils::validate_wallet_components_with( // returns !did_error
 	const string &address_string,
 	const string &sec_viewKey_string,

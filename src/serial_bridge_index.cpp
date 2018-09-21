@@ -44,6 +44,7 @@
 #include "monero_key_image_utils.hpp"
 #include "wallet_errors.h"
 #include "string_tools.h"
+#include "ringct/rctSigs.h"
 //
 //
 using namespace std;
@@ -92,6 +93,8 @@ string serial_bridge::string_from_nettype(network_type nettype)
 // Shared - Parsing - Args
 bool parsed_json_root(const string &args_string, boost::property_tree::ptree &json_root)
 {
+	cout << "args_string: " << args_string << endl;
+	
 	std::stringstream ss;
 	ss << args_string;
 	try {
@@ -276,6 +279,34 @@ string serial_bridge::are_equal_mnemonics(const string &args_string)
 	}
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), equal);
+	//
+	return ret_json_from_root(root);
+}
+string serial_bridge::address_and_keys_from_seed(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	monero_wallet_utils::ComponentsFromSeed_RetVals retVals;
+	bool r = monero_wallet_utils::address_and_keys_from_seed(
+		json_root.get<string>("seed_string"),
+		nettype_from_string(json_root.get<string>("nettype_string")),
+		retVals
+	);
+	bool did_error = retVals.did_error;
+	if (!r) {
+		return error_ret_json_from_message(*(retVals.err_string));
+	}
+	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__address_string(), (*(retVals.optl__val)).address_string);
+	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_viewKey));
+	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_viewKey));
+	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_spendKey));
+	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_spendKey));
 	//
 	return ret_json_from_root(root);
 }
@@ -536,6 +567,153 @@ string serial_bridge::create_transaction(const string &args_string)
 	root.put(ret_json_key__create_transaction__serialized_signed_tx(), std::move(*(retVals.signed_serialized_tx_string)));
 	root.put(ret_json_key__create_transaction__tx_hash(), std::move(*(retVals.tx_hash_string)));
 	root.put(ret_json_key__create_transaction__tx_key(), std::move(*(retVals.tx_key_string)));
+	//
+	return ret_json_from_root(root);
+}
+//
+string serial_bridge::decodeRct(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	rct::key sk;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("sk"), sk)) {
+		return error_ret_json_from_message("Invalid 'sk'");
+	}
+	uint i = stoul(json_root.get<string>("i"));
+	// NOTE: this rv structure parsing could be factored but it presently does not implement a number of sub-components of rv, such as .pseudoOuts
+	auto rv_desc = json_root.get_child("rv");
+	rct::rctSig rv = AUTO_VAL_INIT(rv);
+	uint rv_type_int = stoul(rv_desc.get<string>("type"));
+	// got to be a better way to do this
+	if (rv_type_int == rct::RCTTypeNull) {
+		rv.type = rct::RCTTypeNull;
+	} else if (rv_type_int == rct::RCTTypeSimple) {
+		rv.type = rct::RCTTypeSimple;
+	} else if (rv_type_int == rct::RCTTypeFull) {
+		rv.type = rct::RCTTypeFull;
+	} else if (rv_type_int == rct::RCTTypeSimpleBulletproof) {
+		rv.type = rct::RCTTypeSimpleBulletproof;
+	} else if (rv_type_int == rct::RCTTypeFullBulletproof) {
+		rv.type = rct::RCTTypeFullBulletproof;
+	} else {
+		return error_ret_json_from_message("Invalid 'rv.type'");
+	}
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &ecdh_info_desc, rv_desc.get_child("ecdhInfo"))
+	{
+		assert(ecdh_info_desc.first.empty()); // array elements have no names
+		auto ecdh_info = rct::ecdhTuple{};
+		if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("mask"), ecdh_info.mask)) {
+			return error_ret_json_from_message("Invalid rv.ecdhInfo[].mask");
+		}
+		if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), ecdh_info.amount)) {
+			return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
+		}
+		rv.ecdhInfo.push_back(ecdh_info);
+	}
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &outPk_desc, rv_desc.get_child("outPk"))
+	{
+		assert(outPk_desc.first.empty()); // array elements have no names
+		auto outPk = rct::ctkey{};
+		if (!epee::string_tools::hex_to_pod(outPk_desc.second.get<string>("mask"), outPk.mask)) {
+			return error_ret_json_from_message("Invalid rv.outPk[].mask");
+		}
+		// FIXME: does dest need to be placed on the key?
+		rv.outPk.push_back(outPk);
+	}
+	//
+	rct::key mask;
+	rct::xmr_amount/*uint64_t*/ decoded_amount;
+	try {
+		decoded_amount = rct::decodeRct(
+			rv, sk, i, mask,
+			hw::get_device("default") // presently this uses the default device but we could let a string be passed to switch the type
+		);
+	} catch (std::exception const& e) {
+		return error_ret_json_from_message(e.what());
+	}
+	stringstream decoded_amount_ss;
+	decoded_amount_ss << decoded_amount;
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__decodeRct_mask(), epee::string_tools::pod_to_hex(mask));
+	root.put(ret_json_key__decodeRct_amount(), decoded_amount_ss.str());
+	//
+	return ret_json_from_root(root);	
+}
+string serial_bridge::generate_key_derivation(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	public_key pub_key;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("pub"), pub_key)) {
+		return error_ret_json_from_message("Invalid 'pub'");
+	}
+	secret_key sec_key;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("sec"), sec_key)) {
+		return error_ret_json_from_message("Invalid 'sec'");
+	}
+	crypto::key_derivation derivation = AUTO_VAL_INIT(derivation);
+	if (!crypto::generate_key_derivation(pub_key, sec_key, derivation)) {
+		return error_ret_json_from_message("Unable to generate key derivation");
+	}
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(derivation));
+	//
+	return ret_json_from_root(root);
+}
+string serial_bridge::derive_public_key(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	crypto::key_derivation derivation;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("derivation"), derivation)) {
+		return error_ret_json_from_message("Invalid 'derivation'");
+	}
+	std::size_t output_index = stoul(json_root.get<string>("out_index"));
+	crypto::public_key base;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("pub"), base)) {
+		return error_ret_json_from_message("Invalid 'pub'");
+	}
+	crypto::public_key derived_key = AUTO_VAL_INIT(derived_key);
+	if (!crypto::derive_public_key(derivation, output_index, base, derived_key)) {
+		return error_ret_json_from_message("Unable to derive public key");
+	}
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(derived_key));
+	//
+	return ret_json_from_root(root);
+}
+string serial_bridge::derive_subaddress_public_key(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	crypto::key_derivation derivation;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("derivation"), derivation)) {
+		return error_ret_json_from_message("Invalid 'derivation'");
+	}
+	std::size_t output_index = stoul(json_root.get<string>("out_index"));
+	crypto::public_key out_key;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("output_key"), out_key)) {
+		return error_ret_json_from_message("Invalid 'output_key'");
+	}
+	crypto::public_key derived_key = AUTO_VAL_INIT(derived_key);
+	if (!crypto::derive_subaddress_public_key(out_key, derivation, output_index, derived_key)) {
+		return error_ret_json_from_message("Unable to derive public key");
+	}
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(derived_key));
 	//
 	return ret_json_from_root(root);
 }

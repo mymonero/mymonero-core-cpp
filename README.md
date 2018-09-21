@@ -144,6 +144,15 @@ In future, the key names could be compressed.
 
 * Returns: `err_msg: String` *OR* `pub_spendKey_string: String`, `pub_viewKey_string: String`, `isInViewOnlyMode: Boolstring`, and `isValid: Boolstring`
 
+**`address_and_keys_from_seed`**
+
+* AKA `create_address` in legacy mymonero-core-js
+
+* Args: `nettype_string: NettypeString`, `mnemonic_string: String`
+
+* Returns: `err_msg: String` *OR* `address_string: String`, `pub_spendKey_string: String`, `pub_viewKey_string: String`, `sec_viewKey_string: String`, and `sec_spendKey_string: String`
+
+
 #### Producing Misc. Values
 
 **`new_integrated_address`**
@@ -170,6 +179,43 @@ In future, the key names could be compressed.
 
 * Returns: `err_msg: String` *OR* `retVal: String`
 	
+**`generate_key_derivation`**
+
+* Args: `pub: String`, `sec: String`
+
+* Returns: `err_msg: String` *OR* `retVal: String`
+
+**`derive_public_key`**
+
+* Args: `derivation: String`, `pub: String`, `out_index: UInt32String`
+
+* Returns: `err_msg: String` *OR* `retVal: String`
+	
+**`derive_subaddress_public_key`**
+
+* Args: `derivation: String`, `output_key: String`, `out_index: UInt32String`
+
+* Returns: `err_msg: String` *OR* `retVal: String`
+
+**`decodeRct`**
+
+* Args: `i: UInt32String`, `sk: String`, `rv: DecodeRCT_RV`
+
+	* `DecodeRCT_RV: Dictionary` with `type: RCTTypeIntString`, `ecdhInfo: [DecodeRCT_ECDHInfo]`, `outPk: [DecodeRCT_OutPK]`
+
+		* `RCTTypeIntString: String` corresponding to values in `rct::RCTType*`
+
+		* `DecodeRCT_ECDHInfo: Dictionary` with `amount: String`, `mask: String`
+
+		* `DecodeRCT_OutPK: Dictionary` with `mask: String`
+		
+e.g.
+```
+{"i":"1","sk":"9b1529acb638f497d05677d7505d354b4ba6bc95484008f6362f93160ef3e503","rv":{"type":"1","ecdhInfo":[{"mask":"3ad9d0b3398691b94558e0f750e07e5e0d7d12411cd70b3841159e6c6b10db02","amount":"b3189d8adb5a26568e497eb8e376a7d7d946ebb1daef4c2c87a2c30b65915506"},{"mask":"97b00af8ecba3cb71b9660cc9e1ac110abd21a4c5e50a2c125f964caa96bef0c","amount":"60269d8adb5a26568e497eb8e376a7d7d946ebb1daef4c2c87a2c30b65915506"},{"mask":"db67f5066d9455db404aeaf435ad948bc9f27344bc743e3a32583a9e6695cb08","amount":"b3189d8adb5a26568e497eb8e376a7d7d946ebb1daef4c2c87a2c30b65915506"}],"outPk":[{"mask":"9adc531a9c79a49a4257f24e5e5ea49c2fc1fb4eef49e00d5e5aba6cb6963a7d"},{"mask":"89f40499d6786a4027a24d6674d0940146fd12d8bc6007d338f19f05040e7a41"},{"mask":"f413d28bd5ffdc020528bcb2c19919d7484fbc9c3dd30de34ecff5b8a904e7f6"}]}}
+```
+
+* Returns `err_msg: String` *OR* `amount: String` and `mask: String`
+
 #### Fees
 	
 **`estimate_rct_tx_size`**
@@ -206,4 +252,5 @@ Convenience wrapper
 		* `MixOut: Dictionary` with `global_index: UInt64String`, `public_key: String`, `rct: OptionalString`
 
 * Returns: `err_msg: String` *OR* `serialized_signed_tx: String`, `tx_hash: String`, `tx_key: String`
+
 

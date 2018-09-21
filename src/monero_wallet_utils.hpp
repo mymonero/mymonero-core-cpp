@@ -187,6 +187,25 @@ namespace monero_wallet_utils
 		network_type nettype,
 		WalletComponentsValidationResults &retVals
 	);
+	//
+	struct ComponentsFromSeed
+	{
+		string address_string;
+		//
+		secret_key sec_spendKey;
+		secret_key sec_viewKey;
+		public_key pub_spendKey;
+		public_key pub_viewKey;
+	};
+	struct ComponentsFromSeed_RetVals: RetVals_base
+	{
+		optional<ComponentsFromSeed> optl__val = boost::none;
+	};
+	bool address_and_keys_from_seed(
+		const string &sec_seed_string,
+		network_type nettype,
+		ComponentsFromSeed_RetVals &retVals
+	);
 }
 
 
