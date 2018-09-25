@@ -41,6 +41,8 @@ using namespace cryptonote;
 #include "tools__ret_vals.hpp"
 using namespace epee;
 //
+#include "wallet_errors.h"
+//
 #include "monero_paymentID_utils.hpp"
 //
 // Accessors - Implementations
@@ -108,7 +110,7 @@ optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_
 		return none;
 	}
 	if (info.is_subaddress) {
-		BOOST_THROW_EXCEPTION(runtime_error("new_integratedAddrFromStdAddr must not be called with a subaddress"));
+		THROW_WALLET_EXCEPTION_IF(true, tools::error::wallet_internal_error, "new_integratedAddrFromStdAddr must not be called with a subaddress");
 		return none;
 	}
 	if (info.has_payment_id != false) {
