@@ -197,23 +197,6 @@ string serial_bridge::new_integrated_address(const string &args_string)
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::new_fake_address_for_rct_tx(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	optional<string> retVal = monero::address_utils::new_fake_address_string_for_rct_tx(
-		nettype_from_string(json_root.get<string>("nettype_string"))
-	);
-	boost::property_tree::ptree root;
-	if (retVal != none) {
-		root.put(ret_json_key__generic_retVal(), std::move(*retVal));
-	}
-	//
-	return ret_json_from_root(root);
-}
 string serial_bridge::new_payment_id(const string &args_string)
 {
 	boost::property_tree::ptree json_root;

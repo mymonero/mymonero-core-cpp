@@ -544,28 +544,6 @@ BOOST_AUTO_TEST_CASE(bridged__new_integrated_address)
 	cout << "bridged__new_integrated_address: " << *value << endl;
 }
 //
-BOOST_AUTO_TEST_CASE(bridged__new_fake_address_for_rct_tx)
-{
-	using namespace serial_bridge;
-	//
-	boost::property_tree::ptree root;
-	root.put("nettype_string", string_from_nettype(MAINNET));
-	//
-	auto ret_string = serial_bridge::new_fake_address_for_rct_tx(args_string_from_root(root));
-	stringstream ret_stream;
-	ret_stream << ret_string;
-	boost::property_tree::ptree ret_tree;
-	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
-	if (err_string != none) {
-		BOOST_REQUIRE_MESSAGE(false, *err_string);
-	}
-	optional<string> value = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
-	BOOST_REQUIRE(value != none);
-	BOOST_REQUIRE((*value).size() > 0);
-	cout << "bridged__new_fake_address_for_rct_tx: " << *value << endl;
-}
-//
 BOOST_AUTO_TEST_CASE(bridged__new_short_payment_id)
 {
 	using namespace serial_bridge;

@@ -49,7 +49,6 @@ namespace serial_bridge
 	string is_integrated_address(const string &args_string);
 	//
 	string new_integrated_address(const string &args_string);
-	string new_fake_address_for_rct_tx(const string &args_string);
 	string new_payment_id(const string &args_string);
 	//
 	string newly_created_wallet(const string &args_string);

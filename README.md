@@ -161,12 +161,6 @@ In future, the key names could be compressed.
 
 * Returns: `err_msg: String` *OR* `retVal: String`
 
-**`new_fake_address_for_rct_tx`**
-
-* Args: `nettype_string: NettypeString`
-
-* Returns: `err_msg: String` *OR* `retVal: String`
-
 **`new_payment_id`**
 
 * Args: *empty object*

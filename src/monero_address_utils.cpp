@@ -124,14 +124,3 @@ optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_
 	);
 	return int_address_string;
 }
-account_public_address address_utils::new_fake_address_for_rct_tx()
-{
-	cryptonote::account_base dummy;
-	dummy.generate();
-	//
-	return dummy.get_keys().m_account_address;
-}
-string address_utils::new_fake_address_string_for_rct_tx(network_type nettype)
-{
-	return get_account_address_as_str(nettype, false/*subaddress*/, new_fake_address_for_rct_tx());
-}

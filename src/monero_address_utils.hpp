@@ -58,8 +58,5 @@ namespace monero
 		bool isIntegratedAddress(const string &addressString, network_type nettype);
 		//
 		optional<string> new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID, cryptonote::network_type nettype);
-		//
-		account_public_address new_fake_address_for_rct_tx();
-		string new_fake_address_string_for_rct_tx(network_type nettype);
 	}
 }
