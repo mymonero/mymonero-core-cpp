@@ -795,7 +795,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
 	BOOST_REQUIRE(size_string != none);
 	BOOST_REQUIRE((*size_string).size() > 0);
 	uint64_t size = stoull(*size_string);
-	BOOST_REQUIRE(size == 13762);
+	BOOST_REQUIRE(size == 14290);
 	cout << "bridged__estimate_rct_tx_size: " << size << endl;
 }
 
