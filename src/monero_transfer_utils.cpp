@@ -50,7 +50,7 @@ using namespace monero_fork_rules;
 // Protocol / Defaults
 uint32_t monero_transfer_utils::fixed_ringsize()
 {
-	return 7; // best practice is to conform to fixed default ring size
+	return 11; // best practice is to conform to fixed default ring size
 }
 uint32_t monero_transfer_utils::fixed_mixinsize()
 {
