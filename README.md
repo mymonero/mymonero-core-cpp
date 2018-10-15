@@ -56,6 +56,8 @@ Contributors credited in releases.
 
 * If you use a Mac and want to develop within Xcode, run `bin/genXcodeProj` to generate `./xcode/TEST.xcodeproj`. Once opened, its build target can be switched from **ALL\_BUILD** to **test\_all**, from which a *Build & Run* will display test results in the console.
 
+* Branches and PRs should be made from and to the `develop` branch, which gets merged to `master` for tagged releases
+
 ## Regular and Main Contributors
 
 * 💫 `endogenic` ([Paul Shapiro](https://github.com/paulshapiro)) Lead dev, maintainer
