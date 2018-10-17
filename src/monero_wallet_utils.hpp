@@ -42,7 +42,14 @@
 #include "mnemonics/singleton.h"
 #include "mnemonics/english.h"
 //
-using namespace tools;
+#include "generic-ops.h" // mostly to get its includes
+//
+#include "misc_log_ex.h"
+#include "wipeable_string.h"
+#include "string_tools.h"
+using namespace epee;
+//
+using namespace tools; // intentionally first
 #include "tools__ret_vals.hpp"
 //
 namespace monero_wallet_utils
@@ -71,8 +78,8 @@ namespace monero_wallet_utils
 	const static unsigned long sec_seed_hex_string_length = sizeof(secret_key) * 2;
 	const static unsigned long legacy16B__sec_seed_hex_string_length = sizeof(legacy16B_secret_key) * 2;
 	//
-	bool words_to_bytes(std::string words, legacy16B_secret_key& dst, std::string &language_name);
-	bool bytes_to_words(const legacy16B_secret_key& src, std::string& words, const std::string &language_name);
+	bool words_to_bytes(const epee::wipeable_string &words, legacy16B_secret_key &dst, std::string &language_name);
+	bool bytes_to_words(const legacy16B_secret_key& src, epee::wipeable_string &words, const std::string &language_name);
 	//
 	bool are_equal_mnemonics(const string &words_a, const string &words_b);
  	//
@@ -87,14 +94,14 @@ namespace monero_wallet_utils
 		bool from_legacy16B_lw_seed = false;
 	};
 	bool decoded_seed(
-		const string &mnemonic_string,
+		const epee::wipeable_string &mnemonic_string,
 		//
 		MnemonicDecodedSeed_RetVals &retVals
 	);
 	//
 	struct SeedDecodedMnemonic_RetVals: RetVals_base
 	{
-		optional<string> mnemonic_string = none;
+		optional<epee::wipeable_string> mnemonic_string = none;
 	};
 	SeedDecodedMnemonic_RetVals mnemonic_string_from_seed_hex_string(
 		const string &seed_string,
@@ -113,7 +120,7 @@ namespace monero_wallet_utils
 		public_key pub_spendKey;
 		public_key pub_viewKey;
 		//
-		string mnemonic_string;
+		epee::wipeable_string mnemonic_string;
 		string mnemonic_language;
 	};
 	struct WalletDescriptionRetVals: RetVals_base
@@ -209,18 +216,28 @@ namespace monero_wallet_utils
 }
 
 
-#define MONEROWALLETUTILS_MAKE_COMPARABLE(type) \
+#define MWU__MAKE_COMPARABLE(type) \
 namespace monero_wallet_utils { \
 inline bool operator==(const type &_v1, const type &_v2) { \
-return std::memcmp(&_v1, &_v2, sizeof(type)) == 0; \
+return !memcmp(&_v1, &_v2, sizeof(_v1)); \
 } \
 inline bool operator!=(const type &_v1, const type &_v2) { \
-return std::memcmp(&_v1, &_v2, sizeof(type)) != 0; \
+return !operator==(_v1, _v2); \
 } \
 }
 
-#define MONEROWALLETUTILS_MAKE_HASHABLE(type) \
-MONEROWALLETUTILS_MAKE_COMPARABLE(type) \
+#define MWU__MAKE_COMPARABLE_CONSTANT_TIME(type) \
+namespace monero_wallet_utils { \
+inline bool operator==(const type &_v1, const type &_v2) { \
+static_assert(sizeof(_v1) == 32, "constant time comparison is only implenmted for 32 bytes"); \
+return crypto_verify_32((const unsigned char*)&_v1, (const unsigned char*)&_v2) == 0; \
+} \
+inline bool operator!=(const type &_v1, const type &_v2) { \
+return !operator==(_v1, _v2); \
+} \
+}
+
+#define MWU__DEFINE_HASH_FUNCTIONS(type) \
 namespace monero_wallet_utils { \
 static_assert(sizeof(std::size_t) <= sizeof(type), "Size of " #type " must be at least that of size_t"); \
 inline std::size_t hash_value(const type &_v) { \
@@ -236,6 +253,15 @@ return reinterpret_cast<const std::size_t &>(_v); \
 }; \
 }
 
-MONEROWALLETUTILS_MAKE_HASHABLE(legacy16B_secret_key)
+#define MWU__MAKE_HASHABLE(type) \
+MWU__MAKE_COMPARABLE(type) \
+MWU__DEFINE_HASH_FUNCTIONS(type)
+
+#define MWU__MAKE_HASHABLE_CONSTANT_TIME(type) \
+MWU__MAKE_COMPARABLE_CONSTANT_TIME(type) \
+MWU__DEFINE_HASH_FUNCTIONS(type)
+
+
+MWU__MAKE_HASHABLE(legacy16B_secret_key) // "constant time comparison is only implenmted for 32 bytes"
 
 #endif /* monero_wallet_utils_hpp */

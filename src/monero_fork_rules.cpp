@@ -38,12 +38,12 @@
 using namespace monero_fork_rules;
 //
 uint8_t monero_fork_rules::get_bulletproof_fork()
-{
+{ // the fork at which bulletproofs became optional
 	return 8;
 }
 bool monero_fork_rules::lightwallet_hardeded__use_bulletproofs()
 {
-	return false; // This is temporary (and true only because it's not time for the fork yet) until we have the fork rules supplied by the server
+	return true; // This is temporary until we have the fork rules supplied by the server
 }
 //
 bool monero_fork_rules::lightwallet_hardcoded__use_fork_rules(uint8_t version, int64_t early_blocks)

@@ -973,7 +973,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
 	BOOST_REQUIRE(fee_string != none);
 	BOOST_REQUIRE((*fee_string).size() > 0);
 	uint64_t fee = stoull(*fee_string);
-	BOOST_REQUIRE(fee == 504000000);
+	BOOST_REQUIRE(fee == 144000000); // with bulletproofs on
 	cout << "bridged__estimated_tx_network_fee: " << fee << endl;
 }
 
@@ -981,13 +981,15 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
 {
 	using namespace serial_bridge;
 	//
+	bool use_bulletproofs = monero_fork_rules::lightwallet_hardeded__use_bulletproofs();
+	//
 	boost::property_tree::ptree root;
 	root.put("n_inputs", 2);
 	root.put("mixin", monero_transfer_utils::fixed_mixinsize());
 	root.put("n_outputs", 2);
 	std::vector<uint8_t> extra; // blank extra
 	root.put("extra_size", extra.size());
-	root.put("bulletproof", monero_fork_rules::lightwallet_hardeded__use_bulletproofs());
+	root.put("bulletproof", use_bulletproofs);
 	//
 	auto ret_string = serial_bridge::estimate_rct_tx_size(args_string_from_root(root));
 	stringstream ret_stream;
@@ -1002,7 +1004,8 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
 	BOOST_REQUIRE(size_string != none);
 	BOOST_REQUIRE((*size_string).size() > 0);
 	uint64_t size = stoull(*size_string);
-	BOOST_REQUIRE(size == 14290);
+	BOOST_REQUIRE(use_bulletproofs == true);
+	BOOST_REQUIRE(size == 3288);
 	cout << "bridged__estimate_rct_tx_size: " << size << endl;
 }
 

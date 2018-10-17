@@ -233,7 +233,10 @@ string serial_bridge::newly_created_wallet(const string &args_string)
 	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
 	//
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__mnemonic_string(), (*(retVals.optl__desc)).mnemonic_string);
+	root.put(
+		ret_json_key__mnemonic_string(),
+		std::string((*(retVals.optl__desc)).mnemonic_string.data(), (*(retVals.optl__desc)).mnemonic_string.size())
+	);
 	root.put(ret_json_key__mnemonic_language(), (*(retVals.optl__desc)).mnemonic_language);
 	root.put(ret_json_key__sec_seed_string(), (*(retVals.optl__desc)).sec_seed_string);
 	root.put(ret_json_key__address_string(), (*(retVals.optl__desc)).address_string);
@@ -308,7 +311,10 @@ string serial_bridge::mnemonic_from_seed(const string &args_string)
 	if (retVals.err_string != none) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
-	root.put(ret_json_key__generic_retVal(), *(retVals.mnemonic_string));
+	root.put(
+		ret_json_key__generic_retVal(),
+		std::string((*(retVals.mnemonic_string)).data(), (*(retVals.mnemonic_string)).size())
+	);
 	//
 	return ret_json_from_root(root);
 }
@@ -577,10 +583,8 @@ string serial_bridge::decodeRct(const string &args_string)
 		rv.type = rct::RCTTypeSimple;
 	} else if (rv_type_int == rct::RCTTypeFull) {
 		rv.type = rct::RCTTypeFull;
-	} else if (rv_type_int == rct::RCTTypeSimpleBulletproof) {
-		rv.type = rct::RCTTypeSimpleBulletproof;
-	} else if (rv_type_int == rct::RCTTypeFullBulletproof) {
-		rv.type = rct::RCTTypeFullBulletproof;
+	} else if (rv_type_int == rct::RCTTypeBulletproof) {
+		rv.type = rct::RCTTypeBulletproof;
 	} else {
 		return error_ret_json_from_message("Invalid 'rv.type'");
 	}

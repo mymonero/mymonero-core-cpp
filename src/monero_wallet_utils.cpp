@@ -67,11 +67,11 @@ void monero_wallet_utils::coerce_valid_sec_key_from(
 						(uint8_t *)&dst__sec_seed, sizeof(secret_key));
 }
 bool monero_wallet_utils::words_to_bytes(
-	std::string words, 
-	legacy16B_secret_key& dst, 
+	const epee::wipeable_string &words,
+	legacy16B_secret_key &dst,
 	std::string &language_name
 ) {
-	std::string s;
+	epee::wipeable_string s;
 	if (!crypto::ElectrumWords::words_to_bytes(words, s, sizeof(dst), true, language_name)) {
 		return false;
 	}
@@ -82,8 +82,8 @@ bool monero_wallet_utils::words_to_bytes(
 	return true;
 }
 bool monero_wallet_utils::bytes_to_words(
-	const legacy16B_secret_key& src, 
-	std::string& words, 
+	const legacy16B_secret_key &src,
+	epee::wipeable_string &words,
 	const std::string &language_name
 ) {
 	return crypto::ElectrumWords::bytes_to_words(
@@ -119,7 +119,7 @@ bool monero_wallet_utils::new_wallet(
 	const cryptonote::account_keys& keys = account.get_keys();
 	std::string address_string = account.get_public_address_str(nettype); // getting the string here instead of leaving it to the consumer b/c get_public_address_str could potentially change in implementation (see TODO) so it's not right to duplicate that here
 	//
-	std::string mnemonic_string;
+	epee::wipeable_string mnemonic_string;
 	bool r = crypto::ElectrumWords::bytes_to_words(nonLegacy32B_sec_seed, mnemonic_string, mnemonic_language);
 	// ^-- it's OK to directly call ElectrumWords w/ crypto::secret_key as we are generating new wallet, not reading
 	if (!r) {
@@ -164,7 +164,7 @@ const uint32_t stable_32B_seed_mnemonic_word_count = 25;
 const uint32_t legacy_16B_seed_mnemonic_word_count = 13;
 
 bool monero_wallet_utils::decoded_seed(
-	const string &mnemonic_string__ref,
+	const epee::wipeable_string &mnemonic_string__ref,
 	MnemonicDecodedSeed_RetVals &retVals
 ) {
 	retVals = {};
@@ -176,7 +176,7 @@ bool monero_wallet_utils::decoded_seed(
 		//
 		return false;
 	}
-	string mnemonic_string = mnemonic_string__ref; // just going to take a copy rather than require people to pass mutable string in.
+	string mnemonic_string = string(mnemonic_string__ref.data(), mnemonic_string__ref.size()); // just going to take a copy rather than require people to pass mutable string in.
 	boost::algorithm::to_lower(mnemonic_string); // critical
 	// TODO: strip wrapping whitespace? anything else?
 	//
@@ -190,7 +190,7 @@ bool monero_wallet_utils::decoded_seed(
 	bool from_legacy16B_lw_seed = false;
 	if (word_count == stable_32B_seed_mnemonic_word_count) {
 		from_legacy16B_lw_seed = false; // to be clear
-		bool r = crypto::ElectrumWords::words_to_bytes(mnemonic_string, sec_seed, mnemonic_language);
+		bool r = crypto::ElectrumWords::words_to_bytes(mnemonic_string__ref, sec_seed, mnemonic_language);
 		if (!r) {
 			retVals.did_error = true;
 			retVals.err_string = "Invalid 25-word mnemonic";
@@ -201,7 +201,7 @@ bool monero_wallet_utils::decoded_seed(
 	} else if (word_count == legacy_16B_seed_mnemonic_word_count) {
 		from_legacy16B_lw_seed = true;
 		legacy16B_secret_key legacy16B_sec_seed;
-		bool r = words_to_bytes(mnemonic_string, legacy16B_sec_seed, mnemonic_language); // special 16 byte function
+		bool r = words_to_bytes(mnemonic_string__ref, legacy16B_sec_seed, mnemonic_language); // special 16 byte function
 		if (!r) {
 			retVals.did_error = true;
 			retVals.err_string = "Invalid 13-word mnemonic";
@@ -231,7 +231,7 @@ SeedDecodedMnemonic_RetVals monero_wallet_utils::mnemonic_string_from_seed_hex_s
 ) {
 	SeedDecodedMnemonic_RetVals retVals = {};
 	//
-	std::string mnemonic_string;
+	epee::wipeable_string mnemonic_string;
 	uint32_t sec_hexString_length = sec_hexString.size();
 	//
 	bool r = false;

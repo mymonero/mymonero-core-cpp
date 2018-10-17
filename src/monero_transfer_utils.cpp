@@ -67,7 +67,7 @@ uint64_t monero_transfer_utils::estimated_tx_network_fee(
 	uint32_t priority,
 	use_fork_rules_fn_type use_fork_rules_fn
 ) {
-	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0);
+	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0); // eventually just hardcode this to true (?)
 	uint64_t fee_multiplier = get_fee_multiplier(priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
 	std::vector<uint8_t> extra; // blank extra
 	size_t est_tx_size = estimate_rct_tx_size(2, fixed_mixinsize(), 2, extra.size(), bulletproof); // typically ~14kb post-rct, pre-bulletproofs
@@ -322,6 +322,7 @@ void monero_transfer_utils::create_transaction(
 	//
 	uint32_t fake_outputs_count = fixed_mixinsize();
 	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0);
+	const rct::RangeProofType range_proof_type = bulletproof ? rct::RangeProofPaddedBulletproof : rct::RangeProofBorromean;
 	//
 	if (mix_outs.size() != outputs.size() && fake_outputs_count != 0) {
 		retVals.errCode = wrongNumberOfMixOutsProvided;
@@ -521,7 +522,7 @@ void monero_transfer_utils::create_transaction(
 		sender_account_keys, subaddresses,
 		sources, splitted_dsts, change_dst.addr, extra,
 		tx, unlock_time, tx_key, additional_tx_keys,
-		true, bulletproof,
+		true, range_proof_type,
 		/*m_multisig ? &msout : */NULL
 	);
 	LOG_PRINT_L2("constructed tx, r="<<r);

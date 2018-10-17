@@ -53,6 +53,8 @@ include_directories("${MONERO_SRC}/cryptonote_protocol")
 include_directories("${MONERO_SRC}/wallet")
 include_directories("${MONERO_SRC}/rpc")
 include_directories("${MONERO_SRC}/mnemonics")
+include_directories("${MONERO_SRC}/contrib/libsodium/include") # support sodium/… paths
+include_directories("${MONERO_SRC}/contrib/libsodium/include/sodium")
 include_directories("test")
 
 # keeping test files in a separate source directory 
@@ -88,6 +90,7 @@ set(
     ${MONERO_SRC}/crypto/crypto-ops.c
     ${MONERO_SRC}/crypto/crypto-ops-data.c
     ${MONERO_SRC}/crypto/keccak.c
+    ${MONERO_SRC}/crypto/chacha.c
     ${MONERO_SRC}/crypto/random.c
     ${MONERO_SRC}/crypto/aesb.c
     ${MONERO_SRC}/crypto/tree-hash.c
@@ -102,9 +105,12 @@ set(
     ${MONERO_SRC}/cryptonote_core/cryptonote_tx_utils.cpp
     ${MONERO_SRC}/common/base58.cpp
     ${MONERO_SRC}/common/threadpool.cpp
+    ${MONERO_SRC}/common/aligned.c
+    ${MONERO_SRC}/common/util.cpp
     ${MONERO_SRC}/epee/src/hex.cpp
     ${MONERO_SRC}/epee/src/string_tools.cpp
     ${MONERO_SRC}/epee/src/memwipe.c
+    ${MONERO_SRC}/epee/src/mlocker.cpp
     ${MONERO_SRC}/epee/src/wipeable_string.cpp
     ${MONERO_SRC}/device/device.cpp
     ${MONERO_SRC}/device/device_default.cpp
@@ -113,8 +119,10 @@ set(
     ${MONERO_SRC}/ringct/rctCryptoOps.c
     ${MONERO_SRC}/ringct/rctSigs.cpp
     ${MONERO_SRC}/ringct/bulletproofs.cc
+    ${MONERO_SRC}/ringct/multiexp.cc
     ${MONERO_SRC}/mnemonics/electrum-words.cpp
     ${MONERO_SRC}/vtlogger/logger.cpp
+    ${MONERO_SRC}/contrib/libsodium/src/crypto_verify/verify.c
 )
 # needed for slow-hash
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes")
