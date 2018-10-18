@@ -78,7 +78,7 @@ bool monero_wallet_utils::words_to_bytes(
 	if (s.size() != sizeof(dst)) {
 		return false;
 	}
-	memcpy(dst.data, s.data(), sizeof(dst.data));
+	dst = *(const legacy16B_secret_key*)s.data();
 	return true;
 }
 bool monero_wallet_utils::bytes_to_words(
