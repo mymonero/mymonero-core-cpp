@@ -43,12 +43,10 @@
 #include "ringct/rctSigs.h"
 //
 #include "monero_fork_rules.hpp"
+#include "monero_fee_utils.hpp"
 //
 using namespace tools;
 #include "tools__ret_vals.hpp"
-//
-// used to choose when to stop adding outputs to a tx
-#define APPROXIMATE_INPUT_BYTES 80
 //
 namespace monero_transfer_utils
 {
@@ -58,29 +56,8 @@ namespace monero_transfer_utils
 	using namespace monero_fork_rules;
 	using namespace crypto;
 	//
-	uint64_t get_upper_transaction_size_limit(uint64_t upper_transaction_size_limit__or_0_for_default, use_fork_rules_fn_type use_fork_rules_fn);
-	uint64_t get_fee_multiplier(uint32_t priority, uint32_t default_priority, int fee_algorithm, use_fork_rules_fn_type use_fork_rules_fn);
-	int get_fee_algorithm(use_fork_rules_fn_type use_fork_rules_fn);
-	//
-	uint64_t calculate_fee(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier);
-	uint64_t calculate_fee(uint64_t fee_per_kb, const blobdata &blob, uint64_t fee_multiplier);
-	//
-	size_t estimate_rct_tx_size(int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof);
-	size_t estimate_tx_size(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof);
-	uint64_t estimated_tx_network_fee( // convenience function for size + calc
-		uint64_t fee_per_kb,
-		uint32_t priority, // when priority=0, falls back to monero_transfer_utils::default_priority()
-		use_fork_rules_fn_type use_fork_rules_fn // this is extracted to a function so that implementations can optionally query the daemon (although this presently implies that such a call remains blocking)
-	);
-	//
 	bool is_transfer_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, network_type nettype = MAINNET);
 	bool is_tx_spendtime_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, network_type nettype = MAINNET);
-	//
-	uint32_t fixed_ringsize(); // not mixinsize, which would be ringsize-1
-	uint32_t fixed_mixinsize(); // not ringsize, which would be mixinsize+1
-	uint32_t default_priority();
-	//
-	string new_dummy_address_string_for_rct_tx(network_type nettype = MAINNET);
 	//
 	// Types - Arguments
 	struct SpendableOutput

@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(transfers__fee)
 	};
 	uint64_t fee_per_kb = 9000000;
 	uint32_t priority = 2;
-	uint64_t est_fee = monero_transfer_utils::estimated_tx_network_fee(fee_per_kb, priority, use_fork_rules_fn);
+	uint64_t est_fee = monero_fee_utils::estimated_tx_network_fee(fee_per_kb, priority, use_fork_rules_fn);
 	std::cout << "transfers__fee: est_fee with fee_per_kb " << fee_per_kb << ": " << est_fee << std::endl;
 	BOOST_REQUIRE(est_fee > 0);
 }
@@ -973,7 +973,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
 	BOOST_REQUIRE(fee_string != none);
 	BOOST_REQUIRE((*fee_string).size() > 0);
 	uint64_t fee = stoull(*fee_string);
-	BOOST_REQUIRE(fee == 144000000); // with bulletproofs on
+	BOOST_REQUIRE(fee == 135000000);
 	cout << "bridged__estimated_tx_network_fee: " << fee << endl;
 }
 
@@ -985,7 +985,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
 	//
 	boost::property_tree::ptree root;
 	root.put("n_inputs", 2);
-	root.put("mixin", monero_transfer_utils::fixed_mixinsize());
+	root.put("mixin", monero_fork_rules::fixed_mixinsize());
 	root.put("n_outputs", 2);
 	std::vector<uint8_t> extra; // blank extra
 	root.put("extra_size", extra.size());

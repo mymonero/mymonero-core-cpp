@@ -69,6 +69,8 @@ set(
     src/monero_paymentID_utils.cpp
     src/monero_key_image_utils.hpp
     src/monero_key_image_utils.cpp
+    src/monero_fee_utils.hpp
+    src/monero_fee_utils.cpp
     src/monero_transfer_utils.hpp
     src/monero_transfer_utils.cpp
     src/monero_fork_rules.hpp

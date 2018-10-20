@@ -52,6 +52,29 @@ bool monero_fork_rules::lightwallet_hardcoded__use_fork_rules(uint8_t version, i
 	if (version >= monero_fork_rules::get_bulletproof_fork()) {
 		return bulletproof;
 	}
-	return true;
+	return true; // TODO - we don't have the actual fork rules from thje lightwallet server yet
+	//
+	// full wallets do:
+//	uint64_t height, earliest_height;
+//	boost::optional<std::string> result = m_node_rpc_proxy.get_height(height);
+//	throw_on_rpc_response_error(result, "get_info");
+//	result = m_node_rpc_proxy.get_earliest_height(version, earliest_height);
+//	throw_on_rpc_response_error(result, "get_hard_fork_info");
+//
+//	bool close_enough = height >=  earliest_height - early_blocks; // start using the rules that many blocks beforehand
+//	if (close_enough)
+//		LOG_PRINT_L2("Using v" << (unsigned)version << " rules");
+//	else
+//		LOG_PRINT_L2("Not using v" << (unsigned)version << " rules");
+//	return close_enough;	
 }
-
+//
+// Protocol / Defaults
+uint32_t monero_fork_rules::fixed_ringsize()
+{
+	return 11; // v8
+}
+uint32_t monero_fork_rules::fixed_mixinsize()
+{
+	return monero_fork_rules::fixed_ringsize() - 1;
+}

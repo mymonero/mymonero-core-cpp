@@ -45,159 +45,7 @@ using namespace cryptonote;
 using namespace tools; // for error::
 using namespace monero_transfer_utils;
 using namespace monero_fork_rules;
-
-//
-// Protocol / Defaults
-uint32_t monero_transfer_utils::fixed_ringsize()
-{
-	return 11; // best practice is to conform to fixed default ring size
-}
-uint32_t monero_transfer_utils::fixed_mixinsize()
-{
-	return monero_transfer_utils::fixed_ringsize() - 1;
-}
-uint32_t monero_transfer_utils::default_priority()
-{
-	return 1; // lowest (TODO: declare centrally)
-}
-//
-// Fee estimation
-uint64_t monero_transfer_utils::estimated_tx_network_fee(
-	uint64_t fee_per_kb,
-	uint32_t priority,
-	use_fork_rules_fn_type use_fork_rules_fn
-) {
-	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0); // eventually just hardcode this to true (?)
-	uint64_t fee_multiplier = get_fee_multiplier(priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
-	std::vector<uint8_t> extra; // blank extra
-	size_t est_tx_size = estimate_rct_tx_size(2, fixed_mixinsize(), 2, extra.size(), bulletproof); // typically ~14kb post-rct, pre-bulletproofs
-	uint64_t estimated_fee = calculate_fee(fee_per_kb, est_tx_size, fee_multiplier);
-	//
-	return estimated_fee;
-}
-uint64_t monero_transfer_utils::get_upper_transaction_size_limit(
-	uint64_t upper_transaction_size_limit__or_0_for_default,
-	use_fork_rules_fn_type use_fork_rules_fn
-) {
-	if (upper_transaction_size_limit__or_0_for_default > 0)
-		return upper_transaction_size_limit__or_0_for_default;
-	uint64_t full_reward_zone = use_fork_rules_fn(5, 10) ? CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V5 : use_fork_rules_fn(2, 10) ? CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2 : CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1;
-	return full_reward_zone - CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE;
-}
-uint64_t monero_transfer_utils::get_fee_multiplier(
-	uint32_t priority,
-	uint32_t default_priority,
-	int fee_algorithm,
-	use_fork_rules_fn_type use_fork_rules_fn
-) {
-	static const uint64_t old_multipliers[3] = {1, 2, 3};
-	static const uint64_t new_multipliers[3] = {1, 20, 166};
-	static const uint64_t newer_multipliers[4] = {1, 4, 20, 166};
-
-	if (fee_algorithm == -1)
-		fee_algorithm = get_fee_algorithm(use_fork_rules_fn);
-
-	// 0 -> default (here, x1 till fee algorithm 2, x4 from it)
-	if (priority == 0)
-		priority = default_priority;
-	if (priority == 0)
-	{
-		if (fee_algorithm >= 2)
-			priority = 2;
-		else
-			priority = 1;
-	}
-
-	// 1 to 3/4 are allowed as priorities
-	uint32_t max_priority = (fee_algorithm >= 2) ? 4 : 3;
-	if (priority >= 1 && priority <= max_priority)
-	{
-		switch (fee_algorithm)
-		{
-			case 0: return old_multipliers[priority-1];
-			case 1: return new_multipliers[priority-1];
-			case 2: return newer_multipliers[priority-1];
-			default: THROW_WALLET_EXCEPTION_IF (true, error::invalid_priority);
-		}
-	}
-
-	THROW_WALLET_EXCEPTION_IF (false, error::invalid_priority);
-	return 1;
-}
-int monero_transfer_utils::get_fee_algorithm(use_fork_rules_fn_type use_fork_rules_fn)
-{
-	// changes at v3 and v5
-	if (use_fork_rules_fn(5, 0))
-		return 2;
-	if (use_fork_rules_fn(3, -720 * 14))
-		return 1;
-	return 0;
-}
-size_t monero_transfer_utils::estimate_rct_tx_size(int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof)
-{
-	size_t size = 0;
-
-	// tx prefix
-
-	// first few bytes
-	size += 1 + 6;
-
-	// vin
-	size += n_inputs * (1+6+(mixin+1)*2+32);
-
-	// vout
-	size += n_outputs * (6+32);
-
-	// extra
-	size += extra_size;
-
-	// rct signatures
-
-	// type
-	size += 1;
-
-	// rangeSigs
-	if (bulletproof)
-		size += ((2*6 + 4 + 5)*32 + 3) * n_outputs;
-	else
-		size += (2*64*32+32+64*32) * n_outputs;
-
-	// MGs
-	size += n_inputs * (64 * (mixin+1) + 32);
-
-	// mixRing - not serialized, can be reconstructed
-	/* size += 2 * 32 * (mixin+1) * n_inputs; */
-
-	// pseudoOuts
-	size += 32 * n_inputs;
-	// ecdhInfo
-	size += 2 * 32 * n_outputs;
-	// outPk - only commitment is saved
-	size += 32 * n_outputs;
-	// txnFee
-	size += 4;
-
-	LOG_PRINT_L2("estimated rct tx size for " << n_inputs << " with ring size " << (mixin+1) << " and " << n_outputs << ": " << size << " (" << ((32 * n_inputs/*+1*/) + 2 * 32 * (mixin+1) * n_inputs + 32 * n_outputs) << " saved)");
-	return size;
-}
-size_t monero_transfer_utils::estimate_tx_size(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof)
-{
-	if (use_rct)
-		return estimate_rct_tx_size(n_inputs, mixin, n_outputs + 1, extra_size, bulletproof);
-	else
-		return n_inputs * (mixin+1) * APPROXIMATE_INPUT_BYTES + extra_size;
-}
-//
-uint64_t monero_transfer_utils::calculate_fee(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier)
-{
-	uint64_t kB = (bytes + 1023) / 1024;
-	//
-	return kB * fee_per_kb * fee_multiplier;
-}
-uint64_t monero_transfer_utils::calculate_fee(uint64_t fee_per_kb, const cryptonote::blobdata &blob, uint64_t fee_multiplier)
-{
-	return calculate_fee(fee_per_kb, blob.size(), fee_multiplier);
-}
+using namespace monero_fee_utils;
 //
 // Transfer parsing/derived properties
 bool monero_transfer_utils::is_transfer_unlocked(
@@ -244,13 +92,6 @@ bool monero_transfer_utils::is_tx_spendtime_unlocked(
 }
 //
 // Constructing transactions
-std::string monero_transfer_utils::new_dummy_address_string_for_rct_tx(network_type nettype)
-{
-	cryptonote::account_base account;
-	account.generate();
-	//
-	return account.get_public_address_str(nettype);
-}
 bool _rct_hex_to_rct_commit(
 	const std::string &rct_string,
 	rct::key &rct_commit
@@ -531,8 +372,8 @@ void monero_transfer_utils::create_transaction(
 		retVals.errCode = transactionNotConstructed;
 		return;
 	}
-	if (get_object_blobsize(tx) >= get_upper_transaction_size_limit(0, use_fork_rules_fn)) {
-		// TODO: return error::tx_too_big, tx, upper_transaction_size_limit
+	if (get_upper_transaction_weight_limit(0, use_fork_rules_fn) <= get_transaction_weight(tx)) {
+		// TODO: return error::tx_too_big, tx, upper_transaction_weight_limit
 		retVals.errCode = transactionTooBig;
 		return;
 	}

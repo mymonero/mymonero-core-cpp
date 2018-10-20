@@ -46,6 +46,10 @@ namespace monero_fork_rules
 	bool lightwallet_hardeded__use_bulletproofs();
 	//
 	bool lightwallet_hardcoded__use_fork_rules(uint8_t version, int64_t early_blocks); // convenience
+	//
+	//
+	uint32_t fixed_ringsize(); // not mixinsize, which would be ringsize-1
+	uint32_t fixed_mixinsize(); // not ringsize, which would be mixinsize+1
 }
 
 #endif /* monero_fork_rules */

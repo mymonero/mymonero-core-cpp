@@ -387,7 +387,7 @@ string serial_bridge::estimate_rct_tx_size(const string &args_string)
 		// it will already have thrown an exception
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	uint32_t size = monero_transfer_utils::estimate_rct_tx_size(
+	uint32_t size = monero_fee_utils::estimate_rct_tx_size(
 		json_root.get<int>("n_inputs"),
 		json_root.get<int>("mixin"),
 		json_root.get<int>("n_outputs"),
@@ -409,7 +409,7 @@ string serial_bridge::calculate_fee(const string &args_string)
 		// it will already have thrown an exception
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	uint64_t fee = monero_transfer_utils::calculate_fee(
+	uint64_t fee = monero_fee_utils::calculate_fee(
 		stoull(json_root.get<string>("fee_per_kb")),
 		stoul(json_root.get<string>("num_bytes")),
 		stoull(json_root.get<string>("fee_multiplier"))
@@ -429,7 +429,7 @@ string serial_bridge::estimated_tx_network_fee(const string &args_string)
 		// it will already have thrown an exception
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	uint64_t fee = monero_transfer_utils::estimated_tx_network_fee(
+	uint64_t fee = monero_fee_utils::estimated_tx_network_fee(
 		stoull(json_root.get<string>("fee_per_kb")),
 		stoul(json_root.get<string>("priority")),
 		[] (uint8_t version, int64_t early_blocks) -> bool
