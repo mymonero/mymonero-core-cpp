@@ -37,21 +37,8 @@
 //
 using namespace monero_fork_rules;
 //
-uint8_t monero_fork_rules::get_bulletproof_fork()
-{ // the fork at which bulletproofs became optional
-	return 8;
-}
-bool monero_fork_rules::lightwallet_hardeded__use_bulletproofs()
-{
-	return true; // This is temporary until we have the fork rules supplied by the server
-}
-//
 bool monero_fork_rules::lightwallet_hardcoded__use_fork_rules(uint8_t version, int64_t early_blocks)
 {
-	bool bulletproof = lightwallet_hardeded__use_bulletproofs();
-	if (version >= monero_fork_rules::get_bulletproof_fork()) {
-		return bulletproof;
-	}
 	return true; // TODO - we don't have the actual fork rules from thje lightwallet server yet
 	//
 	// full wallets do:
@@ -76,5 +63,9 @@ uint32_t monero_fork_rules::fixed_ringsize()
 }
 uint32_t monero_fork_rules::fixed_mixinsize()
 {
-	return monero_fork_rules::fixed_ringsize() - 1;
+	return fixed_ringsize() - 1;
+}
+uint64_t monero_fork_rules::dust_threshold()
+{
+	return 2000000000;
 }

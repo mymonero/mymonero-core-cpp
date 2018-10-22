@@ -89,6 +89,21 @@ string serial_bridge::string_from_nettype(network_type nettype)
 			return "UNDEFINED";
 	}
 }
+struct RetVals_Transforms
+{
+	static string str_from(uint64_t v)
+	{
+		std::ostringstream o;
+		o << v;
+		return o.str();
+	}
+	static string str_from(uint32_t v)
+	{
+		std::ostringstream o;
+		o << v;
+		return o.str();
+	}
+};
 //
 // Shared - Parsing - Args
 bool parsed_json_root(const string &args_string, boost::property_tree::ptree &json_root)
@@ -379,49 +394,6 @@ string serial_bridge::validate_components_for_login(const string &args_string)
 	//
 	return ret_json_from_root(root);
 }
-//
-string serial_bridge::estimate_rct_tx_size(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	uint32_t size = monero_fee_utils::estimate_rct_tx_size(
-		json_root.get<int>("n_inputs"),
-		json_root.get<int>("mixin"),
-		json_root.get<int>("n_outputs"),
-		json_root.get<int>("extra_size"),
-		json_root.get<bool>("bulletproof")
-	);
-	std::ostringstream o;
-	o << size;
-	//
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
-	//
-	return ret_json_from_root(root);
-}
-string serial_bridge::calculate_fee(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	uint64_t fee = monero_fee_utils::calculate_fee(
-		stoull(json_root.get<string>("fee_per_kb")),
-		stoul(json_root.get<string>("num_bytes")),
-		stoull(json_root.get<string>("fee_multiplier"))
-	);
-	std::ostringstream o;
-	o << fee;
-	//
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
-	//
-	return ret_json_from_root(root);
-}
 string serial_bridge::estimated_tx_network_fee(const string &args_string)
 {
 	boost::property_tree::ptree json_root;
@@ -430,7 +402,7 @@ string serial_bridge::estimated_tx_network_fee(const string &args_string)
 		return error_ret_json_from_message("Invalid JSON");
 	}
 	uint64_t fee = monero_fee_utils::estimated_tx_network_fee(
-		stoull(json_root.get<string>("fee_per_kb")),
+		stoull(json_root.get<string>("fee_per_b")),
 		stoul(json_root.get<string>("priority")),
 		[] (uint8_t version, int64_t early_blocks) -> bool
 		{
@@ -484,31 +456,105 @@ string serial_bridge::generate_key_image(const string &args_string)
 }
 //
 //
-// TODO: probably take transaction secret key as an argument so we don't have to worry about randomness there
-string serial_bridge::create_transaction(const string &args_string)
+// TODO: possibly take tx sec key as a arg so we don't have to worry about randomness there
+string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &args_string)
 {
 	boost::property_tree::ptree json_root;
 	if (!parsed_json_root(args_string, json_root)) {
 		// it will already have thrown an exception
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	network_type nettype = nettype_from_string(json_root.get<string>("nettype_string"));
 	//
-	vector<SpendableOutput> outputs;
-	BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, json_root.get_child("outputs"))
+	vector<SpendableOutput> unspent_outs;
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, json_root.get_child("unspent_outs"))
 	{
 		assert(output_desc.first.empty()); // array elements have no names
 		SpendableOutput out{};
 		out.amount = stoull(output_desc.second.get<string>("amount"));
 		out.public_key = output_desc.second.get<string>("public_key");
-		out.rct = output_desc.second.get<string>("rct");
+		out.rct = output_desc.second.get_optional<string>("rct");
 		out.global_index = stoull(output_desc.second.get<string>("global_index"));
 		out.index = stoull(output_desc.second.get<string>("index"));
 		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
 		//
-		outputs.push_back(out);
+		unspent_outs.push_back(out);
+	}
+	optional<string> optl__passedIn_attemptAt_fee_string = json_root.get_optional<string>("passedIn_attemptAt_fee");
+	optional<uint64_t> optl__passedIn_attemptAt_fee = none;
+	if (optl__passedIn_attemptAt_fee_string != none) {
+		optl__passedIn_attemptAt_fee = stoull(*optl__passedIn_attemptAt_fee_string);
+	}
+	Send_Step1_RetVals retVals;
+	monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
+		retVals,
+		//
+		json_root.get_optional<string>("payment_id_string"),
+		stoull(json_root.get<string>("sending_amount")),
+		json_root.get<bool>("is_sweeping"),
+		stoul(json_root.get<string>("priority")),
+		[] (uint8_t version, int64_t early_blocks) -> bool
+		{
+			return lightwallet_hardcoded__use_fork_rules(version, early_blocks);
+		},
+		unspent_outs,
+		stoull(json_root.get<string>("fee_per_b")), // per v8
+		//
+		optl__passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+	);
+	boost::property_tree::ptree root;
+	if (retVals.errCode != noError) {
+		root.put(ret_json_key__any__err_code(), retVals.errCode);
+		//
+		// The following will be set if errCode==needMoreMoneyThanFound - and i'm depending on them being 0 otherwise
+		root.put(ret_json_key__send__spendable_balance(), std::move(RetVals_Transforms::str_from(retVals.spendable_balance)));
+		root.put(ret_json_key__send__required_balance(), std::move(RetVals_Transforms::str_from(retVals.required_balance)));
+	} else {
+		root.put(ret_json_key__send__mixin(), std::move(RetVals_Transforms::str_from(retVals.mixin)));
+		root.put(ret_json_key__send__using_fee(), std::move(RetVals_Transforms::str_from(retVals.using_fee)));
+		root.put(ret_json_key__send__final_total_wo_fee(), std::move(RetVals_Transforms::str_from(retVals.final_total_wo_fee)));
+		root.put(ret_json_key__send__change_amount(), std::move(RetVals_Transforms::str_from(retVals.change_amount)));
+		{
+			boost::property_tree::ptree using_outs_ptree;
+			BOOST_FOREACH(SpendableOutput &out, retVals.using_outs)
+			{ // PROBABLY don't need to shuttle these back (could send only public_key) but consumers might like the feature of being able to send this JSON structure directly back to step2 without reconstructing it for themselves
+				boost::property_tree::ptree out_ptree;
+				out_ptree.put("amount", std::move(RetVals_Transforms::str_from(out.amount)));
+				out_ptree.put("public_key", out.public_key); // FIXME: no std::move correct?
+				if (out.rct != none) {
+					out_ptree.put("rct", *out.rct); // copy vs move ?
+				}
+				out_ptree.put("global_index", std::move(RetVals_Transforms::str_from(out.global_index)));
+				out_ptree.put("index", std::move(RetVals_Transforms::str_from(out.index)));
+				out_ptree.put("tx_pub_key", out.tx_pub_key);
+				using_outs_ptree.push_back(std::make_pair("", out_ptree));
+			}
+			root.add_child(ret_json_key__send__using_outs(), using_outs_ptree);
+		}
+	}
+	return ret_json_from_root(root);
+}
+string serial_bridge::send_step2__reenterable_try_create_transaction(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
 	}
 	//
+	vector<SpendableOutput> using_outs;
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, json_root.get_child("using_outs"))
+	{
+		assert(output_desc.first.empty()); // array elements have no names
+		SpendableOutput out{};
+		out.amount = stoull(output_desc.second.get<string>("amount"));
+		out.public_key = output_desc.second.get<string>("public_key");
+		out.rct = output_desc.second.get_optional<string>("rct");
+		out.global_index = stoull(output_desc.second.get<string>("global_index"));
+		out.index = stoull(output_desc.second.get<string>("index"));
+		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
+		//
+		using_outs.push_back(out);
+	}
 	vector<RandomAmountOutputs> mix_outs;
 	BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_desc, json_root.get_child("mix_outs"))
 	{
@@ -521,15 +567,20 @@ string serial_bridge::create_transaction(const string &args_string)
 			auto amountOutput = RandomAmountOutput{};
 			amountOutput.global_index = stoull(mix_out_output_desc.second.get<string>("global_index")); // this is, I believe, presently supplied as a string by the API, probably to avoid overflow
 			amountOutput.public_key = mix_out_output_desc.second.get<string>("public_key");
-			amountOutput.rct = mix_out_output_desc.second.get<string>("rct");
+			amountOutput.rct = mix_out_output_desc.second.get_optional<string>("rct");
 			amountAndOuts.outputs.push_back(amountOutput);
 		}
 		mix_outs.push_back(amountAndOuts);
 	}
-	//
-	Convenience_TransactionConstruction_RetVals retVals;
-	monero_transfer_utils::convenience__create_transaction(
+	optional<string> optl__passedIn_attemptAt_fee_string = json_root.get_optional<string>("passedIn_attemptAt_fee");
+	optional<uint64_t> optl__passedIn_attemptAt_fee = none;
+	if (optl__passedIn_attemptAt_fee_string != none) {
+		optl__passedIn_attemptAt_fee = stoull(*optl__passedIn_attemptAt_fee_string);
+	}
+	Send_Step2_RetVals retVals;
+	monero_transfer_utils::send_step2__reenterable_try_create_transaction(
 		retVals,
+		//
 		json_root.get<string>("from_address_string"),
 		json_root.get<string>("sec_viewKey_string"),
 		json_root.get<string>("sec_spendKey_string"),
@@ -538,25 +589,31 @@ string serial_bridge::create_transaction(const string &args_string)
 		stoull(json_root.get<string>("sending_amount")),
 		stoull(json_root.get<string>("change_amount")),
 		stoull(json_root.get<string>("fee_amount")),
-		outputs,
+		stoul(json_root.get<string>("priority")),
+		using_outs,
+		stoull(json_root.get<string>("fee_per_b")),
 		mix_outs,
 		[] (uint8_t version, int64_t early_blocks) -> bool
 		{
 		   return lightwallet_hardcoded__use_fork_rules(version, early_blocks);
 		},
 		stoull(json_root.get<string>("unlock_time")),
-		nettype
+		nettype_from_string(json_root.get<string>("nettype_string"))
 	);
-	if (retVals.errCode != noError) {
-		return error_ret_json_from_code(retVals.errCode, err_msg_from_err_code__create_transaction(retVals.errCode));
-	}
-	THROW_WALLET_EXCEPTION_IF(retVals.signed_serialized_tx_string == boost::none, error::wallet_internal_error, "Not expecting no signed_serialized_tx_string given no error");
-	//
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__create_transaction__serialized_signed_tx(), std::move(*(retVals.signed_serialized_tx_string)));
-	root.put(ret_json_key__create_transaction__tx_hash(), std::move(*(retVals.tx_hash_string)));
-	root.put(ret_json_key__create_transaction__tx_key(), std::move(*(retVals.tx_key_string)));
-	//
+	if (retVals.errCode != noError) {
+		root.put(ret_json_key__any__err_code(), retVals.errCode);
+	} else {
+		if (retVals.tx_must_be_reconstructed) {
+			root.put(ret_json_key__send__tx_must_be_reconstructed(), true);
+			root.put(ret_json_key__send__fee_actually_needed(), std::move(RetVals_Transforms::str_from(retVals.fee_actually_needed))); // must be passed back
+		} else {
+			root.put(ret_json_key__send__tx_must_be_reconstructed(), false); // so consumers have it available
+			root.put(ret_json_key__send__serialized_signed_tx(), std::move(*(retVals.signed_serialized_tx_string)));
+			root.put(ret_json_key__send__tx_hash(), std::move(*(retVals.tx_hash_string)));
+			root.put(ret_json_key__send__tx_key(), std::move(*(retVals.tx_key_string)));
+		}
+	}
 	return ret_json_from_root(root);
 }
 //

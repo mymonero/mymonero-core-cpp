@@ -91,7 +91,37 @@ bool monero_transfer_utils::is_tx_spendtime_unlocked(
 	return false;
 }
 //
-// Constructing transactions
+CreateTransactionErrorCode _add_pid_to_tx_extra(
+	optional<string> payment_id_string,
+	vector<uint8_t> &extra
+) { // Detect hash8 or hash32 char hex string as pid and configure 'extra' accordingly
+	bool r = false;
+	if (payment_id_string != none) {
+		crypto::hash payment_id;
+		r = monero_paymentID_utils::parse_long_payment_id(*payment_id_string, payment_id);
+		if (r) {
+			std::string extra_nonce;
+			cryptonote::set_payment_id_to_tx_extra_nonce(extra_nonce, payment_id);
+			r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
+			if (!r) {
+				return couldntAddPIDNonceToTXExtra;
+			}
+		} else {
+			crypto::hash8 payment_id8;
+			r = monero_paymentID_utils::parse_short_payment_id(*payment_id_string, payment_id8);
+			if (!r) { // a PID has been specified by the user but the last resort in validating it fails; error
+				return invalidPID;
+			}
+			std::string extra_nonce;
+			cryptonote::set_encrypted_payment_id_to_tx_extra_nonce(extra_nonce, payment_id8);
+			r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
+			if (!r) {
+				return couldntAddPIDNonceToTXExtra;
+			}
+		}
+	}
+	return noError;
+}
 bool _rct_hex_to_rct_commit(
 	const std::string &rct_string,
 	rct::key &rct_commit
@@ -140,6 +170,266 @@ bool _verify_sec_key(const crypto::secret_key &secret_key, const crypto::public_
 	return r && public_key == calculated_pub;
 }
 //
+//
+//----------------------------------------------------------------------------------------------------
+namespace
+{
+	template<typename T>
+	T pop_index(std::vector<T>& vec, size_t idx)
+	{
+		CHECK_AND_ASSERT_MES(!vec.empty(), T(), "Vector must be non-empty");
+		CHECK_AND_ASSERT_MES(idx < vec.size(), T(), "idx out of bounds");
+
+		T res = vec[idx];
+		if (idx + 1 != vec.size()) {
+			vec[idx] = vec.back();
+		}
+		vec.resize(vec.size() - 1);
+		
+		return res;
+	}
+	//
+	template<typename T>
+	T pop_random_value(std::vector<T>& vec)
+	{
+		CHECK_AND_ASSERT_MES(!vec.empty(), T(), "Vector must be non-empty");
+		
+		size_t idx = crypto::rand<size_t>() % vec.size();
+		return pop_index (vec, idx);
+	}
+}
+//
+//
+// Decomposed Send procedure
+void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
+	Send_Step1_RetVals &retVals,
+	//
+	optional<string> payment_id_string,
+	uint64_t sending_amount,
+	bool is_sweeping,
+	uint32_t simple_priority,
+	use_fork_rules_fn_type use_fork_rules_fn,
+	//
+	const vector<SpendableOutput> &unspent_outs,
+	uint64_t fee_per_b, // per v8
+	//
+	optional<uint64_t> passedIn_attemptAt_fee
+) {
+	retVals = {};
+	//
+	if (is_sweeping) {
+		if (sending_amount != 0 && sending_amount != UINT64_MAX) {
+			THROW_WALLET_EXCEPTION_IF(
+				sending_amount != 0 && sending_amount != UINT64_MAX,
+				error::wallet_internal_error, "Ambiguous arguments; Pass sending_amount 0 while sweeping"
+			);
+			return;
+		}
+	} else { // not sweeping
+		if (sending_amount == 0) {
+			retVals.errCode = enteredAmountTooLow;
+			return;
+		}
+	}
+	//
+	uint32_t fake_outs_count = monero_fork_rules::fixed_mixinsize();
+	retVals.mixin = fake_outs_count;
+	//
+	bool use_rct = true;
+	bool bulletproof = true;
+	//
+	std::vector<uint8_t> extra;
+	CreateTransactionErrorCode tx_extra__code = _add_pid_to_tx_extra(payment_id_string, extra);
+	if (tx_extra__code != noError) {
+		retVals.errCode = tx_extra__code;
+		return;
+	}
+	const uint64_t base_fee = get_base_fee(fee_per_b); // in other words, fee_per_b
+	const uint64_t fee_multiplier = get_fee_multiplier(simple_priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
+	const uint64_t fee_quantization_mask = get_fee_quantization_mask(use_fork_rules_fn);
+	//
+	uint64_t attempt_at_min_fee;
+	if (passedIn_attemptAt_fee == none) {
+		attempt_at_min_fee = estimate_fee(true/*use_per_byte_fee*/, true/*use_rct*/, 2/*est num inputs*/, fake_outs_count, 2, extra.size(), bulletproof, base_fee, fee_multiplier, fee_quantization_mask);
+		// opted to do this instead of `const uint64_t min_fee = (fee_multiplier * base_fee * estimate_tx_size(use_rct, 1, fake_outs_count, 2, extra.size(), bulletproof));`
+		// TODO: estimate with 1 input or 2?
+	} else {
+		attempt_at_min_fee = *passedIn_attemptAt_fee;
+	}
+	struct Total
+	{
+		static uint64_t with(uint64_t sending_amount, uint64_t fee_amount)
+		{
+			return sending_amount + fee_amount;
+		}
+	};
+	// fee may get changed as follows…
+	uint64_t potential_total; // aka balance_required
+	if (is_sweeping) {
+		potential_total = UINT64_MAX; // balance required: all
+	} else {
+		potential_total = Total::with(sending_amount, attempt_at_min_fee);
+	}
+	//
+	// Gather outputs and amount to use for getting decoy outputs…
+	uint64_t using_outs_amount = 0;
+	vector<SpendableOutput>  remaining_unusedOuts = unspent_outs; // take copy so not to modify original
+	// TODO: factor this out to get spendable balance for display in the MM wallet:
+	while (using_outs_amount < potential_total && remaining_unusedOuts.size() > 0) {
+		auto out = pop_random_value(remaining_unusedOuts);
+		if (!use_rct && out.rct != none) {
+			// out.rct is set by the server
+			continue; // skip rct outputs if not creating rct tx
+		}
+		if (out.amount < monero_fork_rules::dust_threshold()) { // amount is dusty..
+			if (!is_sweeping) {
+				cout << "Not sweeping, and found a dusty (though maybe mixable) output... skipping it!" << endl;
+				continue;
+			}
+			if (out.rct == none) { // Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!
+				cout << "Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!" << endl;
+				continue;
+			} else {
+				cout << "Sweeping and found a dusty but mixable (rct) amount... keeping it!" << endl;
+			}
+		}
+		retVals.using_outs.push_back(out);
+		using_outs_amount += out.amount;
+		cout << "Using output: " << out.amount << " - " << out.public_key << endl;
+	}
+	retVals.spendable_balance = using_outs_amount; // must store for needMoreMoneyThanFound return
+	// Note: using_outs and using_outs_amount may still get modified below (so retVals.spendable_balance gets updated)
+	//
+//	if (/*using_outs.size() > 1*/ && use_rct) { // FIXME? see original core js
+	uint64_t needed_fee = estimate_fee(
+		true/*use_per_byte_fee*/, use_rct,
+		retVals.using_outs.size(), fake_outs_count, /*tx.dsts.size()*/1+1, extra.size(),
+		bulletproof, base_fee, fee_multiplier, fee_quantization_mask
+	);
+	// if newNeededFee < neededFee, use neededFee instead (should only happen on the 2nd or later times through (due to estimated fee being too low))
+	if (needed_fee < attempt_at_min_fee) {
+		needed_fee = attempt_at_min_fee;
+	}
+	//
+	// NOTE: needed_fee may get further modified below when !is_sweeping if using_outs_amount < total_incl_fees and gets finalized (for this function's scope) as using_fee
+	//
+	retVals.required_balance = is_sweeping ? needed_fee : potential_total; // must store for needMoreMoneyThanFound return .... NOTE: this is set to needed_fee for is_sweeping because that's literally the required balance, which an caller may want to print in case they get needMoreMoneyThanFound - note this gets updated below when !is_sweeping
+	//
+	uint64_t total_wo_fee = is_sweeping
+		? /*now that we know outsAmount>needed_fee*/(using_outs_amount - needed_fee)
+		: sending_amount;
+	retVals.final_total_wo_fee = total_wo_fee;
+	//
+	uint64_t total_incl_fees;
+	if (is_sweeping) {
+		if (using_outs_amount < needed_fee) { // like checking if the result of the following total_wo_fee is < 0
+			retVals.errCode = needMoreMoneyThanFound; // sufficiently up-to-date (for this return case) required_balance and using_outs_amount (spendable balance) will have been stored for return by this point
+			return;
+		}
+		total_incl_fees = using_outs_amount;
+	} else {
+		total_incl_fees = sending_amount + needed_fee; // because fee changed because using_outs.size() was updated
+		while (using_outs_amount < total_incl_fees && remaining_unusedOuts.size() > 0) { // add outputs 1 at a time till we either have them all or can meet the fee
+			auto out = pop_random_value(remaining_unusedOuts);
+			cout << "Using output: " << out.amount << " - " << out.public_key << endl;
+			retVals.using_outs.push_back(out);
+			using_outs_amount += out.amount;
+			retVals.spendable_balance = using_outs_amount; // must store for needMoreMoneyThanFound return
+			//
+			// Recalculate fee, total incl fees
+			needed_fee = estimate_fee(
+				true/*use_per_byte_fee*/, use_rct,
+				retVals.using_outs.size(), fake_outs_count, /*tx.dsts.size()*/1+1, extra.size(),
+				bulletproof, base_fee, fee_multiplier, fee_quantization_mask
+			);
+			total_incl_fees = sending_amount + needed_fee; // because fee changed
+		}
+		retVals.required_balance = total_incl_fees; // update required_balance b/c total_incl_fees changed
+	}
+	retVals.using_fee = needed_fee;
+	//
+	cout << "Final attempt at fee: " << needed_fee << " for " << retVals.using_outs.size() << " inputs" << endl;
+	cout << "Balance to be used: " << total_incl_fees << endl;
+	if (using_outs_amount < total_incl_fees) {
+		retVals.errCode = needMoreMoneyThanFound; // sufficiently up-to-date (for this return case) required_balance and using_outs_amount (spendable balance) will have been stored for return by this point.
+		return;
+	}
+	//
+	// Change can now be calculated
+	uint64_t change_amount = 0; // to initialize
+	if (using_outs_amount > total_incl_fees) {
+		THROW_WALLET_EXCEPTION_IF(is_sweeping, error::wallet_internal_error, "Unexpected total_incl_fees > using_outs_amount while sweeping");
+		change_amount = using_outs_amount - total_incl_fees;
+	}
+	cout << "Calculated change amount:" << change_amount << endl;
+	retVals.change_amount = change_amount;
+	//
+//	uint64_t tx_estimated_weight = estimate_tx_weight(true/*use_rct*/, retVals.using_outs.size(), fake_outs_count, 1+1, extra.size(), true/*bulletproof*/);
+//	if (tx_estimated_weight >= TX_WEIGHT_TARGET(get_upper_transaction_weight_limit(0, use_fork_rules_fn))) {
+//		// TODO?
+//	}
+}
+void monero_transfer_utils::send_step2__reenterable_try_create_transaction(
+	Send_Step2_RetVals &retVals,
+	//
+	string from_address_string,
+	string sec_viewKey_string,
+	string sec_spendKey_string,
+	string to_address_string,
+	optional<string> payment_id_string,
+	uint64_t sending_amount,
+	uint64_t change_amount,
+	uint64_t fee_amount,
+	uint32_t simple_priority,
+	vector<SpendableOutput> &using_outs,
+	uint64_t fee_per_b, // per v8
+	vector<RandomAmountOutputs> &mix_outs,
+	use_fork_rules_fn_type use_fork_rules_fn,
+	uint64_t unlock_time, // or 0
+	cryptonote::network_type nettype
+) {
+	retVals = {};
+	//
+	Convenience_TransactionConstruction_RetVals create_tx__retVals;
+	monero_transfer_utils::convenience__create_transaction(
+		create_tx__retVals,
+		from_address_string,
+		sec_viewKey_string, sec_spendKey_string,
+		to_address_string, payment_id_string,
+		sending_amount, change_amount, fee_amount,
+		using_outs, mix_outs,
+		use_fork_rules_fn,
+		unlock_time,
+		nettype // TODO: move to after from_address_string
+	);
+	if (create_tx__retVals.errCode != noError) {
+		retVals.errCode = create_tx__retVals.errCode;
+		return;
+	}
+	THROW_WALLET_EXCEPTION_IF(create_tx__retVals.signed_serialized_tx_string == boost::none, error::wallet_internal_error, "Not expecting no signed_serialized_tx_string given no error");
+	//
+	size_t blob_size = *create_tx__retVals.txBlob_byteLength;
+	uint64_t fee_actually_needed = calculate_fee(
+		true/*use_per_byte_fee*/,
+		*create_tx__retVals.tx, blob_size,
+		get_base_fee(fee_per_b)/*i.e. fee_per_b*/,
+		get_fee_multiplier(simple_priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn),
+		get_fee_quantization_mask(use_fork_rules_fn)
+	);
+	if (fee_actually_needed > fee_amount) {
+		cout << "Need to reconstruct tx with fee of at least " << fee_actually_needed << "." << endl;
+		retVals.tx_must_be_reconstructed = true;
+		retVals.fee_actually_needed = fee_actually_needed;
+		return;
+	}
+	retVals.signed_serialized_tx_string = std::move(*(create_tx__retVals.signed_serialized_tx_string));
+	retVals.tx_hash_string = std::move(*(create_tx__retVals.tx_hash_string));
+	retVals.tx_key_string = std::move(*(create_tx__retVals.tx_key_string));
+}
+//
+//
+// Underlying implementations to mimic historical JS-land create_transaction / construct_tx impls
+//
 void monero_transfer_utils::create_transaction(
 	TransactionConstruction_RetVals &retVals,
 	const account_keys& sender_account_keys, // this will reference a particular hw::device
@@ -162,7 +452,7 @@ void monero_transfer_utils::create_transaction(
 	// TODO: do we need to sort destinations by amount, here, according to 'decompose_destinations'?
 	//
 	uint32_t fake_outputs_count = fixed_mixinsize();
-	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0);
+	bool bulletproof = true;
 	const rct::RangeProofType range_proof_type = bulletproof ? rct::RangeProofPaddedBulletproof : rct::RangeProofBorromean;
 	//
 	if (mix_outs.size() != outputs.size() && fake_outputs_count != 0) {
@@ -385,7 +675,6 @@ void monero_transfer_utils::create_transaction(
 	retVals.additional_tx_keys = additional_tx_keys;
 }
 //
-//
 void monero_transfer_utils::convenience__create_transaction(
 	Convenience_TransactionConstruction_RetVals &retVals,
 	const string &from_address_string,
@@ -418,55 +707,45 @@ void monero_transfer_utils::convenience__create_transaction(
 		THROW_WALLET_EXCEPTION_IF(!string_tools::hex_to_pod(sec_spendKey_string, sec_spendKey), error::wallet_internal_error, "Couldn't parse spend key");
 		account_keys.m_spend_secret_key = sec_spendKey;
 	}
-	//
-	cryptonote::address_parse_info to_addr_info;
-	THROW_WALLET_EXCEPTION_IF(!cryptonote::get_account_address_from_str(to_addr_info, nettype, to_address_string), error::wallet_internal_error, "Couldn't parse to-address");
+	THROW_WALLET_EXCEPTION_IF(
+		to_address_string.find(".") != std::string::npos, // assumed to be an OA address asXMR addresses do not have periods and OA addrs must
+		error::wallet_internal_error,
+		"Integrators must resolve OA addresses before calling Send"
+	); // This would be an app code fault
+	cryptonote::address_parse_info to_addr_info; // just in case…
+	if (!cryptonote::get_account_address_from_str(to_addr_info, nettype, to_address_string)) {
+		retVals.errCode = couldntDecodeToAddress;
+		return;
+	}
 	//
 	std::vector<uint8_t> extra;
-	bool payment_id_seen = false;
-	{ // Detect hash8 or hash32 char hex string as pid and configure 'extra' accordingly
-		bool r = false;
-		if (payment_id_string != none) {
-			crypto::hash payment_id;
-			r = monero_paymentID_utils::parse_long_payment_id(*payment_id_string, payment_id);
-			if (r) {
-				std::string extra_nonce;
-				cryptonote::set_payment_id_to_tx_extra_nonce(extra_nonce, payment_id);
-				r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
-			} else {
-				crypto::hash8 payment_id8;
-				r = monero_paymentID_utils::parse_short_payment_id(*payment_id_string, payment_id8);
-				if (r) {
-					std::string extra_nonce;
-					cryptonote::set_encrypted_payment_id_to_tx_extra_nonce(extra_nonce, payment_id8);
-					r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
-				}
-			}
-			payment_id_seen = true;
-		} else {
-			if (to_addr_info.is_subaddress && payment_id_seen) {
-				retVals.errCode = cantUsePIDWithSubAddress; // Never use a subaddress with a payment ID
-				return;
-			}
-			if (to_addr_info.has_payment_id) {
-				if (payment_id_seen) {
-					retVals.errCode = nonZeroPIDWithIntAddress; // can't use int addr at same time as supplying manual pid
-					return;
-				}
-				if (to_addr_info.is_subaddress) {
-					THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Unexpected is_subaddress && has_payment_id"); // should never happen
-					return;
-				}
-				std::string extra_nonce;
-				cryptonote::set_encrypted_payment_id_to_tx_extra_nonce(extra_nonce, to_addr_info.payment_id);
-				bool r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
-				if (!r) {
-					retVals.errCode = couldntSetPIDToTXExtra;
-					return;
-				}
-				payment_id_seen = true;
-			}
+	CreateTransactionErrorCode tx_extra__code = _add_pid_to_tx_extra(payment_id_string, extra);
+	if (tx_extra__code != noError) {
+		retVals.errCode = tx_extra__code;
+		return;
+	}
+	bool payment_id_seen = payment_id_string != none; // logically this is true since payment_id_string has passed validation (or we'd have errored)
+	if (to_addr_info.is_subaddress && payment_id_seen) {
+		retVals.errCode = cantUsePIDWithSubAddress; // Never use a subaddress with a payment ID
+		return;
+	}
+	if (to_addr_info.has_payment_id) {
+		if (payment_id_seen) {
+			retVals.errCode = nonZeroPIDWithIntAddress; // can't use int addr at same time as supplying manual pid
+			return;
 		}
+		if (to_addr_info.is_subaddress) {
+			THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Unexpected is_subaddress && has_payment_id"); // should never happen
+			return;
+		}
+		std::string extra_nonce;
+		cryptonote::set_encrypted_payment_id_to_tx_extra_nonce(extra_nonce, to_addr_info.payment_id);
+		bool r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
+		if (!r) {
+			retVals.errCode = couldntAddPIDNonceToTXExtra;
+			return;
+		}
+		payment_id_seen = true;
 	}
 	//
 	uint32_t subaddr_account_idx = 0;
@@ -476,20 +755,13 @@ void monero_transfer_utils::convenience__create_transaction(
 	TransactionConstruction_RetVals actualCall_retVals;
 	create_transaction(
 		actualCall_retVals,
-		account_keys,
-		subaddr_account_idx,
-		subaddresses,
+		account_keys, subaddr_account_idx, subaddresses,
 		to_addr_info.address,
-		sending_amount,
-		change_amount,
-		fee_amount,
-		outputs,
-		mix_outs,
-		extra,
+		sending_amount, change_amount, fee_amount,
+		outputs, mix_outs,
+		extra, // TODO: move to after address
 		use_fork_rules_fn,
-		unlock_time,
-		true, // rct
-		nettype
+		unlock_time, true/*rct*/, nettype
 	);
 	if (actualCall_retVals.errCode != noError) {
 		retVals.errCode = actualCall_retVals.errCode; // pass-through
@@ -514,4 +786,6 @@ void monero_transfer_utils::convenience__create_transaction(
 		}
 	}
 	retVals.tx_key_string = oss.str();
+	retVals.tx = *actualCall_retVals.tx; // for calculating block weight; FIXME: std::move?
+	retVals.txBlob_byteLength = txBlob_byteLength;
 }

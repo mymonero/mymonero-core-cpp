@@ -52,15 +52,9 @@ uint32_t monero_fee_utils::default_priority()
 }
 //
 uint64_t monero_fee_utils::get_base_fee( // added as of v8
-	uint64_t fee_per_kb,
-	use_fork_rules_fn_type use_fork_rules_fn
+	uint64_t fee_per_b
 ) {
-	// since this is the lightwallet…
-	if (use_fork_rules_fn(HF_VERSION_PER_BYTE_FEE, 0/*default*/)) {
-		return fee_per_kb / 1024;
-	} else {
-		return fee_per_kb;
-	}
+	return fee_per_b;
 }
 uint64_t monero_fee_utils::get_fee_quantization_mask(
 	use_fork_rules_fn_type use_fork_rules_fn
@@ -80,15 +74,14 @@ uint64_t monero_fee_utils::get_fee_quantization_mask(
 }
 //
 uint64_t monero_fee_utils::estimated_tx_network_fee(
-	uint64_t fee_per_kb,
+	uint64_t base_fee,
 	uint32_t priority,
 	use_fork_rules_fn_type use_fork_rules_fn
 ) {
-	bool bulletproof = use_fork_rules_fn(get_bulletproof_fork(), 0); // eventually just hardcode this to true (?)
 	uint64_t fee_multiplier = get_fee_multiplier(priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
 	std::vector<uint8_t> extra; // blank extra
-	size_t est_tx_size = estimate_rct_tx_size(2, fixed_mixinsize(), 2, extra.size(), bulletproof); // typically ~14kb post-rct, pre-bulletproofs
-	uint64_t estimated_fee = calculate_fee(fee_per_kb, est_tx_size, fee_multiplier);
+	size_t est_tx_size = estimate_rct_tx_size(2, fixed_mixinsize(), 2, extra.size(), true/*bulletproof*/); // typically ~14kb post-rct, pre-bulletproofs
+	uint64_t estimated_fee = calculate_fee_from_size(base_fee, est_tx_size, fee_multiplier);
 	//
 	return estimated_fee;
 }
@@ -246,7 +239,7 @@ uint64_t monero_fee_utils::estimate_fee(bool use_per_byte_fee, bool use_rct, int
 	else
 	{
 		const size_t estimated_tx_size = estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof);
-		return calculate_fee(base_fee, estimated_tx_size, fee_multiplier);
+		return calculate_fee_from_size(base_fee, estimated_tx_size, fee_multiplier);
 	}
 }
 //
@@ -256,22 +249,20 @@ uint64_t monero_fee_utils::calculate_fee_from_weight(uint64_t base_fee, uint64_t
 	fee = (fee + fee_quantization_mask - 1) / fee_quantization_mask * fee_quantization_mask;
 	return fee;
 }
-uint64_t monero_fee_utils::calculate_fee(uint64_t fee_per_kb, const cryptonote::blobdata &blob, uint64_t fee_multiplier)
-{
-	return calculate_fee(fee_per_kb, blob.size(), fee_multiplier);
-}
-
 uint64_t monero_fee_utils::calculate_fee(bool use_per_byte_fee, const cryptonote::transaction &tx, size_t blob_size, uint64_t base_fee, uint64_t fee_multiplier, uint64_t fee_quantization_mask)
 {
 	if (use_per_byte_fee) {
 		return calculate_fee_from_weight(base_fee, cryptonote::get_transaction_weight(tx, blob_size), fee_multiplier, fee_quantization_mask);
 	} else {
-		return calculate_fee(base_fee, blob_size, fee_multiplier);
+		return calculate_fee_from_size(base_fee, blob_size, fee_multiplier);
 	}
 }
-uint64_t monero_fee_utils::calculate_fee(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier)
+//
+//uint64_t monero_fee_utils::calculate_fee_from_size(uint64_t fee_per_b, const cryptonote::blobdata &blob, uint64_t fee_multiplier)
+//{
+//	return calculate_fee_from_size(fee_per_b, blob.size(), fee_multiplier);
+//}
+uint64_t monero_fee_utils::calculate_fee_from_size(uint64_t fee_per_b, size_t bytes, uint64_t fee_multiplier)
 {
-	uint64_t kB = (bytes + 1023) / 1024;
-	//
-	return kB * fee_per_kb * fee_multiplier;
+	return bytes * fee_per_b * fee_multiplier;
 }

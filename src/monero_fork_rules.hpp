@@ -42,14 +42,12 @@ namespace monero_fork_rules
 {
 	typedef std::function<bool(uint8_t/*version*/, int64_t/*early_blocks*/)> use_fork_rules_fn_type;
 	//
-	uint8_t get_bulletproof_fork();
-	bool lightwallet_hardeded__use_bulletproofs();
-	//
-	bool lightwallet_hardcoded__use_fork_rules(uint8_t version, int64_t early_blocks); // convenience
-	//
+	bool lightwallet_hardcoded__use_fork_rules(uint8_t version, int64_t early_blocks); // convenience - to be called by a use_fork_rules_fn_type implementation
 	//
 	uint32_t fixed_ringsize(); // not mixinsize, which would be ringsize-1
 	uint32_t fixed_mixinsize(); // not ringsize, which would be mixinsize+1
+	//
+	uint64_t dust_threshold();
 }
 
 #endif /* monero_fork_rules */

@@ -94,22 +94,27 @@ namespace monero_transfer_utils
 		inputAmountOverflow			 	= 6,
 		mixRCTOutsMissingCommit		 	= 7,
 		resultFeeNotEqualToGiven 		= 8,
-		needMoreMoneyThanFound			= 9,
-		invalidDestinationAddress		= 10,
-		nonZeroPIDWithIntAddress		= 11,
-		cantUsePIDWithSubAddress		= 12,
-		couldntSetPIDToTXExtra			= 13,
-		givenAnInvalidPubKey			= 14,
-		invalidCommitOrMaskOnOutputRCT	= 15,
-		transactionNotConstructed		= 16,
-		transactionTooBig				= 17,
-		notYetImplemented				= 18
+		invalidDestinationAddress		= 9,
+		nonZeroPIDWithIntAddress		= 10,
+		cantUsePIDWithSubAddress		= 11,
+		couldntAddPIDNonceToTXExtra		= 12,
+		givenAnInvalidPubKey			= 13,
+		invalidCommitOrMaskOnOutputRCT	= 14,
+		transactionNotConstructed		= 15,
+		transactionTooBig				= 16,
+		notYetImplemented				= 17,
+		couldntDecodeToAddress			= 18,
+		invalidPID						= 19,
+		enteredAmountTooLow				= 20,
+		needMoreMoneyThanFound			= 90
 	};
 	static inline string err_msg_from_err_code__create_transaction(CreateTransactionErrorCode code)
 	{
 		switch (code) {
 			case noError:
 				return "No error";
+			case couldntDecodeToAddress:
+				return "Couldn't decode address";
 			case noDestinations:
 				return "No destinations provided";
 			case wrongNumberOfMixOutsProvided:
@@ -131,11 +136,11 @@ namespace monero_transfer_utils
 			case invalidDestinationAddress:
 				return "Invalid destination address";
 			case nonZeroPIDWithIntAddress:
-				return "Can't supply a PID with an integrated address";
+				return "Payment ID must be blank when using an integrated address";
 			case cantUsePIDWithSubAddress:
-				return "Can't use PID with subaddress";
-			case couldntSetPIDToTXExtra:
-				return "Couldn't set PID to tx extra";
+				return "Payment ID must be blank when using a subaddress";
+			case couldntAddPIDNonceToTXExtra:
+				return "Couldn't add nonce to tx extra";
 			case givenAnInvalidPubKey:
 				return "Invalid pub key";
 			case invalidCommitOrMaskOnOutputRCT:
@@ -146,34 +151,85 @@ namespace monero_transfer_utils
 				return "Transaction too big";
 			case notYetImplemented:
 				return "Not yet implemented";
+			case invalidPID:
+				return "Invalid payment ID";
+			case enteredAmountTooLow:
+				return "The amount you've entered is too low";
 		}
 	}
-	struct TransactionConstruction_RetVals
+	//
+	// Send_Step* functions procedure for integrators:
+	//	1. call GetUnspentOuts endpoint
+	//	2. call step1__prepare_params_for_get_decoys to get params for calling RandomOuts; call GetRandomOuts
+	//	3. call step2__reenterable_… with retVals from Step1 (incl using_outs, RandomOuts)
+	//		3a. While tx must be reconstructed, re-call step1 passing step2 fee_actually_needed as passedIn_attemptAt_fee, then re-request RandomOuts again, and call step2 again
+	//		3b. If good tx constructed, proceed to submit/save the tx
+	// Note: This separation of steps fully encodes SendFunds_ProcessStep
+	//
+	struct Send_Step1_RetVals
 	{
-		CreateTransactionErrorCode errCode;
+		CreateTransactionErrorCode errCode; // if != noError, abort Send process
+		// for display / information purposes on errCode=needMoreMoneyThanFound during step1:
+		uint64_t spendable_balance; //  (effectively but not the same as spendable_balance)
+		uint64_t required_balance; // for display / information purposes on errCode=needMoreMoneyThanFound during step1
 		//
-		optional<transaction> tx;
-		optional<secret_key> tx_key;
-		optional<vector<secret_key>> additional_tx_keys;
+		// Success case return values
+		uint32_t mixin;
+		vector<SpendableOutput> using_outs;
+		uint64_t using_fee;
+		uint64_t final_total_wo_fee;
+		uint64_t change_amount;
 	};
-	// TODO: add priority
-	void create_transaction(
-		TransactionConstruction_RetVals &retVals,
-		const account_keys& sender_account_keys, // this will reference a particular hw::device
-		const uint32_t subaddr_account_idx, // pass 0 for no subaddrs
-		const std::unordered_map<crypto::public_key, cryptonote::subaddress_index> &subaddresses,
-		const account_public_address &to_addr,
+	void send_step1__prepare_params_for_get_decoys(
+		Send_Step1_RetVals &retVals,
+		//
+		optional<string> payment_id_string,
+		uint64_t sending_amount,
+		bool is_sweeping,
+		uint32_t simple_priority,
+		use_fork_rules_fn_type use_fork_rules_fn,
+		//
+		const vector<SpendableOutput> &unspent_outs,
+		uint64_t fee_per_b, // per v8
+		//
+		optional<uint64_t> passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+	);
+	//
+	struct Send_Step2_RetVals
+	{
+		CreateTransactionErrorCode errCode; // if != noError, abort Send process
+		//
+		// Reconstruct-required parameters:
+		bool tx_must_be_reconstructed; // if true, re-request RandomOuts with the following parameters and retry step3
+		uint64_t fee_actually_needed; // will be non-zero if tx_must_be_reconstructed
+		//
+		// Success parameters:
+		optional<string> signed_serialized_tx_string;
+		optional<string> tx_hash_string;
+		optional<string> tx_key_string; // this includes additional_tx_keys
+	};
+	void send_step2__reenterable_try_create_transaction(
+		Send_Step2_RetVals &retVals,
+		//
+		string from_address_string,
+		string sec_viewKey_string,
+		string sec_spendKey_string,
+		string to_address_string,
+		optional<string> payment_id_string,
 		uint64_t sending_amount,
 		uint64_t change_amount,
 		uint64_t fee_amount,
-		vector<SpendableOutput> &outputs,
+		uint32_t simple_priority,
+		vector<SpendableOutput> &using_outs,
+		uint64_t fee_per_b, // per v8
 		vector<RandomAmountOutputs> &mix_outs,
-		std::vector<uint8_t> &extra, // this is not declared const b/c it may have the output tx pub key appended to it
 		use_fork_rules_fn_type use_fork_rules_fn,
-		uint64_t unlock_time							= 0, // or 0
-		bool rct 										= true,
-		network_type nettype							= MAINNET
+		uint64_t unlock_time, // or 0
+		cryptonote::network_type nettype
 	);
+	//
+	//
+	// Lower level functions - generally you won't need to call these (these are what used to live in cn_utils.js)
 	//
 	struct Convenience_TransactionConstruction_RetVals
 	{
@@ -182,6 +238,8 @@ namespace monero_transfer_utils
 		optional<string> signed_serialized_tx_string;
 		optional<string> tx_hash_string;
 		optional<string> tx_key_string; // this includes additional_tx_keys
+		optional<transaction> tx; // for block weight
+		optional<size_t> txBlob_byteLength;
 	};
 	void convenience__create_transaction(
 		Convenience_TransactionConstruction_RetVals &retVals,
@@ -198,6 +256,31 @@ namespace monero_transfer_utils
 		use_fork_rules_fn_type use_fork_rules_fn,
 		uint64_t unlock_time							= 0, // or 0
 		network_type nettype 							= MAINNET
+	);
+	struct TransactionConstruction_RetVals
+	{
+		CreateTransactionErrorCode errCode;
+		//
+		optional<transaction> tx;
+		optional<secret_key> tx_key;
+		optional<vector<secret_key>> additional_tx_keys;
+	};
+	void create_transaction(
+		TransactionConstruction_RetVals &retVals,
+		const account_keys& sender_account_keys, // this will reference a particular hw::device
+		const uint32_t subaddr_account_idx, // pass 0 for no subaddrs
+		const std::unordered_map<crypto::public_key, cryptonote::subaddress_index> &subaddresses,
+		const account_public_address &to_addr,
+		uint64_t sending_amount,
+		uint64_t change_amount,
+		uint64_t fee_amount,
+		vector<SpendableOutput> &outputs,
+		vector<RandomAmountOutputs> &mix_outs,
+		std::vector<uint8_t> &extra, // this is not declared const b/c it may have the output tx pub key appended to it
+		use_fork_rules_fn_type use_fork_rules_fn,
+		uint64_t unlock_time							= 0, // or 0
+		bool rct 										= true,
+		network_type nettype							= MAINNET
 	);
 }
 
