@@ -504,6 +504,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 	boost::property_tree::ptree root;
 	if (retVals.errCode != noError) {
 		root.put(ret_json_key__any__err_code(), retVals.errCode);
+		root.put(ret_json_key__any__err_msg(), err_msg_from_err_code__create_transaction(retVals.errCode));
 		//
 		// The following will be set if errCode==needMoreMoneyThanFound - and i'm depending on them being 0 otherwise
 		root.put(ret_json_key__send__spendable_balance(), std::move(RetVals_Transforms::str_from(retVals.spendable_balance)));
@@ -603,6 +604,7 @@ string serial_bridge::send_step2__reenterable_try_create_transaction(const strin
 	boost::property_tree::ptree root;
 	if (retVals.errCode != noError) {
 		root.put(ret_json_key__any__err_code(), retVals.errCode);
+		root.put(ret_json_key__any__err_msg(), err_msg_from_err_code__create_transaction(retVals.errCode));
 	} else {
 		if (retVals.tx_must_be_reconstructed) {
 			root.put(ret_json_key__send__tx_must_be_reconstructed(), true);
