@@ -369,7 +369,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 //		// TODO?
 //	}
 }
-void monero_transfer_utils::send_step2__reenterable_try_create_transaction(
+void monero_transfer_utils::send_step2__try_create_transaction(
 	Send_Step2_RetVals &retVals,
 	//
 	string from_address_string,

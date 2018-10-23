@@ -534,7 +534,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 	}
 	return ret_json_from_root(root);
 }
-string serial_bridge::send_step2__reenterable_try_create_transaction(const string &args_string)
+string serial_bridge::send_step2__try_create_transaction(const string &args_string)
 {
 	boost::property_tree::ptree json_root;
 	if (!parsed_json_root(args_string, json_root)) {
@@ -579,7 +579,7 @@ string serial_bridge::send_step2__reenterable_try_create_transaction(const strin
 		optl__passedIn_attemptAt_fee = stoull(*optl__passedIn_attemptAt_fee_string);
 	}
 	Send_Step2_RetVals retVals;
-	monero_transfer_utils::send_step2__reenterable_try_create_transaction(
+	monero_transfer_utils::send_step2__try_create_transaction(
 		retVals,
 		//
 		json_root.get<string>("from_address_string"),

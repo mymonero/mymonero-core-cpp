@@ -43,7 +43,7 @@ namespace serial_bridge
 	//
 	// Bridging Functions - these take and return JSON strings
 	string send_step1__prepare_params_for_get_decoys(const string &args_string);
-	string send_step2__reenterable_try_create_transaction(const string &args_string);
+	string send_step2__try_create_transaction(const string &args_string);
 	//
 	string decode_address(const string &args_string);
 	string is_subaddress(const string &args_string);

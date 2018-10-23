@@ -161,7 +161,7 @@ namespace monero_transfer_utils
 	// Send_Step* functions procedure for integrators:
 	//	1. call GetUnspentOuts endpoint
 	//	2. call step1__prepare_params_for_get_decoys to get params for calling RandomOuts; call GetRandomOuts
-	//	3. call step2__reenterable_… with retVals from Step1 (incl using_outs, RandomOuts)
+	//	3. call step2__try_… with retVals from Step1 (incl using_outs, RandomOuts)
 	//		3a. While tx must be reconstructed, re-call step1 passing step2 fee_actually_needed as passedIn_attemptAt_fee, then re-request RandomOuts again, and call step2 again
 	//		3b. If good tx constructed, proceed to submit/save the tx
 	// Note: This separation of steps fully encodes SendFunds_ProcessStep
@@ -208,7 +208,7 @@ namespace monero_transfer_utils
 		optional<string> tx_hash_string;
 		optional<string> tx_key_string; // this includes additional_tx_keys
 	};
-	void send_step2__reenterable_try_create_transaction(
+	void send_step2__try_create_transaction(
 		Send_Step2_RetVals &retVals,
 		//
 		string from_address_string,

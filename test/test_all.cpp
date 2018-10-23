@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 			root.add_child("mix_outs", mix_outs);
 			//
 			boost::property_tree::ptree ret_tree;
-			auto ret_string = serial_bridge::send_step2__reenterable_try_create_transaction(args_string_from_root(root));
+			auto ret_string = serial_bridge::send_step2__try_create_transaction(args_string_from_root(root));
 			stringstream ret_stream;
 			ret_stream << ret_string;
 			boost::property_tree::read_json(ret_stream, ret_tree);
@@ -464,7 +464,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			root.add_child("mix_outs", mix_outs);
 			//
 			boost::property_tree::ptree ret_tree;
-			auto ret_string = serial_bridge::send_step2__reenterable_try_create_transaction(args_string_from_root(root));
+			auto ret_string = serial_bridge::send_step2__try_create_transaction(args_string_from_root(root));
 			stringstream ret_stream;
 			ret_stream << ret_string;
 			boost::property_tree::read_json(ret_stream, ret_tree);
