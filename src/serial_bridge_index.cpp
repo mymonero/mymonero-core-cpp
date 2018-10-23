@@ -587,7 +587,7 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 		json_root.get<string>("sec_spendKey_string"),
 		json_root.get<string>("to_address_string"),
 		json_root.get_optional<string>("payment_id_string"),
-		stoull(json_root.get<string>("sending_amount")),
+		stoull(json_root.get<string>("final_total_wo_fee")),
 		stoull(json_root.get<string>("change_amount")),
 		stoull(json_root.get<string>("fee_amount")),
 		stoul(json_root.get<string>("priority")),

@@ -216,7 +216,7 @@ namespace monero_transfer_utils
 		string sec_spendKey_string,
 		string to_address_string,
 		optional<string> payment_id_string,
-		uint64_t sending_amount,
+		uint64_t final_total_wo_fee, // this gets passed to create_transaction's 'sending_amount'
 		uint64_t change_amount,
 		uint64_t fee_amount,
 		uint32_t simple_priority,

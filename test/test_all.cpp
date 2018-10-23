@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 		}
 		{
 			boost::property_tree::ptree root;
-			root.put("sending_amount", *final_total_wo_fee_string); // NOTE: one must use this as the final total - for ex during a sweep we dont know sending_amount until reading this value
+			root.put("final_total_wo_fee", *final_total_wo_fee_string);
 			root.put("change_amount", *change_amount_string); // from step1
 			root.put("fee_amount", *using_fee_string); // from step1
 			root.add_child("using_outs", using_outs); // from step1
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 				BOOST_REQUIRE((*fee_actually_needed_string).size() > 0);
 				//
 				// This means we must go back through step1 to re-pick using_outs
-				BOOST_REQUIRE(construction_attempt_n < 2); // not generally expecting to have to do this more than once
+				BOOST_REQUIRE(construction_attempt_n < 3); // not generally expecting to have to do this more than once or twice
 				continue; // proceed to next iteration (re-enter tx construction at step1(II) with fee_actually_needed_string from step2(I))
 			}
 			optional<string> tx_hash = ret_tree.get_optional<string>(ret_json_key__send__tx_hash());
@@ -447,7 +447,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 		}
 		{
 			boost::property_tree::ptree root;
-			root.put("sending_amount", *final_total_wo_fee_string); // NOTE: one must use this as the final total - for ex during a sweep we dont know sending_amount until reading this value
+			root.put("final_total_wo_fee", *final_total_wo_fee_string);
 			root.put("change_amount", *change_amount_string); // from step1
 			root.put("fee_amount", *using_fee_string); // from step1
 			root.add_child("using_outs", using_outs); // from step1
@@ -483,7 +483,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 				BOOST_REQUIRE((*fee_actually_needed_string).size() > 0);
 				//
 				// This means we must go back through step1 to re-pick using_outs
-				BOOST_REQUIRE(construction_attempt_n < 2); // not generally expecting to have to do this more than once
+				BOOST_REQUIRE(construction_attempt_n < 3); // not generally expecting to have to do this more than once or twice
 				continue; // proceed to next iteration (re-enter tx construction at step1(II) with fee_actually_needed_string from step2(I))
 			}
 			optional<string> tx_hash = ret_tree.get_optional<string>(ret_json_key__send__tx_hash());
