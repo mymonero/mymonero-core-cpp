@@ -283,19 +283,19 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 		}
 		if (out.amount < monero_fork_rules::dust_threshold()) { // amount is dusty..
 			if (!is_sweeping) {
-				cout << "Not sweeping, and found a dusty (though maybe mixable) output... skipping it!" << endl;
+//				cout << "Not sweeping, and found a dusty (though maybe mixable) output... skipping it!" << endl;
 				continue;
 			}
 			if (out.rct == none) { // Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!
-				cout << "Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!" << endl;
+//				cout << "Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!" << endl;
 				continue;
 			} else {
-				cout << "Sweeping and found a dusty but mixable (rct) amount... keeping it!" << endl;
+//				cout << "Sweeping and found a dusty but mixable (rct) amount... keeping it!" << endl;
 			}
 		}
 		retVals.using_outs.push_back(out);
 		using_outs_amount += out.amount;
-		cout << "Using output: " << out.amount << " - " << out.public_key << endl;
+//		cout << "Using output: " << out.amount << " - " << out.public_key << endl;
 	}
 	retVals.spendable_balance = using_outs_amount; // must store for needMoreMoneyThanFound return
 	// Note: using_outs and using_outs_amount may still get modified below (so retVals.spendable_balance gets updated)
@@ -331,7 +331,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 		total_incl_fees = sending_amount + needed_fee; // because fee changed because using_outs.size() was updated
 		while (using_outs_amount < total_incl_fees && remaining_unusedOuts.size() > 0) { // add outputs 1 at a time till we either have them all or can meet the fee
 			auto out = pop_random_value(remaining_unusedOuts);
-			cout << "Using output: " << out.amount << " - " << out.public_key << endl;
+//			cout << "Using output: " << out.amount << " - " << out.public_key << endl;
 			retVals.using_outs.push_back(out);
 			using_outs_amount += out.amount;
 			retVals.spendable_balance = using_outs_amount; // must store for needMoreMoneyThanFound return
@@ -348,8 +348,8 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	}
 	retVals.using_fee = needed_fee;
 	//
-	cout << "Final attempt at fee: " << needed_fee << " for " << retVals.using_outs.size() << " inputs" << endl;
-	cout << "Balance to be used: " << total_incl_fees << endl;
+//	cout << "Final attempt at fee: " << needed_fee << " for " << retVals.using_outs.size() << " inputs" << endl;
+//	cout << "Balance to be used: " << total_incl_fees << endl;
 	if (using_outs_amount < total_incl_fees) {
 		retVals.errCode = needMoreMoneyThanFound; // sufficiently up-to-date (for this return case) required_balance and using_outs_amount (spendable balance) will have been stored for return by this point.
 		return;
@@ -361,7 +361,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 		THROW_WALLET_EXCEPTION_IF(is_sweeping, error::wallet_internal_error, "Unexpected total_incl_fees > using_outs_amount while sweeping");
 		change_amount = using_outs_amount - total_incl_fees;
 	}
-	cout << "Calculated change amount:" << change_amount << endl;
+//	cout << "Calculated change amount:" << change_amount << endl;
 	retVals.change_amount = change_amount;
 	//
 //	uint64_t tx_estimated_weight = estimate_tx_weight(true/*use_rct*/, retVals.using_outs.size(), fake_outs_count, 1+1, extra.size(), true/*bulletproof*/);
@@ -417,7 +417,7 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 		get_fee_quantization_mask(use_fork_rules_fn)
 	);
 	if (fee_actually_needed > fee_amount) {
-		cout << "Need to reconstruct tx with fee of at least " << fee_actually_needed << "." << endl;
+//		cout << "Need to reconstruct tx with fee of at least " << fee_actually_needed << "." << endl;
 		retVals.tx_must_be_reconstructed = true;
 		retVals.fee_actually_needed = fee_actually_needed;
 		return;
