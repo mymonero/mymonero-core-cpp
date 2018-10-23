@@ -270,7 +270,7 @@ namespace monero_transfer_utils
 		const account_keys& sender_account_keys, // this will reference a particular hw::device
 		const uint32_t subaddr_account_idx, // pass 0 for no subaddrs
 		const std::unordered_map<crypto::public_key, cryptonote::subaddress_index> &subaddresses,
-		const account_public_address &to_addr,
+		const address_parse_info &to_addr, // this _must_ include correct .is_subaddr
 		uint64_t sending_amount,
 		uint64_t change_amount,
 		uint64_t fee_amount,
