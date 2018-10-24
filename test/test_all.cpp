@@ -773,7 +773,28 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
 	cout << "bridged__seed_and_keys_from_mnemonic: sec_spendKey_string: " << *sec_spendKey_string << endl;
 }
-
+BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login__subaddress)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("address_string", "852t3x5nfQ7PLnavxP1Q6S2ff18tvy8Cih4ikkd61aqd2BV5iTaeY6PFBeLPcHZdrvfumGJx9z1Md6fwyxKSykyHKJAMrk6");
+	root.put("sec_viewKey_string", "…");
+	root.put("sec_spendKey_string", "…");
+	root.put("seed_string", "…");
+	root.put("nettype_string", string_from_nettype(MAINNET));
+	//
+	auto ret_string = serial_bridge::validate_components_for_login(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	BOOST_REQUIRE(err_string != none);
+	BOOST_REQUIRE((*err_string).compare("Can't log in with a sub-address") == 0);
+	optional<bool> isValid = ret_tree.get_optional<bool>(ret_json_key__isValid());
+	BOOST_REQUIRE(isValid == none || *isValid == false);
+}
 BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login)
 {
 	using namespace serial_bridge;

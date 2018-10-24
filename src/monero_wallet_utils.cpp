@@ -364,6 +364,7 @@ bool monero_wallet_utils::validate_wallet_components_with( // returns !did_error
 	cryptonote::network_type nettype,
 	WalletComponentsValidationResults &retVals
 ) { // TODO: how can the err_strings be prepared for localization?
+	// TODO: return err code instead
 	retVals = {};
 	bool r = false;
 	//
@@ -377,6 +378,12 @@ bool monero_wallet_utils::validate_wallet_components_with( // returns !did_error
 	if (r == false) {
 		retVals.did_error = true;
 		retVals.err_string = "Invalid address";
+		//
+		return false;
+	}
+	if (decoded_address_info.is_subaddress) {
+		retVals.did_error = true;
+		retVals.err_string = "Can't log in with a sub-address";
 		//
 		return false;
 	}
@@ -401,7 +408,7 @@ bool monero_wallet_utils::validate_wallet_components_with( // returns !did_error
 	}
 	if (decoded_address_info.address.m_view_public_key != expected_pub_viewKey) {
 		retVals.did_error = true;
-		retVals.err_string = "View key does not match address";
+		retVals.err_string = "Address doesn't match view key";
 		//
 		return false;
 	}
@@ -431,7 +438,7 @@ bool monero_wallet_utils::validate_wallet_components_with( // returns !did_error
 			}
 			if (decoded_address_info.address.m_spend_public_key != expected_pub_spendKey) {
 				retVals.did_error = true;
-				retVals.err_string = "Spend key does not match address";
+				retVals.err_string = "Address doesn't match spend key";
 				//
 				return false;
 			}
