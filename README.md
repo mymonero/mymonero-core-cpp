@@ -214,23 +214,11 @@ e.g.
 
 #### Fees
 	
-**`estimate_rct_tx_size`**
-
-* Args: `n_inputs: Int32`, `mixin: Int32`, `n_outputs: Int32`, `extra_size: Int32`, `bulletproof: Bool`
-
-* Returns: `retVal: Int32String`
-
-**`calculate_fee`**
-
-* Args: `fee_per_kb: Int64String`, `num_bytes: Int32String`, `fee_multiplier: Int64String`
-
-* Returns: `retVal: Int64String`
-
 **`estimated_tx_network_fee`**
 
 Convenience wrapper
 
-* Args: `fee_per_kb: Int64String`, `priority: Int32String`
+* Args: `fee_per_b: Int64String`, `priority: Int32String`
 
 * Returns: `retVal: Int64String`
 
