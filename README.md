@@ -105,15 +105,14 @@ When they fail, some of these functions return only a key-value `err_msg`.
 
 ### Argument and return value data types
 
-* Some args must be passed as strings, such as `uint64` args like `index`s and `amount`s.
+* Some args must be passed as strings, such as `uint64` args like `index`s and `amount`s. 
 
-* Network type is sent as an argument as a string (`NettypeString ` below), which can be obtained via `serial_bridge::string_from_nettype()`.
+* Some boolean return values may be sent (by Boost) in JSON as strings instead, called `BoolString` below ( e.g. `"false"`). 
 
-* `WordsetString` is the value returned by `seed_and_keys_from_mnemonic` and `newly_created_wallet`.
+* Network type is sent as a string (`NettypeString` below), which can be obtained via `serial_bridge::string_from_nettype()`.
 
-* Some boolean return values may be sent by Boost as strings instead, called `Boolstring` below ( e.g. `"false"`). 
 
-In future, the key names could be compressed.
+**Compressing / reducing size of key names could be a significant optimization, as could a migration to msgpack.**
 
 
 #### Parsing Addresses
@@ -142,7 +141,7 @@ In future, the key names could be compressed.
 
 * Args: `nettype_string: NettypeString`, `locale_language_code: String`
 
-* Returns: `err_msg: String` *OR* `mnemonic_string: String`, `mnemonic_language: WordsetName`, `sec_seed_string: String`, `address_string: String`, `pub_spendKey_string: String`, `pub_viewKey_string: String`, `sec_viewKey_string: String`, and `sec_spendKey_string: String`
+* Returns: `err_msg: String` *OR* `mnemonic_string: String`, `mnemonic_language: WordsetNameString`, `sec_seed_string: String`, `address_string: String`, `pub_spendKey_string: String`, `pub_viewKey_string: String`, `sec_viewKey_string: String`, and `sec_spendKey_string: String`
 
 **`are_equal_mnemonics`**
 
@@ -152,7 +151,9 @@ In future, the key names could be compressed.
 
 **`mnemonic_from_seed`**
 
-* Args: `seed_string: String`, `wordset_name: WordsetString`
+* Args:
+	* `seed_string: String`
+	* `wordset_name: WordsetNameString` returned as `mnemonic_language` by `seed_and_keys_from_mnemonic` and `newly_created_wallet`
 
 * Returns: `err_msg: String` *OR* `retVal: String`
 
@@ -160,7 +161,7 @@ In future, the key names could be compressed.
 
 * Args: `nettype_string: NettypeString`, `mnemonic_string: String`
 
-* Returns: `err_msg: String` *OR* `mnemonic_language: WordsetName`, `sec_seed_string: String`, `address_string: String`, `pub_spendKey_string: String`, `pub_viewKey_string: String`, `sec_viewKey_string: String`, and `sec_spendKey_string: String`
+* Returns: `err_msg: String` *OR* `mnemonic_language: WordsetNameString`, `sec_seed_string: String`, `address_string: String`, `pub_spendKey_string: String`, `pub_viewKey_string: String`, `sec_viewKey_string: String`, and `sec_spendKey_string: String`
 
 **`validate_components_for_login`**
 
@@ -193,7 +194,7 @@ In future, the key names could be compressed.
 
 **`generate_key_image`**
 
-* Args: `sec_viewKey_string: String`, `sec_spendKey_string: String`, `pub_spendKey_string: String`, `tx_pub_key: String`, `out_index: Int64String`
+* Args: `sec_viewKey_string: String`, `sec_spendKey_string: String`, `pub_spendKey_string: String`, `tx_pub_key: String`, `out_index: UInt64String`
 
 * Returns: `err_msg: String` *OR* `retVal: String`
 	
@@ -240,23 +241,105 @@ e.g.
 
 Convenience wrapper
 
-* Args: `fee_per_b: Int64String`, `priority: Int32String`
+* Args: `fee_per_b: UInt64String`, `priority: UInt32String`
 
-* Returns: `retVal: Int64String`
+* Returns: `retVal: UInt64String`
 
 
-#### Transactions
+#### Creating and Sending Transactions
 
-**`create_transaction`**
+As mentioned, implementing the Send procedure without making use of one of our existing libraries or examples involves two bridge calls surrounded by server API calls, and mandatory reconstruction logic, and is simplified by various opportunities to pass values directly between the steps.
 
-* Args: `from_address_string: String`, `sec_viewKey_string: String`, `sec_spendKey_string: String`, `to_address_string: String`, `sending_amount: Int64String`, `change_amount: Int64String`, `fee_amount: Int64String`, `outputs: [UnspentOutput]`, `mix_outs: [MixAmountAndOuts]`,  `unlock_time: Int64String`, `nettype_string: NettypeString`
+The values which must be passed between functions have (almost entirely) consistent names, simplifying integration. The only current exception is the name of the explicit `fee_actually_needed` which should be passed to step1 as the optional `passedIn_attemptAt_fee` after being received by calling step2 (see below).
 
-	* `UnspentOutput: Dictionary` with `amount: UInt64String`, `public_key: String`, `rct: OptionalString`, `global_index: UInt64String`, `index: UInt64String`, `tx_pub_key: String`
+##### Examples
+* [JS implementation of SendFunds](https://github.com/mymonero/mymonero-core-js/blob/master/monero_utils/monero_sendingFunds_utils.js#L100)
+* [JS implementation of JSON bridge calls](https://github.com/mymonero/mymonero-core-js/blob/789c1fa71b00fa0579389b7a9f483877745fb06c/monero_utils/MyMoneroCoreBridge.js#L465) - note `err_code` handling in `step1` and comments
 
-	* `MixAmountAndOuts: Dictionary` with `amount: UInt64String`, `outputs: [MixOut]`
+##### Shared JSON types
 
-		* `MixOut: Dictionary` with `global_index: UInt64String`, `public_key: String`, `rct: OptionalString`
+* `UnspentOutput: Dictionary` with 
+	* `amount: UInt64String`
+	* `public_key: String`
+	* `rct: Optional<String>`
+	* `global_index: UInt64String`
+	* `index: UInt64String`
+	* `tx_pub_key: String`
 
-* Returns: `err_msg: String` *OR* `serialized_signed_tx: String`, `tx_hash: String`, `tx_key: String`
+* `CreateTransactionErrorCode: UInt32String` defined in `monero_transfer_utils.hpp`; to remain stable within major versions
 
+##### `send_step1__prepare_params_for_get_decoys`
+
+* Args: 
+	* `sending_amount: UInt64String`
+	* `is_sweeping: BoolString`
+	* `priority: UInt32String` of `1`–`4`
+	* `fee_per_b: UInt64String`
+	* `unspent_outs: [UnspentOutput]` - fully parsed server response
+	* `payment_id_string: Optional<String>`
+	* `passedIn_attemptAt_fee: Optional<UInt64String>`
+	
+* Returns: 
+	
+	* `err_code: CreateTransactionErrorCode`==`needMoreMoneyThanFound(90)`
+	* `err_msg: String`
+	* `required_balance: UInt64String`
+	* `spendable_balance: UInt64String` 
+	
+	*OR*
+	
+	* `err_code: CreateTransactionErrorCode`!=`needMoreMoneyThanFound`
+	* `err_msg: String` 
+	
+	*OR* 
+	
+	* `mixin: UInt32String` use this for requesting random outputs before step2
+	* `using_fee: UInt64String`
+	* `change_amount: UInt64String`
+	* `using_outs: [UnspentOutput]` passable directly to step2
+	* `final_total_wo_fee: UInt64String`
+	
+
+##### `send_step2__try_create_transaction`
+
+* Args: 
+	* `from_address_string: String`
+	* `sec_viewKey_string: String`
+	* `sec_spendKey_string: String`
+	* `to_address_string: String`
+	* `final_total_wo_fee: UInt64String` returned by step1
+	* `change_amount: UInt64String` returned by step1
+	* `fee_amount: UInt64String` returned by step1
+	* `priority: UInt32String` of `1`–`4`
+	* `fee_per_b: UInt64String`
+	* `using_outs: [UnspentOutput]` returned by step1
+	* `mix_outs: [MixAmountAndOuts]` defined below
+	* `unlock_time: UInt64String`
+	* `nettype_string: NettypeString`
+	* `payment_id_string: Optional<String>`
+
+		* `MixAmountAndOuts: Dictionary` decoys obtained from API call with
+			* `amount: UInt64String`
+			* `outputs: [MixOut]` where
+				* `MixOut: Dictionary` with 
+					* `global_index: UInt64String`
+					* `public_key: String`
+					* `rct: Optional<String>`
+
+	* Returns: 
+	
+		* `tx_must_be_reconstructed: BoolString`==`true`
+		* `fee_actually_needed: UInt64String` pass this back to step1 as `passedIn_attemptAt_fee`
+	
+		*OR*
+	
+		* `err_msg: String` 
+		
+		*OR* 
+		
+		* `tx_must_be_reconstructed: Boolstring`!=`true`
+		* `serialized_signed_tx: String`
+		* `tx_hash: String`
+		* `tx_key: String`
+	
 
