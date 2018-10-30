@@ -647,7 +647,6 @@ void monero_transfer_utils::create_transaction(
 	}
 	//
 	cryptonote::transaction tx;
-	auto sources_copy = sources;
 	crypto::secret_key tx_key;
 	std::vector<crypto::secret_key> additional_tx_keys;
 	bool r = cryptonote::construct_tx_and_get_tx_key(
