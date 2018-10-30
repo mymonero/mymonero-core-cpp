@@ -7,7 +7,8 @@
 1. Pull Requests
 1. Developing
 1. Contributors
-1. API Documentation
+1. Embedding the C++
+1. API 
 
 ## What's in This Repo?
 
@@ -66,16 +67,37 @@ Contributors credited in releases.
 
 * 🐮 `moneromooo-monero` Major Monero contributor; Advisory
 
+## Embedding the C++
 
-## API Documentation
+If you want to embed the C++ or build the source in your own project, please take note of the following:
+
+* `slow-hash.c` must be compiled with `-maes`
+
+* The Monero source, a slightly modified version of which is a dep of this project, can only be built on versions of iOS >= 9 due to required support for `thread_local` as used by `threadpool.cpp`.
+
+* Not all Monero `.cpp` files which are in `monero-core-custom` must be included for `mymonero-core-cpp` - such as when their symbols are not required by any code called by this project. See `CMakeLists.txt` for a list of files required for compilation.
+
+* If you only want to call the C++ directly without using `serial_bridge_index` (described below), then that file-pair does not need to be included in your build. (See mymonero-app-ios link)
+
+
+## API 
+
+#### Notes:
+
+* If you are implementing the below-described Send routine yourself (examples: [JS](https://github.com/mymonero/mymonero-core-js/blob/master/monero_utils/monero_sendingFunds_utils.js#L100), [Swift](https://github.com/mymonero/mymonero-app-ios/blob/6deb815257e654ee9639a2b7a08a103b29a910f7/Modules/HostedMonero/HostedMonero_SendingFunds.swift#L179)), you should:
+	* implement the [necessary re-entry logic](https://github.com/mymonero/mymonero-app-ios/blob/6deb815257e654ee9639a2b7a08a103b29a910f7/Modules/HostedMonero/HostedMonero_SendingFunds.swift#L265) if step2 indicates reconstruction required, and
+	* *(optional)* [construct the `err_msg`](https://github.com/mymonero/mymonero-app-ios/blob/6deb815257e654ee9639a2b7a08a103b29a910f7/Modules/MyMoneroCore/Swift/MyMoneroCore_ObjCpp.mm#L563) if the error code indicates not enough spendable balance.
 
 ### C++
 
 *Coming soon*
 
+For examples see `src/serial_bridge_index.cpp` and [mymonero-app-ios/MyMoneroCore_ObjCpp.mm](https://github.com/mymonero/mymonero-app-ios/blob/master/Modules/MyMoneroCore/Swift/MyMoneroCore_ObjCpp.mm).
+
+
 ### JSON
 
-`src/serial_bridge_index` exposes a basic set of functions, each of which takes a string-serialized JSON object as an argument and returns a string-serialized JSON object.
+`src/serial_bridge_index` exposes this project's core library functions, each of which takes a string-serialized JSON object as an argument and returns a string-serialized JSON object.
 
 Usage of each of these functions is demonstrated in `tests/test_all.cpp`.
 
