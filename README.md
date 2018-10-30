@@ -218,7 +218,7 @@ When they fail, some of these functions return only a key-value `err_msg`.
 
 **`decodeRct`**
 
-* Args: `i: UInt32String`, `sk: String`, `rv: DecodeRCT_RV`
+* Args: `i: UInt32String`, `sk: String`, `rv: DecodeRCT_RV` where
 
 	* `DecodeRCT_RV: Dictionary` with `type: RCTTypeIntString`, `ecdhInfo: [DecodeRCT_ECDHInfo]`, `outPk: [DecodeRCT_OutPK]`
 
@@ -239,9 +239,11 @@ e.g.
 	
 **`estimated_tx_network_fee`**
 
-Convenience wrapper
+Useful for displaying an estimated fee – To obtain exact fees, see "Creating and Sending Transactions"
 
-* Args: `fee_per_b: UInt64String`, `priority: UInt32String`
+* Args: 
+	* `fee_per_b: UInt64String`
+	* `priority: UInt32String`
 
 * Returns: `retVal: UInt64String`
 
