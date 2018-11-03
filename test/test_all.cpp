@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 				BOOST_REQUIRE((*fee_actually_needed_string).size() > 0);
 				//
 				// This means we must go back through step1 to re-pick using_outs
-				BOOST_REQUIRE(construction_attempt_n < 3); // not generally expecting to have to do this more than once or twice
+				BOOST_REQUIRE(construction_attempt_n < 7); // not generally expecting to have to do this more than once or twice - i did see < 3 insufficient once so raised this
 				continue; // proceed to next iteration (re-enter tx construction at step1(II) with fee_actually_needed_string from step2(I))
 			}
 			optional<string> tx_hash = ret_tree.get_optional<string>(ret_json_key__send__tx_hash());
@@ -1065,4 +1065,177 @@ BOOST_AUTO_TEST_CASE(bridged__decodeRct)
 	BOOST_REQUIRE(amount_string.size() > 0);
 	cout << "bridged__decodeRct: amount_string: " << amount_string << endl;
 	BOOST_REQUIRE(amount_string == "4501"); // FIXME is this correct?
+}
+//
+//
+//
+string OM_stagenet__unspent_outs_json = "{\"unspent_outs\":[{\"amount\":\"25281219529517\",\"global_index\":642806,\"height\":189324,\"index\":0,\"public_key\":\"4e8f890509b157125cc529218a97f4c5e5711af3b36e6d04881391105b8de2c7\",\"tx_hash\":\"0bb8cfdb2c5c142c87faaf3cc6523fdf82fb5435cb382218a5df3e338202fa8e\",\"tx_id\":257,\"tx_prefix_hash\":\"51799f1647ec5d98255db8a51ecea3aebdc7c6015f6cef166643d0334f592915\",\"tx_pub_key\":\"e8cd4671aa2be2f1b169c1dc0c5e80ed6b19149b336bb02d825fb1728677eae2\"},{\"amount\":\"25280399800334\",\"global_index\":642823,\"height\":189341,\"index\":0,\"public_key\":\"6c69745ebadc04ff068e55ff113d1c44658f7b5b4311e748a8fcccb261dac263\",\"rct\":\"8b22c4fadb152cb8e6c6dd21d2cf46b668a3657fcf666973c7f2a8354eae384501000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"70d1678c23289d45f6d556bdfed0de52559141edb2645a62935027032c8e891e\",\"tx_id\":258,\"tx_prefix_hash\":\"1e43e7aefcea766096d7ab902dc63dc11dc6cb4d7db8511eb01ef65457c69d9a\",\"tx_pub_key\":\"36fc11368f364e85e3863176487b06d705c3bf901d997b7a2683c567a95e2777\"},{\"amount\":\"25280158708574\",\"global_index\":642828,\"height\":189346,\"index\":0,\"public_key\":\"977f3d24792f583a8c8fc3123c35589c83e1a29e573cfaf35d6957f9bb286469\",\"rct\":\"761f8ac29fc66b8d004600155caf98c5a1db7173d616a696a520969425cd647a01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"45c7151f27376cdabf3e0e6c0a6412ad7b74cf06e8aff1f1f18eda96c7aa2755\",\"tx_id\":259,\"tx_prefix_hash\":\"67c48668d2340692a348d89b55e6888833a2b219028b29947cebb6b1210b14f3\",\"tx_pub_key\":\"f21b25d38bf0b64eda40434f88fffa2e574d894ee788a97710acea189978a180\"},{\"amount\":\"25280062272513\",\"global_index\":642830,\"height\":189348,\"index\":0,\"public_key\":\"21df141a799f53b262c89293e2dc4f99fa661de3378cd65ad709608720b2ded8\",\"rct\":\"92c27bb967345986e94b02ec14558eaf7d93168f2e7a4376c22e9d55a5fb89b801000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"3a42dc8deaf1a9d1188e36b2354eb140fdd34c36c18b9232b0c163b480ffb762\",\"tx_id\":260,\"tx_prefix_hash\":\"76e3943d64f731071f35b0e0f28b7e084285ff32ee91d4eb4affb51f39bd26e1\",\"tx_pub_key\":\"e1eb916dc0c92c05da1bfa620af6750b8d8713a552e03d470b113d73f84f489f\"},{\"amount\":\"25279628314794\",\"global_index\":642839,\"height\":189357,\"index\":0,\"public_key\":\"0bfe8c187810c13ed423cbeb19219ec41732489a492b492e4069c448eef94b1c\",\"rct\":\"8f4c588457e4c162d12a1927307fa1c4065fff90da75a400629415dddc655b3b01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"ef9fde50a44ea003d51fe555f75f73995135e10f1783aa095fd4f494a026dde4\",\"tx_id\":261,\"tx_prefix_hash\":\"a1b0cf4ec0415257da3cc4854a9da975a3a5673b161dab2ec31da3858cdfa1f8\",\"tx_pub_key\":\"d2f0cbb319de4de653e683ea552d9856d0de99c323078c74bbcae5d2a6784328\"},{\"amount\":\"25279242580853\",\"global_index\":642847,\"height\":189365,\"index\":0,\"public_key\":\"f7d0bfea20a9a73346c868af3a925e17f30f3eda513023c513a59883e7edfd3d\",\"rct\":\"7f91e3fd454d27e231f5b90909be59f067ca704d9e9e92555b6a255145c369cd01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"f982fd2b94333f63ac8294037cc6a8afdf6cd87f024fb453a24bad1e6259393d\",\"tx_id\":262,\"tx_prefix_hash\":\"d8c283e8f8d79a72c02c0869d9b629e7d8dafe7f8a32e17e12e16bd68d5fce6c\",\"tx_pub_key\":\"edcdafda5b834b0dd7ecd748a2b73b65c36c09853c32345d4146579eecb9614c\"},{\"amount\":\"25280290942143\",\"global_index\":642850,\"height\":189368,\"index\":0,\"public_key\":\"9e9b9ec98bf50382ad64ae178eda96455cce5b494623f28fb36b09dc750b7f28\",\"rct\":\"f60426634efcff6e84657c1be104fa91c413009c9ca4f0c170c52bbdef99e41f01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"75cedfd148c291b55b5f70b4bde8215db1fc858287b7eaf2b1245eaf969b2b77\",\"tx_id\":263,\"tx_prefix_hash\":\"1b76cd6dde6b73c427468eee0d8d60e637cfed15809ffa6ac15f3927549d7562\",\"tx_pub_key\":\"0bf1f11812a40b06f05a38e7c0dc75ce3fd3312994e4c4185e85c53b53a7fa48\"},{\"amount\":\"25278712206295\",\"global_index\":642866,\"height\":189376,\"index\":0,\"public_key\":\"c6a90657353543930ff1135923d56aacbbf7f162d639d75e1c8f815852d71824\",\"rct\":\"1c0f1e4f7fe3666088c2f4e58289f36e49544a31bfe3ec597094b94ac90a1f9a01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"c33a2e9daa82c32a4fcdbc1805785d80dc115314fd6f40a07b399e4e76d637af\",\"tx_id\":264,\"tx_prefix_hash\":\"ad41c4b185fed1359469cb4621d1147d1ff1389299b9a20d8152eab79c46f82a\",\"tx_pub_key\":\"538950955fd8a944a916f0ed6122313a05db1404d55aa603215fcd149c7b264e\"}]}";
+string OM_stagenet__rand_outs_json = "{\"mix_outs\":[{\"amount\":\"0\",\"outputs\":[{\"global_index\":396567,\"public_key\":\"841c0540176bf72d0cf44806cb481fd1c1ddb1423c8e158ecb154626de4aa219\",\"rct\":\"66c40a4cda875983e23ae7fa23fab2c3b0ec210b5aad838d85583eb0185b78ea987ca3b45e1c5396a0b493a21e4c765a1dae6e3fdf428d7b6b9718e47557910bf52392367413b6d6901624ee0df46fe2b1b2b820c68b36029677b35d18c55408\"},{\"global_index\":549126,\"public_key\":\"931063eda20cbbccfbec5ca1e776123d84eb9b524c0e10f2e8b9c9245f60ed12\",\"rct\":\"052756b6c25633a544ebda021de45bdca71c13d75dad47550bfde2300bb0effa479b2e96bf533a9342ae66d06fe05d8b6ad0d63d40e5bcee1e1949c015d5fc0e8bee43e1b67cecee6c990fe026c5ad8eb23f46f09f5bbf1132b695a0d295a205\"},{\"global_index\":107684,\"public_key\":\"4c72b36d9fe5cb85a99bd3e2092ea3cc405ee6c8a23d2062f9909b8be17ba68f\",\"rct\":\"f610785155c4841ce28cff5a524eb5a89206667b3886cdf361b5181e2698618900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"},{\"global_index\":599301,\"public_key\":\"50fa87714baaa3c4aa0a1521e034c142c33016600c2993707b950233f89cd88d\",\"rct\":\"deb98ad8d8ebb48f977e0b6c7b5631cef2edb071ee6b5336302db3cb1a76db2900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"},{\"global_index\":440995,\"public_key\":\"5b38f11f0b532c7bb168fc53180b5044fce17b65f8c46b25d661c3bef7a84d9b\",\"rct\":\"7e097bd6e2655c678d134789c09b6cf8b5f408ab5daf438d5b09d8629e09f6ce429d1d3f8ed030c2b9386c91f2166c65f7bd022e21e7f9d49785abc2dc081609fdabe18cc6216be4148419786299282d6229af1b3242ec1579beb571afcfa607\"},{\"global_index\":623015,\"public_key\":\"07137bc9e412eecae31871279fb80896c771b0ea408cb40d9f9e683de13de6ff\",\"rct\":\"8565e3131cf34a4cb0a62c1f340cfb313d32010786e0ad88fcbdfaec1d3c0c8b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"},{\"global_index\":317661,\"public_key\":\"f50a4d572230aba56cb08ca84429dfd77a8564304ef4ba8ba847e00345a655c9\",\"rct\":\"d0d0be0296aad2412058fc65372aee9a61fa7df0efc6bb6cca6b5bec131dc9957573322031219bb1cbaa108a3ecbd3e5cc13a3c7d48dd70c792c80fe6c43640057f55f71b565dd90ca24a403ba93fe48ffae36b6a94d1b773be008fbfd513e05\"},{\"global_index\":153786,\"public_key\":\"68bae4aa3a12b2ccfe4a82f2ca90c9f0a1dade21744a383de26d8e366f468ab8\",\"rct\":\"32e0d57de61a3b4bf70a08686be1b1592db72f9e0be0123df8095d9a4b98b62dd2f283a225d57ccf768be2c4004c875e36371681dc5fb030ef348ba8c22be40740e531ea20c8dd200823c9363eb37a11a1121a83cfe063ca3547d58745a6d101\"},{\"global_index\":360768,\"public_key\":\"758b308d7297d2da2d4872c2db6f61100f5fb7eb7aaa6357aacc69e5ef61280b\",\"rct\":\"54f2c2c827dbbf80a131bb27ac9ab6724001eafb136bd5916c202236211bcfe4d9f68dcb00bfb3fb01e41c91f07d06016db9e420e7277a21cd72b7b52dab7a011f5b7a4c5abf0d9013b42e98b6f16f06c4f61dd8468089002e169058292b1e0a\"},{\"global_index\":613372,\"public_key\":\"e31fa7b495c6e2d1a12511a2833fbd224bb1c8463ecc15d4ba44cd32c6856103\",\"rct\":\"e1a9e52ec110a580f2a444f70efe24c019ca4dac8cafa0c8dca61d26bc0591f200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"},{\"global_index\":630358,\"public_key\":\"8ab2e91d587142844107cb220dbddfa5f1c49f08c5144b637419165eb15b510c\",\"rct\":\"740969143db8beb3b1d886bfc6a534cfffddc4b4548192a7f9dd67730e1aa8f7c27cb174dd7de99007097c14798f323be74c5f456a38bdb873101998fe35c40f26d3f37113f6f868e0551b8ad53d8cea066ff1faae460efdea4b975e2369840e\"}]}]}";
+
+BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
+{
+	using namespace serial_bridge;
+	using namespace monero_transfer_utils;
+	//
+	// this being input as JSON merely for convenience
+	boost::property_tree::ptree pt;
+	stringstream ss;
+	ss << OM_stagenet__unspent_outs_json;
+	boost::property_tree::json_parser::read_json(ss, pt);
+	boost::property_tree::ptree unspent_outs = pt.get_child("unspent_outs");
+	//
+	// NOTE: in the real algorithm you should re-request this _each time step2 must be called_
+	// this being input as JSON merely for convenience
+	boost::property_tree::ptree mix_outs;
+	{
+		boost::property_tree::ptree pt;
+		stringstream ss;
+		ss << OM_stagenet__rand_outs_json;
+		boost::property_tree::json_parser::read_json(ss, pt);
+		mix_outs = pt.get_child("mix_outs");
+	}
+	//
+	// Send algorithm:
+	bool tx_must_be_reconstructed = true; // for ease of writing this code, start this off true & structure whole thing as while loop
+	optional<string> fee_actually_needed_string = none;
+	size_t construction_attempt_n = 0;
+	while (tx_must_be_reconstructed) {
+		construction_attempt_n += 1; // merely kept for assertion purposes
+		//
+		optional<string> mixin_string;
+		optional<string> change_amount_string;
+		optional<string> using_fee_string;
+		optional<string> final_total_wo_fee_string;
+		boost::property_tree::ptree using_outs;
+		{
+			boost::property_tree::ptree root;
+			root.put("is_sweeping", "false");
+			root.put("payment_id_string", "d2f602b240fbe624"); // optl
+			root.put("sending_amount", "1000000000000");
+			root.put("fee_per_b", "166333");
+			root.put("priority", "1");
+			root.add_child("unspent_outs", unspent_outs);
+			if (fee_actually_needed_string != none) {
+				BOOST_REQUIRE(construction_attempt_n > 1);
+				//
+				// for next round's integration - if it needs to re-enter... arg "passedIn_attemptAt_fee"
+				root.put("passedIn_attemptAt_fee", *fee_actually_needed_string);
+			}
+			auto ret_string = serial_bridge::send_step1__prepare_params_for_get_decoys(args_string_from_root(root));
+			stringstream ret_stream;
+			ret_stream << ret_string;
+			boost::property_tree::ptree ret_tree;
+			boost::property_tree::read_json(ret_stream, ret_tree);
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
+				if ((CreateTransactionErrorCode)*err_code == monero_transfer_utils::needMoreMoneyThanFound) {
+					optional<string> spendable_balance_string = ret_tree.get_optional<string>(ret_json_key__send__spendable_balance());
+					BOOST_REQUIRE(spendable_balance_string != none);
+					BOOST_REQUIRE((*spendable_balance_string).size() > 0);
+					//			uint64_t fee = stoull(*fee_string);
+					//			BOOST_REQUIRE(fee == 135000000);
+					cout << "bridge__transfers__send_stagenet_coinbase: step1: needMoreMoneyThanFound: spendable_balance " << *spendable_balance_string << endl;
+					//
+					optional<string> required_balance_string = ret_tree.get_optional<string>(ret_json_key__send__required_balance());
+					BOOST_REQUIRE(required_balance_string != none);
+					BOOST_REQUIRE((*required_balance_string).size() > 0);
+					//			uint64_t fee = stoull(*fee_string);
+					//			BOOST_REQUIRE(fee == 135000000);
+					cout << "bridge__transfers__send_stagenet_coinbase: step1: needMoreMoneyThanFound: required_balance " << *required_balance_string << endl;
+				}
+				auto err_msg = err_msg_from_err_code__create_transaction((CreateTransactionErrorCode)*err_code);
+				BOOST_REQUIRE_MESSAGE(false, err_msg);
+				// ^--- not expecting anything like needMoreMoneyThanFound errors here
+			}
+			mixin_string = ret_tree.get_optional<string>(ret_json_key__send__mixin());
+			BOOST_REQUIRE(mixin_string != none);
+			BOOST_REQUIRE((*mixin_string).size() > 0);
+			uint64_t mixin = stoull(*mixin_string);
+			BOOST_REQUIRE(mixin == 10);
+			cout << "bridge__transfers__send_stagenet_coinbase: mixin " << *mixin_string << endl;
+			//
+			using_fee_string = ret_tree.get_optional<string>(ret_json_key__send__using_fee()); // save this
+			BOOST_REQUIRE(using_fee_string != none);
+			BOOST_REQUIRE((*using_fee_string).size() > 0);
+			//		uint64_t using_fee = stoull(*using_fee_string);
+			//	BOOST_REQUIRE(using_fee == 10); // TODO:?
+			cout << "bridge__transfers__send_stagenet_coinbase: step1: using_fee " << *using_fee_string << endl;
+			//
+			using_outs = ret_tree.get_child(ret_json_key__send__using_outs()); // save this for step2
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, using_outs)
+			{
+				assert(output_desc.first.empty()); // array elements have no names
+				cout << "bridge__transfers__send_stagenet_coinbase: step1: using_out " << output_desc.second.get<string>("public_key") << endl;
+			}
+			//
+			change_amount_string = ret_tree.get_optional<string>(ret_json_key__send__change_amount());
+			BOOST_REQUIRE(change_amount_string != none);
+			BOOST_REQUIRE((*change_amount_string).size() > 0);
+			//		uint64_t change_amount = stoull(*change_amount_string);
+			//	BOOST_REQUIRE(change_amount == 10); // TODO:?
+			cout << "bridge__transfers__send_stagenet_coinbase: step1: change_amount " << *change_amount_string << endl;
+			//
+			final_total_wo_fee_string = ret_tree.get_optional<string>(ret_json_key__send__final_total_wo_fee());
+			BOOST_REQUIRE(final_total_wo_fee_string != none);
+			BOOST_REQUIRE((*final_total_wo_fee_string).size() > 0);
+			//		uint64_t final_total_wo_fee = stoull(*final_total_wo_fee_string);
+			//	BOOST_REQUIRE(final_total_wo_fee == 10); // TODO:?
+			cout << "bridge__transfers__send_stagenet_coinbase: step1: final_total_wo_fee " << *final_total_wo_fee_string << endl;
+			//
+		}
+		{
+			boost::property_tree::ptree root;
+			root.put("final_total_wo_fee", *final_total_wo_fee_string);
+			root.put("change_amount", *change_amount_string); // from step1
+			root.put("fee_amount", *using_fee_string); // from step1
+			root.add_child("using_outs", using_outs); // from step1
+			//
+			root.put("payment_id_string", "d2f602b240fbe624"); // optl
+			root.put("nettype_string", string_from_nettype(STAGENET));
+			root.put("to_address_string", "57Hx8QpLUSMjhgoCNkvJ2Ch91mVyxcffESCprnRPrtbphMCv8iGUEfCUJxrpUWUeWrS9vPWnFrnMmTwnFpSKJrSKNuaXc5q");
+			root.put("from_address_string", "56bY2v2RJZNEvrKdYuwG73Q2idshQyGc5fV74BZqoVv72MPSBEakPbfWYtQH4PLGhk3uaCjNZ81XJ7o9pimAXzQFCv7bxxf");
+			root.put("sec_viewKey_string", "9ef8e116d2c774b207a2dd6a234dab8f5d54becc04aa26ccbd6f1f67e8427308");
+			root.put("sec_spendKey_string", "4acde2a96d5085423fcc8713c878448b35e45900f4e9cf2c0b643eb4268e140e");
+			root.put("fee_per_b", "166333");
+			root.put("unlock_time", "0");
+			root.put("priority", "1");
+			root.add_child("mix_outs", mix_outs);
+			//
+			boost::property_tree::ptree ret_tree;
+			auto ret_string = serial_bridge::send_step2__try_create_transaction(args_string_from_root(root));
+			stringstream ret_stream;
+			ret_stream << ret_string;
+			boost::property_tree::read_json(ret_stream, ret_tree);
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
+				auto err_msg = err_msg_from_err_code__create_transaction((CreateTransactionErrorCode)*err_code);
+				BOOST_REQUIRE_MESSAGE(false, err_msg);
+			}
+			//
+			tx_must_be_reconstructed = ret_tree.get<bool>(ret_json_key__send__tx_must_be_reconstructed());
+			cout << "bridge__transfers__send_stagenet_coinbase: step2: must tx be reconstructed? " << tx_must_be_reconstructed << endl;
+			if (tx_must_be_reconstructed) {
+				// declared outside the for-loop so that we can use it for subsequent iterations if needed:
+				fee_actually_needed_string = ret_tree.get_optional<string>(ret_json_key__send__fee_actually_needed());
+				BOOST_REQUIRE(fee_actually_needed_string != none);
+				BOOST_REQUIRE((*fee_actually_needed_string).size() > 0);
+				//
+				// This means we must go back through step1 to re-pick using_outs
+				BOOST_REQUIRE(construction_attempt_n < 3); // not generally expecting to have to do this more than once or twice
+				continue; // proceed to next iteration (re-enter tx construction at step1(II) with fee_actually_needed_string from step2(I))
+			}
+			optional<string> tx_hash = ret_tree.get_optional<string>(ret_json_key__send__tx_hash());
+			optional<string> tx_key_string = ret_tree.get_optional<string>(ret_json_key__send__tx_key());
+			optional<string> serialized_signed_tx = ret_tree.get_optional<string>(ret_json_key__send__serialized_signed_tx());
+			BOOST_REQUIRE(serialized_signed_tx != none);
+			BOOST_REQUIRE((*serialized_signed_tx).size() > 0);
+			cout << "bridge__transfers__send_stagenet_coinbase: serialized_signed_tx: " << *serialized_signed_tx << endl;
+			BOOST_REQUIRE(tx_hash != none);
+			BOOST_REQUIRE((*tx_hash).size() > 0);
+			cout << "bridge__transfers__send_stagenet_coinbase: tx_hash: " << *tx_hash << endl;
+			BOOST_REQUIRE(tx_key_string != none);
+			BOOST_REQUIRE((*tx_key_string).size() > 0);
+			cout << "bridge__transfers__send_stagenet_coinbase: tx_key_string: " << *tx_key_string << endl;
+		}
+	}
 }

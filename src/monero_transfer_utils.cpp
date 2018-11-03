@@ -159,7 +159,7 @@ bool _rct_hex_to_decrypted_mask(
 	THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Failed to generate key derivation");
 	crypto::secret_key scalar;
 	crypto::derivation_to_scalar(derivation, internal_output_index, scalar);
-	sc_sub(decrypted_mask.bytes,encrypted_mask.bytes,rct::hash_to_scalar(rct::sk2rct(scalar)).bytes);
+	sc_sub(decrypted_mask.bytes, encrypted_mask.bytes, rct::hash_to_scalar(rct::sk2rct(scalar)).bytes);
 	
 	return true;
 }
@@ -581,13 +581,17 @@ void monero_transfer_utils::create_transaction(
 		src.rct = outputs[out_index].rct != boost::none && (*(outputs[out_index].rct)).empty() == false;
 		if (src.rct) {
 			rct::key decrypted_mask;
-			_rct_hex_to_decrypted_mask(
+			bool r = _rct_hex_to_decrypted_mask(
 				*(outputs[out_index].rct),
 				sender_account_keys.m_view_secret_key,
 				tx_pub_key,
 				internal_output_index,
 				decrypted_mask
 			);
+			if (!r) {
+				retVals.errCode = cantGetDecryptedMaskFromRCTHex;
+				return;
+			}
 			src.mask = decrypted_mask;
 //			rct::key calculated_commit = rct::commit(outputs[out_index].amount, decrypted_mask);
 //			rct::key parsed_commit;
@@ -599,7 +603,7 @@ void monero_transfer_utils::create_transaction(
 		} else {
 			rct::key I;
 			rct::identity(I);
-			src.mask = I; // in JS MM code this was left as null for generate_key_image_helper_rct to, I think, fill in with identity I
+			src.mask = I; // in the original cn_utils impl this was left as null for generate_key_image_helper_rct to fill in with identity I
 		}
 		// not doing multisig here yet
 		src.multisig_kLRki = rct::multisig_kLRki({rct::zero(), rct::zero(), rct::zero(), rct::zero()});
