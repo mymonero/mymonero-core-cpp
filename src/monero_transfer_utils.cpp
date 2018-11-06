@@ -153,6 +153,11 @@ bool _rct_hex_to_decrypted_mask(
 	THROW_WALLET_EXCEPTION_IF(!string_tools::validate_hex(64, encrypted_mask_str), error::wallet_internal_error, "Invalid rct mask: " + encrypted_mask_str);
 	string_tools::hex_to_pod(encrypted_mask_str, encrypted_mask);
 	//
+	if (encrypted_mask == rct::identity()) { // NOTE: ringct coinbase txs have the identity mask manually provided unencrypted in the rct field by the hosted lightwallet backend
+		decrypted_mask = encrypted_mask;
+		return true;
+	}
+	//
 	// Decrypt the mask
 	crypto::key_derivation derivation;
 	bool r = generate_key_derivation(tx_pub_key, view_secret_key, derivation);
