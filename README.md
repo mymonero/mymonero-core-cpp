@@ -27,6 +27,21 @@ A primary goal for this repository is its future convergence and reimplementatio
 * This readme is located at `README.md`, and the license is located at `LICENSE.txt`. All source code copyright © 2014-2018 by MyMonero. All rights reserved.
 
 
+### Dependencies
+
+* (to use included shell scripts) cmake
+
+* Boost 1.58 library components
+
+	* `system`
+
+	* `thread`
+
+	* If running tests: `unit_test_framework`
+
+* `monero-core-custom` (see "Setup")
+
+
 ## Setup
 
 * Run `bin/update_submodules` 
