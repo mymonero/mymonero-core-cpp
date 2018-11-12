@@ -97,9 +97,9 @@ For examples see `src/serial_bridge_index.cpp` and [mymonero-app-ios/MyMoneroCor
 
 ### JSON
 
-`src/serial_bridge_index` exposes this project's core library functions, each of which takes a string-serialized JSON object as an argument and returns a string-serialized JSON object.
+`src/serial_bridge_index` exposes this project's core library functions. Each bridge function takes a string-serialized JSON object as an argument and returns a string-serialized JSON object.
 
-Usage of each of these functions is demonstrated in `tests/test_all.cpp`.
+Usage of each of these JSON-bridge functions is demonstrated in `tests/test_all.cpp`.
 
 When they fail, some of these functions return only a key-value `err_msg`.
 
