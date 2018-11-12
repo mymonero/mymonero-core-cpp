@@ -687,7 +687,7 @@ BOOST_AUTO_TEST_CASE(bridged__are_equal_mnemonics)
 	//
 	boost::property_tree::ptree root;
 	root.put("a", "foxe selfish hum nexus juven dodeg pepp ember biscuti elap jazz vibrate biscui");
-	root.put("b", "fox sel hum nex juv dod pep emb bis ela jaz vib bis");
+	root.put("b", "fox sel hum nex juv\r  \ndod pep emb bis ela jaz vib bis");
 	//
 	auto ret_string = serial_bridge::are_equal_mnemonics(args_string_from_root(root));
 	stringstream ret_stream;
@@ -732,7 +732,7 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	using namespace serial_bridge;
 	//
 	boost::property_tree::ptree root;
-	root.put("mnemonic_string", "foxe selfish hum nexus juven dodeg pepp ember biscuti elap jazz vibrate biscui");
+	root.put("mnemonic_string", "foxe selfish\n\r \t     hum nexus juven dodeg pepp \r\n\r\n ember biscuti elap jazz vibrate biscui");
 	root.put("nettype_string", string_from_nettype(MAINNET));
 	//
 	auto ret_string = serial_bridge::seed_and_keys_from_mnemonic(args_string_from_root(root));
@@ -756,6 +756,7 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	BOOST_REQUIRE(address_string != none);
 	BOOST_REQUIRE((*address_string).size() > 0);
 	cout << "bridged__seed_and_keys_from_mnemonic: address: " << *address_string << endl;
+	BOOST_REQUIRE((*address_string) == "43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg");
 	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
