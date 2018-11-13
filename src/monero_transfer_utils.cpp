@@ -430,6 +430,7 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 	retVals.signed_serialized_tx_string = std::move(*(create_tx__retVals.signed_serialized_tx_string));
 	retVals.tx_hash_string = std::move(*(create_tx__retVals.tx_hash_string));
 	retVals.tx_key_string = std::move(*(create_tx__retVals.tx_key_string));
+	retVals.tx_pub_key_string = std::move(*(create_tx__retVals.tx_pub_key_string));
 }
 //
 //
@@ -787,14 +788,23 @@ void monero_transfer_utils::convenience__create_transaction(
 	// signed serialized tx
 	retVals.signed_serialized_tx_string = epee::string_tools::buff_to_hex_nodelimer(cryptonote::tx_to_blob(*actualCall_retVals.tx));
 	// (concatenated) tx key
-	ostringstream oss;
 	{
+		ostringstream oss;
 		oss << epee::string_tools::pod_to_hex(*actualCall_retVals.tx_key);
 		for (size_t i = 0; i < (*actualCall_retVals.additional_tx_keys).size(); ++i) {
 			oss << epee::string_tools::pod_to_hex((*actualCall_retVals.additional_tx_keys)[i]);
 		}
+		retVals.tx_key_string = oss.str();
 	}
-	retVals.tx_key_string = oss.str();
+	{
+		ostringstream oss;
+		oss << epee::string_tools::pod_to_hex(get_tx_pub_key_from_extra(*actualCall_retVals.tx));
+		retVals.tx_pub_key_string = oss.str();
+	}
 	retVals.tx = *actualCall_retVals.tx; // for calculating block weight; FIXME: std::move?
+	//
+//	cout << "out 0: " << string_tools::pod_to_hex(boost::get<txout_to_key>((*(actualCall_retVals.tx)).vout[0].target).key) << endl;
+//	cout << "out 1: " << string_tools::pod_to_hex(boost::get<txout_to_key>((*(actualCall_retVals.tx)).vout[1].target).key) << endl;
+	//	
 	retVals.txBlob_byteLength = txBlob_byteLength;
 }

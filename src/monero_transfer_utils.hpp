@@ -210,6 +210,7 @@ namespace monero_transfer_utils
 		optional<string> signed_serialized_tx_string;
 		optional<string> tx_hash_string;
 		optional<string> tx_key_string; // this includes additional_tx_keys
+		optional<string> tx_pub_key_string; // from get_tx_pub_key_from_extra()
 	};
 	void send_step2__try_create_transaction(
 		Send_Step2_RetVals &retVals,
@@ -241,6 +242,7 @@ namespace monero_transfer_utils
 		optional<string> signed_serialized_tx_string;
 		optional<string> tx_hash_string;
 		optional<string> tx_key_string; // this includes additional_tx_keys
+		optional<string> tx_pub_key_string; // from get_tx_pub_key_from_extra()
 		optional<transaction> tx; // for block weight
 		optional<size_t> txBlob_byteLength;
 	};

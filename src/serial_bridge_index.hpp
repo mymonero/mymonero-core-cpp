@@ -93,6 +93,7 @@ namespace serial_bridge
 	static inline string ret_json_key__send__serialized_signed_tx() { return "serialized_signed_tx"; }
 	static inline string ret_json_key__send__tx_hash() { return "tx_hash"; }
 	static inline string ret_json_key__send__tx_key() { return "tx_key"; }
+	static inline string ret_json_key__send__tx_pub_key() { return "tx_pub_key"; }
 	//
 	// - - decode_address, etc
 	static inline string ret_json_key__paymentID_string() { return "paymentID_string"; } // optional

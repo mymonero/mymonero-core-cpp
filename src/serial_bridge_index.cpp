@@ -614,6 +614,7 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 			root.put(ret_json_key__send__serialized_signed_tx(), std::move(*(retVals.signed_serialized_tx_string)));
 			root.put(ret_json_key__send__tx_hash(), std::move(*(retVals.tx_hash_string)));
 			root.put(ret_json_key__send__tx_key(), std::move(*(retVals.tx_key_string)));
+			root.put(ret_json_key__send__tx_pub_key(), std::move(*(retVals.tx_pub_key_string)));
 		}
 	}
 	return ret_json_from_root(root);

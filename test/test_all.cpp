@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amountWOnlyDusty)
 	// ^--- expecting needMoreMoneyThanFound
 }
 string DG_postsweep__unspent_outs_json = "{\"unspent_outs\":[{\"amount\":\"3000000000\",\"public_key\":\"41be1978f58cabf69a9bed5b6cb3c8d588621ef9b67602328da42a213ee42271\",\"index\":1,\"global_index\":7611174,\"rct\":\"86a2c9f1f8e66848cd99bfda7a14d4ac6c3525d06947e21e4e55fe42a368507eb5b234ccdd70beca8b1fc8de4f2ceb1374e0f1fd8810849e7f11316c2cc063060008ffa5ac9827b776993468df21af8c963d12148622354f950cbe1369a92a0c\",\"tx_id\":5334971,\"tx_hash\":\"9d37c7fdeab91abfd1e7e120f5c49eac17b7ac04a97a0c93b51c172115df21ea\",\"tx_pub_key\":\"bd703d7f37995cc7071fb4d2929594b5e2a4c27d2b7c68a9064500ca7bc638b8\"}]}";
-string DG_postsweep__rand_outs_json = "{\"mix_outs\":[{\"amount\":\"0\",\"outputs\":[{\"global_index\":\"7453099\",\"public_key\":\"31f3a7fec0f6f09067e826b6c2904fd4b1684d7893dcf08c5b5d22e317e148bb\",\"rct\":\"ea6bcb193a25ce2787dd6abaaeef1ee0c924b323c6a5873db1406261e86145fc\"},{\"global_index\":\"7500097\",\"public_key\":\"f9d923500671da05a1bf44b932b872f0c4a3c88e6b3d4bf774c8be915e25f42b\",\"rct\":\"dcae4267a6c382bcd71fd1af4d2cbceb3749d576d7a3acc473dd579ea9231a52\"},{\"global_index\":\"7548483\",\"public_key\":\"839cbbb73685654b93e824c4843e745e8d5f7742e83494932307bf300641c480\",\"rct\":\"aa99d492f1d6f1b20dcd95b8fff8f67a219043d0d94b4551759016b4888573e7\"},{\"global_index\":\"7554755\",\"public_key\":\"b8860f0697988c8cefd7b4285fbb8bec463f136c2b9a9cadb3e57cebee10717f\",\"rct\":\"327f9b07bee9c4c25b5a990123cd2444228e5704ebe32016cd632866710279b5\"},{\"global_index\":\"7561477\",\"public_key\":\"561d734cb90bc4a64d49d37f85ea85575243e2ed749a3d6dcb4d27aa6bec6e88\",\"rct\":\"b5393e038df95b94bfda62b44a29141cac9e356127270af97193460d51949841\"},{\"global_index\":\"7567062\",\"public_key\":\"db1024ef67e7e73608ef8afab62f49e2402c8da3dc3197008e3ba720ad3c94a8\",\"rct\":\"1fedf95621881b77f823a70aa83ece26aef62974976d2b8cd87ed4862a4ec92c\"},{\"global_index\":\"7567508\",\"public_key\":\"6283f3cd2f050bba90276443fe04f6076ad2ad46a515bf07b84d424a3ba43d27\",\"rct\":\"10e16bb8a8b7b0c8a4b193467b010976b962809c9f3e6c047335dba09daa351f\"},{\"global_index\":\"7568716\",\"public_key\":\"7a7deb4eef81c1f5ce9cbd0552891cb19f1014a03a5863d549630824c7c7c0d3\",\"rct\":\"735d059dc3526334ac705ddc44c4316bb8805d2426dcea9544cde50cf6c7a850\"},{\"global_index\":\"7571196\",\"public_key\":\"535208e354cae530ed7ce752935e555d630cf2edd7f91525024ed9c332b2a347\",\"rct\":\"c3cf838faa14e993536c5581ca582fb0d96b70f713cf88f7f15c89336e5853ec\"},{\"global_index\":\"7571333\",\"public_key\":\"e73f27b7eb001aa7eac13df82814cda65b42ceeb6ef36227c25d5cbf82f6a5e4\",\"rct\":\"5f45f33c6800cdae202b37abe6d87b53d6873e7b30f3527161f44fa8db3104b6\"},{\"global_index\":\"7571335\",\"public_key\":\"fce982db8e7a6b71a1e632c7de8c5cbf54e8bacdfbf250f1ffc2a8d2f7055ce3\",\"rct\":\"407bdcc48e70eb3ef2cc22cefee6c6b5a3c59fd17bde12fda5f1a44a0fb39d14\"}]}]}";
+string DG_postsweep__rand_outs_json = "{\"mix_outs\":[{\"amount\":\"0\",\"outputs\":[{\"global_index\":\"7453099\",\"public_key\":\"31f3a7fec0f6f09067e826b6c2904fd4b1684d7893dcf08c5b5d22e317e148bb\",\"rct\":\"ea6bcb193a25ce2787dd6abaaeef1ee0c924b323c6a5873db1406261e86145fc\"},{\"global_index\":\"7500097\",\"public_key\":\"f9d923500671da05a1bf44b932b872f0c4a3c88e6b3d4bf774c8be915e25f42b\",\"rct\":\"dcae4267a6c382bcd71fd1af4d2cbceb3749d576d7a3acc473dd579ea9231a52\"},{\"global_index\":\"7548483\",\"public_key\":\"839cbbb73685654b93e824c4843e745e8d5f7742e83494932307bf300641c480\",\"rct\":\"aa99d492f1d6f1b20dcd95b8fff8f67a219043d0d94b4551759016b4888573e7\"},{\"global_index\":\"7554755\",\"public_key\":\"b8860f0697988c8cefd7b4285fbb8bec463f136c2b9a9cadb3e57cebee10717f\",\"rct\":\"327f9b07bee9c4c25b5a990123cd2444228e5704ebe32016cd632866710279b5\"},{\"global_index\":\"7561477\",\"public_key\":\"561d734cb90bc4a64d49d37f85ea85575243e2ed749a3d6dcb4d27aa6bec6e88\",\"rct\":\"b5393e038df95b94bfda62b44a29141cac9e356127270af97193460d51949841\"},{\"global_index\":\"7567062\",\"public_key\":\"db1024ef67e7e73608ef8afab62f49e2402c8da3dc3197008e3ba720ad3c94a8\",\"rct\":\"1fedf95621881b77f823a70aa83ece26aef62974976d2b8cd87ed4862a4ec92c\"},{\"global_index\":\"7567508\",\"public_key\":\"6283f3cd2f050bba90276443fe04f6076ad2ad46a515bf07b84d424a3ba43d27\",\"rct\":\"10e16bb8a8b7b0c8a4b193467b010976b962809c9f3e6c047335dba09daa351f\"},{\"global_index\":\"7568716\",\"public_key\":\"7a7deb4eef81c1f5ce9cbd0552891cb19f1014a03a5863d549630824c7c7c0d3\",\"rct\":\"735d059dc3526334ac705ddc44c4316bb8805d2426dcea9544cde50cf6c7a850\"},{\"global_index\":\"7571196\",\"public_key\":\"535208e354cae530ed7ce752935e555d630cf2edd7f91525024ed9c332b2a347\",\"rct\":\"c3cf838faa14e993536c5581ca582fb0d96b70f713cf88f7f15c89336e5853ec\"},{\"global_index\":\"7571333\",\"public_key\":\"e73f27b7eb001aa7eac13df82814cda65b42ceeb6ef36227c25d5cbf82f6a5e4\",\"rct\":\"5f45f33c6800cdae202b37abe6d87b53d6873e7b30f3527161f44fa8db3104b6\"},{\"global_index\":\"7571335\",\"public_key\":\"fce982dbz8e7a6b71a1e632c7de8c5cbf54e8bacdfbf250f1ffc2a8d2f7055ce3\",\"rct\":\"407bdcc48e70eb3ef2cc22cefee6c6b5a3c59fd17bde12fda5f1a44a0fb39d14\"}]}]}";
 
 BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 {
@@ -448,6 +448,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 		{
 			boost::property_tree::ptree root;
 			root.put("final_total_wo_fee", *final_total_wo_fee_string);
+			cout << "change_amount_string: " << *change_amount_string << endl;
 			root.put("change_amount", *change_amount_string); // from step1
 			root.put("fee_amount", *using_fee_string); // from step1
 			root.add_child("using_outs", using_outs); // from step1
@@ -488,6 +489,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			}
 			optional<string> tx_hash = ret_tree.get_optional<string>(ret_json_key__send__tx_hash());
 			optional<string> tx_key_string = ret_tree.get_optional<string>(ret_json_key__send__tx_key());
+			optional<string> tx_pub_key_string = ret_tree.get_optional<string>(ret_json_key__send__tx_pub_key());
 			optional<string> serialized_signed_tx = ret_tree.get_optional<string>(ret_json_key__send__serialized_signed_tx());
 			BOOST_REQUIRE(serialized_signed_tx != none);
 			BOOST_REQUIRE((*serialized_signed_tx).size() > 0);
@@ -498,6 +500,9 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			BOOST_REQUIRE(tx_key_string != none);
 			BOOST_REQUIRE((*tx_key_string).size() > 0);
 			cout << "bridge__transfers__send__amount: tx_key_string: " << *tx_key_string << endl;
+			BOOST_REQUIRE(tx_pub_key_string != none);
+			BOOST_REQUIRE((*tx_pub_key_string).size() > 0);
+			cout << "bridge__transfers__send__amount: tx_pub_key_string: " << *tx_pub_key_string << endl;
 		}
 	}
 }
@@ -994,6 +999,64 @@ BOOST_AUTO_TEST_CASE(bridged__generate_key_derivation)
 	BOOST_REQUIRE((*derivation).size() > 0);
 	BOOST_REQUIRE(*derivation == "591c749f1868c58f37ec3d2a9d2f08e7f98417ac4f8131e3a57c1fd71273ad00");
 	cout << "bridged__generate_key_derivation: derivation: " << *derivation << endl;
+}
+//
+BOOST_AUTO_TEST_CASE(bridge__mainnet_pubKeyDerivations)
+{
+	using namespace serial_bridge;
+	//
+	string arg__txPubKey = "5b7bc9532af303b7742dfceb04a5a3989f2433caa0ca75f58df4eaa1a4422d96";
+	string arg__secViewKey = "7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104";
+	string arg__pubSpendKey = "3eb884d3440d71326e27cc07a861b873e72abd339feb654660c36a008a0028b3";
+	//
+	string arg__TxOwnOutIdx = "0";
+	string arg__TxOwnOutPubKey = "f43366980f7b0c2094023171cf8275210e7d0dae03cca0e8161a2f0aa4625e63";
+	//
+	cout << "bridge__mainnet_pubKeyDerivations: arg__TxOwnOutPubKey " << arg__TxOwnOutPubKey << endl;
+	//
+	optional<string> key_derivation = none; // to derive
+	{
+		boost::property_tree::ptree root;
+		root.put("pub", arg__txPubKey);
+		root.put("sec", arg__secViewKey);
+		//
+		auto ret_string = serial_bridge::generate_key_derivation(args_string_from_root(root));
+		stringstream ret_stream;
+		ret_stream << ret_string;
+		boost::property_tree::ptree ret_tree;
+		boost::property_tree::read_json(ret_stream, ret_tree);
+		optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+		if (err_string != none) {
+			BOOST_REQUIRE_MESSAGE(false, *err_string);
+		}
+		key_derivation = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+		BOOST_REQUIRE(key_derivation != none);
+		BOOST_REQUIRE((*key_derivation).size() > 0);
+		cout << "bridge__mainnet_pubKeyDerivations: key_derivation " << *key_derivation << endl;
+	}
+	{
+		boost::property_tree::ptree root;
+		root.put("derivation", *key_derivation);
+		root.put("out_index", arg__TxOwnOutIdx);
+		root.put("pub", arg__pubSpendKey);
+		//
+		auto ret_string = serial_bridge::derive_public_key(args_string_from_root(root));
+		stringstream ret_stream;
+		ret_stream << ret_string;
+		boost::property_tree::ptree ret_tree;
+		boost::property_tree::read_json(ret_stream, ret_tree);
+		optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+		if (err_string != none) {
+			BOOST_REQUIRE_MESSAGE(false, *err_string);
+		}
+		optional<string> derived_pub_key = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+		BOOST_REQUIRE(derived_pub_key != none);
+		BOOST_REQUIRE((*derived_pub_key).size() > 0);
+		cout << "bridge__mainnet_pubKeyDerivations: Derived pub key " << *derived_pub_key << endl;
+		//
+		// The critical tests
+		BOOST_REQUIRE(*derived_pub_key == arg__TxOwnOutPubKey);
+	}
 }
 //
 BOOST_AUTO_TEST_CASE(bridged__decodeRct)
