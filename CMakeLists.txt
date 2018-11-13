@@ -9,32 +9,8 @@ enable_testing()
 #Prep ourselves for compiling boost
 find_package(Boost COMPONENTS 
     unit_test_framework REQUIRED
-    # atomic REQUIRED
-    # chrono REQUIRED
-    # context REQUIRED
-    # date_time REQUIRED
-    # exception REQUIRED
-    # filesystem REQUIRED
-    # graph REQUIRED
-    # iostreams REQUIRED
-    # math_c99 REQUIRED
-    # math_c99f REQUIRED
-    # math_c99l REQUIRED
-    # math_tr1 REQUIRED
-    # math_tr1f REQUIRED
-    # math_tr1l REQUIRED
-    # prg_exec_monitor REQUIRED
-    # program_options REQUIRED
-    # random REQUIRED
-    # regex REQUIRED
-    # serialization REQUIRED
-    # signals REQUIRED
     system REQUIRED
-    # test_exec_monitor REQUIRED
     thread REQUIRED
-    # timer REQUIRED
-    # wave REQUIRED
-    # wserialization REQUIRED
 )
 
 set(MONERO_SRC "contrib/monero-core-custom")
@@ -73,12 +49,18 @@ set(
     src/monero_fee_utils.cpp
     src/monero_transfer_utils.hpp
     src/monero_transfer_utils.cpp
+    src/monero_send_routine.hpp
+    src/monero_send_routine.cpp
     src/monero_fork_rules.hpp
     src/monero_fork_rules.cpp
     src/monero_wallet_utils.hpp
     src/monero_wallet_utils.cpp
     src/serial_bridge_index.hpp
     src/serial_bridge_index.cpp
+    src/serial_bridge_utils.hpp
+    src/serial_bridge_utils.cpp
+    # src/emscr_async_bridge_index.hpp
+    # src/emscr_async_bridge_index.cpp
     src/tools__ret_vals.hpp
     src/tools__ret_vals.cpp
     #

@@ -46,7 +46,8 @@
 #include "string_tools.h"
 #include "ringct/rctSigs.h"
 //
-//
+#include "serial_bridge_utils.hpp"
+
 using namespace std;
 using namespace boost;
 using namespace cryptonote;
@@ -54,98 +55,7 @@ using namespace monero_transfer_utils;
 using namespace monero_fork_rules;
 //
 using namespace serial_bridge;
-//
-network_type serial_bridge::nettype_from_string(const string &nettype_string)
-{ // TODO: possibly move this to network_type declaration
-	if (nettype_string == "MAINNET") {
-		return MAINNET;
-	} else if (nettype_string == "TESTNET") {
-		return TESTNET;
-	} else if (nettype_string == "STAGENET") {
-		return STAGENET;
-	} else if (nettype_string == "FAKECHAIN") {
-		return FAKECHAIN;
-	} else if (nettype_string == "UNDEFINED") {
-		return UNDEFINED;
-	}
-	THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Unrecognized nettype_string")
-	return UNDEFINED;
-}
-string serial_bridge::string_from_nettype(network_type nettype)
-{
-	switch (nettype) {
-		case MAINNET:
-			return "MAINNET";
-		case TESTNET:
-			return "TESTNET";
-		case STAGENET:
-			return "STAGENET";
-		case FAKECHAIN:
-			return "FAKECHAIN";
-		case UNDEFINED:
-			return "UNDEFINED";
-		default:
-			THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Unrecognized nettype for string conversion")
-			return "UNDEFINED";
-	}
-}
-struct RetVals_Transforms
-{
-	static string str_from(uint64_t v)
-	{
-		std::ostringstream o;
-		o << v;
-		return o.str();
-	}
-	static string str_from(uint32_t v)
-	{
-		std::ostringstream o;
-		o << v;
-		return o.str();
-	}
-};
-//
-// Shared - Parsing - Args
-bool parsed_json_root(const string &args_string, boost::property_tree::ptree &json_root)
-{
-//	cout << "args_string: " << args_string << endl;
-	
-	std::stringstream ss;
-	ss << args_string;
-	try {
-		boost::property_tree::read_json(ss, json_root);
-	} catch (std::exception const& e) {
-		THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Invalid JSON");
-		return false;
-	}
-	return true;
-}
-//
-// Shared - Factories - Return values
-string ret_json_from_root(const boost::property_tree::ptree &root)
-{
-	stringstream ret_ss;
-	boost::property_tree::write_json(ret_ss, root, false/*pretty*/);
-	//
-	return ret_ss.str();
-}
-string error_ret_json_from_message(string err_msg)
-{
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__any__err_msg(), err_msg);
-	//
-	return ret_json_from_root(root);
-}
-string error_ret_json_from_code(int code, optional<string> err_msg)
-{
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__any__err_code(), code);
-	if (err_msg != none) {
-		root.put(ret_json_key__any__err_msg(), *err_msg);
-	}
-	//
-	return ret_json_from_root(root);
-}
+using namespace serial_bridge_utils;
 //
 //
 // Bridge Function Implementations
@@ -455,10 +365,8 @@ string serial_bridge::generate_key_image(const string &args_string)
 	return ret_json_from_root(root);
 }
 //
-//
-// TODO: possibly take tx sec key as a arg so we don't have to worry about randomness there
 string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &args_string)
-{
+{ // TODO: possibly allow this fn to take tx sec key as an arg, although, random bit gen is now handled well by emscripten
 	boost::property_tree::ptree json_root;
 	if (!parsed_json_root(args_string, json_root)) {
 		// it will already have thrown an exception
@@ -572,11 +480,6 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 			amountAndOuts.outputs.push_back(amountOutput);
 		}
 		mix_outs.push_back(amountAndOuts);
-	}
-	optional<string> optl__passedIn_attemptAt_fee_string = json_root.get_optional<string>("passedIn_attemptAt_fee");
-	optional<uint64_t> optl__passedIn_attemptAt_fee = none;
-	if (optl__passedIn_attemptAt_fee_string != none) {
-		optl__passedIn_attemptAt_fee = stoull(*optl__passedIn_attemptAt_fee_string);
 	}
 	Send_Step2_RetVals retVals;
 	monero_transfer_utils::send_step2__try_create_transaction(

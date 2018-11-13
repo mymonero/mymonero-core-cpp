@@ -133,7 +133,7 @@ namespace monero_transfer_utils
 			case resultFeeNotEqualToGiven:
 				return "Result fee not equal to given fee";
 			case needMoreMoneyThanFound:
-				return "Need more money than found";
+				return "Spendable balance too low";
 			case invalidDestinationAddress:
 				return "Invalid destination address";
 			case nonZeroPIDWithIntAddress:
@@ -160,6 +160,9 @@ namespace monero_transfer_utils
 				return "Can't get decrypted mask from 'rct' hex";
 		}
 	}
+	//
+	// See monero_send_routine for actual app-lvl interface used by lightwallets 
+	//
 	//
 	// Send_Step* functions procedure for integrators:
 	//	1. call GetUnspentOuts endpoint
@@ -215,18 +218,18 @@ namespace monero_transfer_utils
 	void send_step2__try_create_transaction(
 		Send_Step2_RetVals &retVals,
 		//
-		string from_address_string,
-		string sec_viewKey_string,
-		string sec_spendKey_string,
-		string to_address_string,
+		const string &from_address_string,
+		const string &sec_viewKey_string,
+		const string &sec_spendKey_string,
+		const string &to_address_string,
 		optional<string> payment_id_string,
 		uint64_t final_total_wo_fee, // this gets passed to create_transaction's 'sending_amount'
 		uint64_t change_amount,
 		uint64_t fee_amount,
 		uint32_t simple_priority,
-		vector<SpendableOutput> &using_outs,
+		const vector<SpendableOutput> &using_outs,
 		uint64_t fee_per_b, // per v8
-		vector<RandomAmountOutputs> &mix_outs,
+		vector<RandomAmountOutputs> &mix_outs, // it gets sorted
 		use_fork_rules_fn_type use_fork_rules_fn,
 		uint64_t unlock_time, // or 0
 		cryptonote::network_type nettype
@@ -256,8 +259,8 @@ namespace monero_transfer_utils
 		uint64_t sending_amount,
 		uint64_t change_amount,
 		uint64_t fee_amount,
-		vector<SpendableOutput> &outputs,
-		vector<RandomAmountOutputs> &mix_outs,
+		const vector<SpendableOutput> &outputs,
+		vector<RandomAmountOutputs> &mix_outs, // get sorted
 		use_fork_rules_fn_type use_fork_rules_fn,
 		uint64_t unlock_time							= 0, // or 0
 		network_type nettype 							= MAINNET
@@ -279,9 +282,9 @@ namespace monero_transfer_utils
 		uint64_t sending_amount,
 		uint64_t change_amount,
 		uint64_t fee_amount,
-		vector<SpendableOutput> &outputs,
+		const vector<SpendableOutput> &outputs,
 		vector<RandomAmountOutputs> &mix_outs,
-		std::vector<uint8_t> &extra, // this is not declared const b/c it may have the output tx pub key appended to it
+		const std::vector<uint8_t> &extra, // this is not declared const b/c it may have the output tx pub key appended to it
 		use_fork_rules_fn_type use_fork_rules_fn,
 		uint64_t unlock_time							= 0, // or 0
 		bool rct 										= true,

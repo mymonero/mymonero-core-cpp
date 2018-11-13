@@ -35,6 +35,7 @@
 #include "wallet_errors.h"
 #include "string_tools.h"
 #include "monero_paymentID_utils.hpp"
+#include "monero_key_image_utils.hpp"
 //
 using namespace std;
 using namespace crypto;
@@ -46,6 +47,7 @@ using namespace tools; // for error::
 using namespace monero_transfer_utils;
 using namespace monero_fork_rules;
 using namespace monero_fee_utils;
+using namespace monero_key_image_utils; // for API response parsing
 //
 // Transfer parsing/derived properties
 bool monero_transfer_utils::is_transfer_unlocked(
@@ -175,8 +177,6 @@ bool _verify_sec_key(const crypto::secret_key &secret_key, const crypto::public_
 	return r && public_key == calculated_pub;
 }
 //
-//
-//----------------------------------------------------------------------------------------------------
 namespace
 {
 	template<typename T>
@@ -203,6 +203,7 @@ namespace
 		return pop_index (vec, idx);
 	}
 }
+//
 //
 //
 // Decomposed Send procedure
@@ -377,18 +378,18 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 void monero_transfer_utils::send_step2__try_create_transaction(
 	Send_Step2_RetVals &retVals,
 	//
-	string from_address_string,
-	string sec_viewKey_string,
-	string sec_spendKey_string,
-	string to_address_string,
+	const string &from_address_string,
+	const string &sec_viewKey_string,
+	const string &sec_spendKey_string,
+	const string &to_address_string,
 	optional<string> payment_id_string,
 	uint64_t final_total_wo_fee,
 	uint64_t change_amount,
 	uint64_t fee_amount,
 	uint32_t simple_priority,
-	vector<SpendableOutput> &using_outs,
+	const vector<SpendableOutput> &using_outs,
 	uint64_t fee_per_b, // per v8
-	vector<RandomAmountOutputs> &mix_outs,
+	vector<RandomAmountOutputs> &mix_outs, // cannot be const due to convenience__create_transaction's mutability requirement
 	use_fork_rules_fn_type use_fork_rules_fn,
 	uint64_t unlock_time, // or 0
 	cryptonote::network_type nettype
@@ -445,9 +446,9 @@ void monero_transfer_utils::create_transaction(
 	uint64_t sending_amount,
 	uint64_t change_amount,
 	uint64_t fee_amount,
-	vector<SpendableOutput> &outputs,
-	vector<RandomAmountOutputs> &mix_outs,
-	std::vector<uint8_t> &extra,
+	const vector<SpendableOutput> &outputs,
+	vector<RandomAmountOutputs> &mix_outs, 
+	const std::vector<uint8_t> &extra,
 	use_fork_rules_fn_type use_fork_rules_fn,
 	uint64_t unlock_time, // or 0
 	bool rct,
@@ -695,7 +696,7 @@ void monero_transfer_utils::convenience__create_transaction(
 	uint64_t sending_amount,
 	uint64_t change_amount,
 	uint64_t fee_amount,
-	vector<SpendableOutput> &outputs,
+	const vector<SpendableOutput> &outputs,
 	vector<RandomAmountOutputs> &mix_outs,
 	use_fork_rules_fn_type use_fork_rules_fn,
 	uint64_t unlock_time,
