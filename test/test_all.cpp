@@ -1091,6 +1091,30 @@ BOOST_AUTO_TEST_CASE(bridge__mainnet_pubKeyDerivations)
 	}
 }
 //
+BOOST_AUTO_TEST_CASE(bridged__derivation_to_scalar)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("derivation", "7a4c13a037d4bd2a7dd99a8c24669e9e04ca4e8a90e5b6703e88e87ad51c1849");
+	root.put("output_index", "1");
+	//
+	auto ret_string = serial_bridge::derivation_to_scalar(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> str = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(str != none);
+	BOOST_REQUIRE((*str).size() > 0);
+	BOOST_REQUIRE(*str == "767a2b9b814b78d55e27ab7fc9bae03253a810c820e7abb4cabadde44b599d04");
+	cout << "bridged__derivation_to_scalar: " << *str << endl;
+}
+//
 BOOST_AUTO_TEST_CASE(bridged__decodeRct)
 {
 	using namespace serial_bridge;
