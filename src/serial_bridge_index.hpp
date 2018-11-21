@@ -70,6 +70,7 @@ namespace serial_bridge
 	string derive_public_key(const string &args_string);
 	string derive_subaddress_public_key(const string &args_string);
 	string decodeRct(const string &args_string);
+	string decodeRctSimple(const string &args_string);
 }
 
 #endif /* serial_bridge_index_hpp */

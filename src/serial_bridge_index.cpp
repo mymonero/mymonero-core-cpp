@@ -616,6 +616,77 @@ string serial_bridge::decodeRct(const string &args_string)
 	//
 	return ret_json_from_root(root);	
 }
+//
+string serial_bridge::decodeRctSimple(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	rct::key sk;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("sk"), sk)) {
+		return error_ret_json_from_message("Invalid 'sk'");
+	}
+	unsigned int i = stoul(json_root.get<string>("i"));
+	// NOTE: this rv structure parsing could be factored but it presently does not implement a number of sub-components of rv, such as .pseudoOuts
+	auto rv_desc = json_root.get_child("rv");
+	rct::rctSig rv = AUTO_VAL_INIT(rv);
+	unsigned int rv_type_int = stoul(rv_desc.get<string>("type"));
+	// got to be a better way to do this
+	if (rv_type_int == rct::RCTTypeNull) {
+		rv.type = rct::RCTTypeNull;
+	} else if (rv_type_int == rct::RCTTypeSimple) {
+		rv.type = rct::RCTTypeSimple;
+	} else if (rv_type_int == rct::RCTTypeFull) {
+		rv.type = rct::RCTTypeFull;
+	} else if (rv_type_int == rct::RCTTypeBulletproof) {
+		rv.type = rct::RCTTypeBulletproof;
+	} else {
+		return error_ret_json_from_message("Invalid 'rv.type'");
+	}
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &ecdh_info_desc, rv_desc.get_child("ecdhInfo"))
+	{
+		assert(ecdh_info_desc.first.empty()); // array elements have no names
+		auto ecdh_info = rct::ecdhTuple{};
+		if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("mask"), ecdh_info.mask)) {
+			return error_ret_json_from_message("Invalid rv.ecdhInfo[].mask");
+		}
+		if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), ecdh_info.amount)) {
+			return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
+		}
+		rv.ecdhInfo.push_back(ecdh_info);
+	}
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &outPk_desc, rv_desc.get_child("outPk"))
+	{
+		assert(outPk_desc.first.empty()); // array elements have no names
+		auto outPk = rct::ctkey{};
+		if (!epee::string_tools::hex_to_pod(outPk_desc.second.get<string>("mask"), outPk.mask)) {
+			return error_ret_json_from_message("Invalid rv.outPk[].mask");
+		}
+		// FIXME: does dest need to be placed on the key?
+		rv.outPk.push_back(outPk);
+	}
+	//
+	rct::key mask;
+	rct::xmr_amount/*uint64_t*/ decoded_amount;
+	try {
+		decoded_amount = rct::decodeRctSimple(
+			rv, sk, i, mask,
+			hw::get_device("default") // presently this uses the default device but we could let a string be passed to switch the type
+		);
+	} catch (std::exception const& e) {
+		return error_ret_json_from_message(e.what());
+	}
+	stringstream decoded_amount_ss;
+	decoded_amount_ss << decoded_amount;
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__decodeRct_mask(), epee::string_tools::pod_to_hex(mask));
+	root.put(ret_json_key__decodeRct_amount(), decoded_amount_ss.str());
+	//
+	return ret_json_from_root(root);	
+}
 string serial_bridge::generate_key_derivation(const string &args_string)
 {
 	boost::property_tree::ptree json_root;

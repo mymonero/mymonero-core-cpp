@@ -1163,6 +1163,68 @@ BOOST_AUTO_TEST_CASE(bridged__decodeRct)
 	BOOST_REQUIRE(amount_string == "4501"); // FIXME is this correct?
 }
 //
+BOOST_AUTO_TEST_CASE(bridged__decodeRctSimple)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("i", "0");
+	root.put("sk", "a2259749f7aad692e000af4b7f383f4441ba4085bf70e518081365750db73b06");
+	
+	boost::property_tree::ptree rv;
+	{
+		rv.put("type", "3");
+		//
+		boost::property_tree::ptree ecdhInfo;
+		{
+			boost::property_tree::ptree ecdh_info;
+			ecdh_info.put("mask", "dc9a2e8a66a336f67bb1a150f6de4522f09c451a10f450d7ee096baa75660a05");
+			ecdh_info.put("amount", "0c8f7514fd1d7c4f49795f33254739ce8e96275b17f50a03c877ed4b56896601");
+			ecdhInfo.push_back(std::make_pair("", ecdh_info));
+		}
+		{
+			boost::property_tree::ptree ecdh_info;
+			ecdh_info.put("mask", "f0d94c21aa892ad4e0d492f5fce4b8e99ff5e1ed687134b9419a2290e8701004");
+			ecdh_info.put("amount", "dbaeca613d37b53ff0a22a1fb6e09150baa6f4f5f6e145ef78a78cc19624a702");
+			ecdhInfo.push_back(std::make_pair("", ecdh_info));
+		}
+		rv.add_child("ecdhInfo", ecdhInfo);
+		//
+		boost::property_tree::ptree outPk;
+		{
+			boost::property_tree::ptree an_outPk;
+			an_outPk.put("mask", "4dd9e7e2a2d8f31f065562923079399ec6c90d4b155d289208001994815bd01f");
+			outPk.push_back(std::make_pair("", an_outPk));
+		}
+		{
+			boost::property_tree::ptree an_outPk;
+			an_outPk.put("mask", "c23cdb07e56bcb6a9ad087122b7079f2c34e217bcbddd16ca6031ab8828f7a84");
+			outPk.push_back(std::make_pair("", an_outPk));
+		}
+		rv.add_child("outPk", outPk);
+	}
+	root.add_child("rv", rv);
+	//
+	auto ret_string = serial_bridge::decodeRct(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	string mask_string = ret_tree.get<string>(ret_json_key__decodeRct_mask());
+	BOOST_REQUIRE(mask_string.size() > 0);
+	cout << "bridged__decodeRctSimple: mask_string: " << mask_string << endl;
+	BOOST_REQUIRE(mask_string == "51bdfc13c6757758148dd493a77e94073a062622a056a915a457abe6ca6c050b");
+	string amount_string = ret_tree.get<string>(ret_json_key__decodeRct_amount());
+	BOOST_REQUIRE(amount_string.size() > 0);
+	cout << "bridged__decodeRctSimple: amount_string: " << amount_string << endl;
+	BOOST_REQUIRE(amount_string == "10000000000");
+}
+
+//
 //
 // NOTE: output 0's rct field is actually borrowed from output 1 since it got deleted (and the stagenet account which produced this data has since been swept). 
 string OM_stagenet__unspent_outs_json = "{\"unspent_outs\":[{\"amount\":\"25281219529517\",\"rct\":\"8b22c4fadb152cb8e6c6dd21d2cf46b668a3657fcf666973c7f2a8354eae384501000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"global_index\":642806,\"height\":189324,\"index\":0,\"public_key\":\"4e8f890509b157125cc529218a97f4c5e5711af3b36e6d04881391105b8de2c7\",\"tx_hash\":\"0bb8cfdb2c5c142c87faaf3cc6523fdf82fb5435cb382218a5df3e338202fa8e\",\"tx_id\":257,\"tx_prefix_hash\":\"51799f1647ec5d98255db8a51ecea3aebdc7c6015f6cef166643d0334f592915\",\"tx_pub_key\":\"e8cd4671aa2be2f1b169c1dc0c5e80ed6b19149b336bb02d825fb1728677eae2\"},{\"amount\":\"25280399800334\",\"global_index\":642823,\"height\":189341,\"index\":0,\"public_key\":\"6c69745ebadc04ff068e55ff113d1c44658f7b5b4311e748a8fcccb261dac263\",\"rct\":\"8b22c4fadb152cb8e6c6dd21d2cf46b668a3657fcf666973c7f2a8354eae384501000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"70d1678c23289d45f6d556bdfed0de52559141edb2645a62935027032c8e891e\",\"tx_id\":258,\"tx_prefix_hash\":\"1e43e7aefcea766096d7ab902dc63dc11dc6cb4d7db8511eb01ef65457c69d9a\",\"tx_pub_key\":\"36fc11368f364e85e3863176487b06d705c3bf901d997b7a2683c567a95e2777\"},{\"amount\":\"25280158708574\",\"global_index\":642828,\"height\":189346,\"index\":0,\"public_key\":\"977f3d24792f583a8c8fc3123c35589c83e1a29e573cfaf35d6957f9bb286469\",\"rct\":\"761f8ac29fc66b8d004600155caf98c5a1db7173d616a696a520969425cd647a01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"45c7151f27376cdabf3e0e6c0a6412ad7b74cf06e8aff1f1f18eda96c7aa2755\",\"tx_id\":259,\"tx_prefix_hash\":\"67c48668d2340692a348d89b55e6888833a2b219028b29947cebb6b1210b14f3\",\"tx_pub_key\":\"f21b25d38bf0b64eda40434f88fffa2e574d894ee788a97710acea189978a180\"},{\"amount\":\"25280062272513\",\"global_index\":642830,\"height\":189348,\"index\":0,\"public_key\":\"21df141a799f53b262c89293e2dc4f99fa661de3378cd65ad709608720b2ded8\",\"rct\":\"92c27bb967345986e94b02ec14558eaf7d93168f2e7a4376c22e9d55a5fb89b801000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"3a42dc8deaf1a9d1188e36b2354eb140fdd34c36c18b9232b0c163b480ffb762\",\"tx_id\":260,\"tx_prefix_hash\":\"76e3943d64f731071f35b0e0f28b7e084285ff32ee91d4eb4affb51f39bd26e1\",\"tx_pub_key\":\"e1eb916dc0c92c05da1bfa620af6750b8d8713a552e03d470b113d73f84f489f\"},{\"amount\":\"25279628314794\",\"global_index\":642839,\"height\":189357,\"index\":0,\"public_key\":\"0bfe8c187810c13ed423cbeb19219ec41732489a492b492e4069c448eef94b1c\",\"rct\":\"8f4c588457e4c162d12a1927307fa1c4065fff90da75a400629415dddc655b3b01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"ef9fde50a44ea003d51fe555f75f73995135e10f1783aa095fd4f494a026dde4\",\"tx_id\":261,\"tx_prefix_hash\":\"a1b0cf4ec0415257da3cc4854a9da975a3a5673b161dab2ec31da3858cdfa1f8\",\"tx_pub_key\":\"d2f0cbb319de4de653e683ea552d9856d0de99c323078c74bbcae5d2a6784328\"},{\"amount\":\"25279242580853\",\"global_index\":642847,\"height\":189365,\"index\":0,\"public_key\":\"f7d0bfea20a9a73346c868af3a925e17f30f3eda513023c513a59883e7edfd3d\",\"rct\":\"7f91e3fd454d27e231f5b90909be59f067ca704d9e9e92555b6a255145c369cd01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"f982fd2b94333f63ac8294037cc6a8afdf6cd87f024fb453a24bad1e6259393d\",\"tx_id\":262,\"tx_prefix_hash\":\"d8c283e8f8d79a72c02c0869d9b629e7d8dafe7f8a32e17e12e16bd68d5fce6c\",\"tx_pub_key\":\"edcdafda5b834b0dd7ecd748a2b73b65c36c09853c32345d4146579eecb9614c\"},{\"amount\":\"25280290942143\",\"global_index\":642850,\"height\":189368,\"index\":0,\"public_key\":\"9e9b9ec98bf50382ad64ae178eda96455cce5b494623f28fb36b09dc750b7f28\",\"rct\":\"f60426634efcff6e84657c1be104fa91c413009c9ca4f0c170c52bbdef99e41f01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"75cedfd148c291b55b5f70b4bde8215db1fc858287b7eaf2b1245eaf969b2b77\",\"tx_id\":263,\"tx_prefix_hash\":\"1b76cd6dde6b73c427468eee0d8d60e637cfed15809ffa6ac15f3927549d7562\",\"tx_pub_key\":\"0bf1f11812a40b06f05a38e7c0dc75ce3fd3312994e4c4185e85c53b53a7fa48\"},{\"amount\":\"25278712206295\",\"global_index\":642866,\"height\":189376,\"index\":0,\"public_key\":\"c6a90657353543930ff1135923d56aacbbf7f162d639d75e1c8f815852d71824\",\"rct\":\"1c0f1e4f7fe3666088c2f4e58289f36e49544a31bfe3ec597094b94ac90a1f9a01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"tx_hash\":\"c33a2e9daa82c32a4fcdbc1805785d80dc115314fd6f40a07b399e4e76d637af\",\"tx_id\":264,\"tx_prefix_hash\":\"ad41c4b185fed1359469cb4621d1147d1ff1389299b9a20d8152eab79c46f82a\",\"tx_pub_key\":\"538950955fd8a944a916f0ed6122313a05db1404d55aa603215fcd149c7b264e\"}]}";
