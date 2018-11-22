@@ -860,6 +860,33 @@ BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
 	BOOST_REQUIRE(fee == 330047330);
 	cout << "bridged__estimated_tx_network_fee: " << fee << endl;
 }
+BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("n_inputs", "1");
+	root.put("mixin", "10");
+	root.put("n_outputs", "2");
+	root.put("extra_size", "0");
+	root.put("bulletproof", "true");
+	//
+	auto ret_string = serial_bridge::estimate_rct_tx_size(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> size_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(size_string != none);
+	BOOST_REQUIRE((*size_string).size() > 0);
+	size_t size = stoul(*size_string);
+	BOOST_REQUIRE(size == 1848);
+	cout << "bridged__estimate_rct_tx_size: " << size << endl;
+}
 BOOST_AUTO_TEST_CASE(bridged__generate_key_image)
 {
 	using namespace serial_bridge;

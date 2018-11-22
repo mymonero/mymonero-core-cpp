@@ -417,6 +417,28 @@ string serial_bridge::estimated_tx_network_fee(const string &args_string)
 	//
 	return ret_json_from_root(root);
 }
+string serial_bridge::estimate_rct_tx_size(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	std::size_t size = monero_fee_utils::estimate_rct_tx_size(
+		stoul(json_root.get<string>("n_inputs")),
+		stoul(json_root.get<string>("mixin")),
+		stoul(json_root.get<string>("n_outputs")),
+		stoul(json_root.get<string>("extra_size")),
+		json_root.get<bool>("bulletproof")
+	);
+	std::ostringstream o;
+	o << size;
+	//
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), o.str());
+	//
+	return ret_json_from_root(root);
+}
 //
 string serial_bridge::generate_key_image(const string &args_string)
 {
