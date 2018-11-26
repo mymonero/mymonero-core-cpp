@@ -1391,7 +1391,7 @@ BOOST_AUTO_TEST_CASE(send_routine__sweep)
 		[] ( // status update fn
 			SendFunds_ProcessStep code
 		) -> void {
-			cout << "bridge__transfers__send_stagenet_coinbase: status update: " << err_msg_from_err_code__send_funds_step(code) << endl;
+			cout << "send_routine__sweep: status update: " << err_msg_from_err_code__send_funds_step(code) << endl;
 		},
 		[] ( // error
 			const SendFunds_Error_RetVals &err_retVals
@@ -1411,16 +1411,16 @@ BOOST_AUTO_TEST_CASE(send_routine__sweep)
 			BOOST_REQUIRE(success_retVals.mixin == monero_fork_rules::fixed_mixinsize());
 
 			BOOST_REQUIRE(success_retVals.signed_serialized_tx_string.size() > 0);
-			cout << "bridge__transfers__send_stagenet_coinbase: serialized_signed_tx: " << success_retVals.signed_serialized_tx_string << endl;
+			cout << "send_routine__sweep: serialized_signed_tx: " << success_retVals.signed_serialized_tx_string << endl;
 
 			BOOST_REQUIRE(success_retVals.tx_hash_string.size() > 0);
-			cout << "bridge__transfers__send_stagenet_coinbase: tx_hash: " << success_retVals.tx_hash_string << endl;
+			cout << "send_routine__sweep: tx_hash: " << success_retVals.tx_hash_string << endl;
 
 			BOOST_REQUIRE((success_retVals.tx_key_string).size() > 0);
-			cout << "bridge__transfers__send_stagenet_coinbase: tx_key_string: " << success_retVals.tx_key_string << endl;
+			cout << "send_routine__sweep: tx_key_string: " << success_retVals.tx_key_string << endl;
 
 			BOOST_REQUIRE((success_retVals.tx_pub_key_string).size() > 0);
-			cout << "bridge__transfers__send_stagenet_coinbase: tx_pub_key_string: " << success_retVals.tx_pub_key_string << endl;
+			cout << "send_routine__sweep: tx_pub_key_string: " << success_retVals.tx_pub_key_string << endl;
 
 		},
 		0,
