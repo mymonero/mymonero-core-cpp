@@ -59,8 +59,6 @@ set(
     src/serial_bridge_index.cpp
     src/serial_bridge_utils.hpp
     src/serial_bridge_utils.cpp
-    # src/emscr_async_bridge_index.hpp
-    # src/emscr_async_bridge_index.cpp
     src/tools__ret_vals.hpp
     src/tools__ret_vals.cpp
     #
