@@ -94,7 +94,7 @@ bool monero_transfer_utils::is_tx_spendtime_unlocked(
 }
 //
 CreateTransactionErrorCode _add_pid_to_tx_extra(
-	optional<string> payment_id_string,
+	const optional<string>& payment_id_string,
 	vector<uint8_t> &extra
 ) { // Detect hash8 or hash32 char hex string as pid and configure 'extra' accordingly
 	bool r = false;
@@ -185,9 +185,9 @@ namespace
 		CHECK_AND_ASSERT_MES(!vec.empty(), T(), "Vector must be non-empty");
 		CHECK_AND_ASSERT_MES(idx < vec.size(), T(), "idx out of bounds");
 
-		T res = vec[idx];
+		T res = std::move(vec[idx]);
 		if (idx + 1 != vec.size()) {
-			vec[idx] = vec.back();
+			vec[idx] = std::move(vec.back());
 		}
 		vec.resize(vec.size() - 1);
 		
@@ -210,7 +210,7 @@ namespace
 void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	Send_Step1_RetVals &retVals,
 	//
-	optional<string> payment_id_string,
+	const optional<string>& payment_id_string,
 	uint64_t sending_amount,
 	bool is_sweeping,
 	uint32_t simple_priority,
@@ -299,9 +299,9 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 //				cout << "Sweeping and found a dusty but mixable (rct) amount... keeping it!" << endl;
 			}
 		}
-		retVals.using_outs.push_back(out);
 		using_outs_amount += out.amount;
 //		cout << "Using output: " << out.amount << " - " << out.public_key << endl;
+		retVals.using_outs.push_back(std::move(out));
 	}
 	retVals.spendable_balance = using_outs_amount; // must store for needMoreMoneyThanFound return
 	// Note: using_outs and using_outs_amount may still get modified below (so retVals.spendable_balance gets updated)
@@ -336,10 +336,12 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	} else {
 		total_incl_fees = sending_amount + needed_fee; // because fee changed because using_outs.size() was updated
 		while (using_outs_amount < total_incl_fees && remaining_unusedOuts.size() > 0) { // add outputs 1 at a time till we either have them all or can meet the fee
-			auto out = pop_random_value(remaining_unusedOuts);
-//			cout << "Using output: " << out.amount << " - " << out.public_key << endl;
-			retVals.using_outs.push_back(out);
-			using_outs_amount += out.amount;
+			{
+				auto out = pop_random_value(remaining_unusedOuts);
+//				cout << "Using output: " << out.amount << " - " << out.public_key << endl;
+				using_outs_amount += out.amount;
+				retVals.using_outs.push_back(std::move(out));
+			}
 			retVals.spendable_balance = using_outs_amount; // must store for needMoreMoneyThanFound return
 			//
 			// Recalculate fee, total incl fees
@@ -382,7 +384,7 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 	const string &sec_viewKey_string,
 	const string &sec_spendKey_string,
 	const string &to_address_string,
-	optional<string> payment_id_string,
+	const optional<string>& payment_id_string,
 	uint64_t final_total_wo_fee,
 	uint64_t change_amount,
 	uint64_t fee_amount,
@@ -692,7 +694,7 @@ void monero_transfer_utils::convenience__create_transaction(
 	const string &sec_viewKey_string,
 	const string &sec_spendKey_string,
 	const string &to_address_string,
-	optional<string> payment_id_string,
+	const optional<string>& payment_id_string,
 	uint64_t sending_amount,
 	uint64_t change_amount,
 	uint64_t fee_amount,

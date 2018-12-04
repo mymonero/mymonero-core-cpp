@@ -58,7 +58,7 @@ bool monero_key_image_utils::new__key_image(
 	r = crypto::generate_key_derivation(tx_public_key, account_sec_view_key, derivation);
 	if (!r) {
 		retVals.did_error = true;
-		std::stringstream ss{};
+		std::ostringstream ss{};
 		ss << "failed to generate_key_derivation(" << tx_public_key << ", " << account_sec_view_key << ")";
 		retVals.err_string = ss.str();
 		//
@@ -68,7 +68,7 @@ bool monero_key_image_utils::new__key_image(
 	r = crypto::derive_public_key(derivation, out_index, account_pub_spend_key, in_ephemeral.pub);
 	if (!r) {
 		retVals.did_error = true;
-		std::stringstream ss{};
+		std::ostringstream ss{};
 		ss << "failed to derive_public_key (" << derivation << ", " << out_index << ", " << account_pub_spend_key << ")";
 		retVals.err_string = ss.str();
 		//
@@ -79,7 +79,7 @@ bool monero_key_image_utils::new__key_image(
 	r = crypto::secret_key_to_public_key(in_ephemeral.sec, out_pkey_test);
 	if (!r) {
 		retVals.did_error = true;
-		std::stringstream ss{};
+		std::ostringstream ss{};
 		ss << "failed to secret_key_to_public_key(" << in_ephemeral.sec << ")";
 		retVals.err_string = ss.str();
 		//

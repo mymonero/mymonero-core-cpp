@@ -72,14 +72,14 @@ optional<uint64_t> _possible_uint64_from_json(
 }
 //
 LightwalletAPI_Req_GetUnspentOuts monero_send_routine::new__req_params__get_unspent_outs(
-	const string &from_address_string,
-	const string &sec_viewKey_string
+	string from_address_string,
+	string sec_viewKey_string
 ) {
-	stringstream dustT_ss;
+	ostringstream dustT_ss;
 	dustT_ss << dust_threshold();
 	return {
-		from_address_string,
-		sec_viewKey_string,
+		std::move(from_address_string),
+		std::move(sec_viewKey_string),
 		"0", // amount - always sent as "0"
 		fixed_mixinsize(),
 		true, // use dust
@@ -95,7 +95,7 @@ LightwalletAPI_Req_GetRandomOuts monero_send_routine::new__req_params__get_rando
 		if (using_out.rct != none && (*(using_out.rct)).size() > 0) {
 			decoy_req__amounts.push_back("0");
 		} else {
-			stringstream amount_ss;
+			ostringstream amount_ss;
 			amount_ss << using_out.amount;
 			decoy_req__amounts.push_back(amount_ss.str());
 		}
@@ -107,7 +107,7 @@ LightwalletAPI_Req_GetRandomOuts monero_send_routine::new__req_params__get_rando
 }
 //
 LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unspent_outs(
-	property_tree::ptree &res,
+	const property_tree::ptree &res,
 	const secret_key &sec_viewKey,
 	const secret_key &sec_spendKey,
 	const public_key &pub_spendKey
@@ -149,7 +149,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 		};
 	}
 	vector<SpendableOutput> unspent_outs;
-	BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, res.get_child("outputs"))
+	BOOST_FOREACH(const boost::property_tree::ptree::value_type &output_desc, res.get_child("outputs"))
 	{
 		assert(output_desc.first.empty()); // array elements have no names
 		//
@@ -191,7 +191,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 		}
 		bool isOutputSpent = false; // let's see…
 		{
-			BOOST_FOREACH(boost::property_tree::ptree::value_type &spend_key_image_string, output_desc.second.get_child("spend_key_images"))
+			BOOST_FOREACH(const boost::property_tree::ptree::value_type &spend_key_image_string, output_desc.second.get_child("spend_key_images"))
 			{
 //				cout << "spend_key_image_string: " << spend_key_image_string.second.data() << endl;
 				KeyImageRetVals retVals;
@@ -225,7 +225,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 			out.index = output__index;
 			out.tx_pub_key = *optl__tx_pub_key; // just b/c we've already accessed it above
 			//
-			unspent_outs.push_back(out);
+			unspent_outs.push_back(std::move(out));
 		}
 	}
 	return LightwalletAPI_Res_GetUnspentOuts{
@@ -234,10 +234,10 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 	};
 }
 LightwalletAPI_Res_GetRandomOuts monero_send_routine::new__parsed_res__get_random_outs(
-	property_tree::ptree &res
+	const property_tree::ptree &res
 ) {
 	vector<RandomAmountOutputs> mix_outs;
-	BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_desc, res.get_child("amount_outs"))
+	BOOST_FOREACH(const boost::property_tree::ptree::value_type &mix_out_desc, res.get_child("amount_outs"))
 	{
 		assert(mix_out_desc.first.empty()); // array elements have no names
 		auto amountAndOuts = RandomAmountOutputs{};
@@ -251,7 +251,7 @@ LightwalletAPI_Res_GetRandomOuts monero_send_routine::new__parsed_res__get_rando
 			string err_msg = "Random outs: Unrecognized 'amount' format";
 			return {err_msg, none};
 		}
-		BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_output_desc, mix_out_desc.second.get_child("outputs"))
+		BOOST_FOREACH(const boost::property_tree::ptree::value_type &mix_out_output_desc, mix_out_desc.second.get_child("outputs"))
 		{
 			assert(mix_out_output_desc.first.empty()); // array elements have no names
 			auto amountOutput = RandomAmountOutput{};
@@ -268,9 +268,9 @@ LightwalletAPI_Res_GetRandomOuts monero_send_routine::new__parsed_res__get_rando
 			amountOutput.public_key = mix_out_output_desc.second.get<string>("public_key");
 			amountOutput.rct = mix_out_output_desc.second.get_optional<string>("rct");
 			//
-			amountAndOuts.outputs.push_back(amountOutput);
+			amountAndOuts.outputs.push_back(std::move(amountOutput));
 		}
-		mix_outs.push_back(amountAndOuts);
+		mix_outs.push_back(std::move(amountAndOuts));
 	}
 	return {
 		none, mix_outs

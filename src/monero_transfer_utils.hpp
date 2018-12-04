@@ -189,7 +189,7 @@ namespace monero_transfer_utils
 	void send_step1__prepare_params_for_get_decoys(
 		Send_Step1_RetVals &retVals,
 		//
-		optional<string> payment_id_string,
+		const optional<string>& payment_id_string,
 		uint64_t sending_amount,
 		bool is_sweeping,
 		uint32_t simple_priority,
@@ -222,7 +222,7 @@ namespace monero_transfer_utils
 		const string &sec_viewKey_string,
 		const string &sec_spendKey_string,
 		const string &to_address_string,
-		optional<string> payment_id_string,
+		const optional<string>& payment_id_string,
 		uint64_t final_total_wo_fee, // this gets passed to create_transaction's 'sending_amount'
 		uint64_t change_amount,
 		uint64_t fee_amount,
@@ -255,7 +255,7 @@ namespace monero_transfer_utils
 		const string &sec_viewKey_string,
 		const string &sec_spendKey_string,
 		const string &to_address_string,
-		optional<string> payment_id_string,
+		const optional<string>& payment_id_string,
 		uint64_t sending_amount,
 		uint64_t change_amount,
 		uint64_t fee_amount,

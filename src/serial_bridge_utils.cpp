@@ -85,9 +85,7 @@ string serial_bridge_utils::string_from_nettype(network_type nettype)
 bool serial_bridge_utils::parsed_json_root(const string &args_string, boost::property_tree::ptree &json_root)
 {
 //	cout << "args_string: " << args_string << endl;
-	
-	std::stringstream ss;
-	ss << args_string;
+	std::istringstream ss(args_string);
 	try {
 		boost::property_tree::read_json(ss, json_root);
 	} catch (std::exception const& e) {
@@ -100,7 +98,7 @@ bool serial_bridge_utils::parsed_json_root(const string &args_string, boost::pro
 // Shared - Factories - Return values
 string serial_bridge_utils::ret_json_from_root(const boost::property_tree::ptree &root)
 {
-	stringstream ret_ss;
+	ostringstream ret_ss;
 	boost::property_tree::write_json(ret_ss, root, false/*pretty*/);
 	//
 	return ret_ss.str();

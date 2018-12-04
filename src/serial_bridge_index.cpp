@@ -73,10 +73,10 @@ string serial_bridge::decode_address(const string &args_string)
 	}
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__isSubaddress(), retVals.isSubaddress);
-	root.put(ret_json_key__pub_viewKey_string(), std::move(*(retVals.pub_viewKey_string)));
-	root.put(ret_json_key__pub_spendKey_string(), std::move(*(retVals.pub_spendKey_string)));
+	root.put(ret_json_key__pub_viewKey_string(), *(retVals.pub_viewKey_string));
+	root.put(ret_json_key__pub_spendKey_string(), *(retVals.pub_spendKey_string));
 	if (retVals.paymentID_string != none) {
-		root.put(ret_json_key__paymentID_string(), std::move(*(retVals.paymentID_string)));
+		root.put(ret_json_key__paymentID_string(), *(retVals.paymentID_string));
 	}
 	//
 	return ret_json_from_root(root);
@@ -117,7 +117,7 @@ string serial_bridge::new_integrated_address(const string &args_string)
 	optional<string> retVal = monero::address_utils::new_integratedAddrFromStdAddr(json_root.get<string>("address"), json_root.get<string>("short_pid"), nettype_from_string(json_root.get<string>("nettype_string")));
 	boost::property_tree::ptree root;
 	if (retVal != none) {
-		root.put(ret_json_key__generic_retVal(), std::move(*retVal));
+		root.put(ret_json_key__generic_retVal(), *retVal);
 	}
 	//
 	return ret_json_from_root(root);
@@ -132,7 +132,7 @@ string serial_bridge::new_payment_id(const string &args_string)
 	optional<string> retVal = monero_paymentID_utils::new_short_plain_paymentID_string();
 	boost::property_tree::ptree root;
 	if (retVal != none) {
-		root.put(ret_json_key__generic_retVal(), std::move(*retVal));
+		root.put(ret_json_key__generic_retVal(), *retVal);
 	}
 	//
 	return ret_json_from_root(root);
@@ -299,8 +299,8 @@ string serial_bridge::validate_components_for_login(const string &args_string)
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__isValid(), retVals.isValid);
 	root.put(ret_json_key__isInViewOnlyMode(), retVals.isInViewOnlyMode);
-	root.put(ret_json_key__pub_viewKey_string(), std::move(retVals.pub_viewKey_string));
-	root.put(ret_json_key__pub_spendKey_string(), std::move(retVals.pub_spendKey_string));
+	root.put(ret_json_key__pub_viewKey_string(), retVals.pub_viewKey_string);
+	root.put(ret_json_key__pub_spendKey_string(), retVals.pub_spendKey_string);
 	//
 	return ret_json_from_root(root);
 }
@@ -385,7 +385,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		out.index = stoull(output_desc.second.get<string>("index"));
 		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
 		//
-		unspent_outs.push_back(out);
+		unspent_outs.push_back(std::move(out));
 	}
 	optional<string> optl__passedIn_attemptAt_fee_string = json_root.get_optional<string>("passedIn_attemptAt_fee");
 	optional<uint64_t> optl__passedIn_attemptAt_fee = none;
@@ -415,27 +415,28 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		root.put(ret_json_key__any__err_msg(), err_msg_from_err_code__create_transaction(retVals.errCode));
 		//
 		// The following will be set if errCode==needMoreMoneyThanFound - and i'm depending on them being 0 otherwise
-		root.put(ret_json_key__send__spendable_balance(), std::move(RetVals_Transforms::str_from(retVals.spendable_balance)));
-		root.put(ret_json_key__send__required_balance(), std::move(RetVals_Transforms::str_from(retVals.required_balance)));
+		root.put(ret_json_key__send__spendable_balance(), RetVals_Transforms::str_from(retVals.spendable_balance));
+		root.put(ret_json_key__send__required_balance(), RetVals_Transforms::str_from(retVals.required_balance));
 	} else {
-		root.put(ret_json_key__send__mixin(), std::move(RetVals_Transforms::str_from(retVals.mixin)));
-		root.put(ret_json_key__send__using_fee(), std::move(RetVals_Transforms::str_from(retVals.using_fee)));
-		root.put(ret_json_key__send__final_total_wo_fee(), std::move(RetVals_Transforms::str_from(retVals.final_total_wo_fee)));
-		root.put(ret_json_key__send__change_amount(), std::move(RetVals_Transforms::str_from(retVals.change_amount)));
+		root.put(ret_json_key__send__mixin(), RetVals_Transforms::str_from(retVals.mixin));
+		root.put(ret_json_key__send__using_fee(), RetVals_Transforms::str_from(retVals.using_fee));
+		root.put(ret_json_key__send__final_total_wo_fee(), RetVals_Transforms::str_from(retVals.final_total_wo_fee));
+		root.put(ret_json_key__send__change_amount(), RetVals_Transforms::str_from(retVals.change_amount));
 		{
 			boost::property_tree::ptree using_outs_ptree;
 			BOOST_FOREACH(SpendableOutput &out, retVals.using_outs)
 			{ // PROBABLY don't need to shuttle these back (could send only public_key) but consumers might like the feature of being able to send this JSON structure directly back to step2 without reconstructing it for themselves
-				boost::property_tree::ptree out_ptree;
-				out_ptree.put("amount", std::move(RetVals_Transforms::str_from(out.amount)));
-				out_ptree.put("public_key", out.public_key); // FIXME: no std::move correct?
+				auto out_ptree_pair = std::make_pair("", boost::property_tree::ptree{});
+ 				auto& out_ptree = out_ptree_pair.second;
+				out_ptree.put("amount", RetVals_Transforms::str_from(out.amount));
+				out_ptree.put("public_key", out.public_key);
 				if (out.rct != none) {
-					out_ptree.put("rct", *out.rct); // copy vs move ?
+					out_ptree.put("rct", *out.rct); 
 				}
-				out_ptree.put("global_index", std::move(RetVals_Transforms::str_from(out.global_index)));
-				out_ptree.put("index", std::move(RetVals_Transforms::str_from(out.index)));
+				out_ptree.put("global_index", RetVals_Transforms::str_from(out.global_index));
+				out_ptree.put("index", RetVals_Transforms::str_from(out.index));
 				out_ptree.put("tx_pub_key", out.tx_pub_key);
-				using_outs_ptree.push_back(std::make_pair("", out_ptree));
+				using_outs_ptree.push_back(out_ptree_pair);
 			}
 			root.add_child(ret_json_key__send__using_outs(), using_outs_ptree);
 		}
@@ -462,7 +463,7 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 		out.index = stoull(output_desc.second.get<string>("index"));
 		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
 		//
-		using_outs.push_back(out);
+		using_outs.push_back(std::move(out));
 	}
 	vector<RandomAmountOutputs> mix_outs;
 	BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_desc, json_root.get_child("mix_outs"))
@@ -477,9 +478,9 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 			amountOutput.global_index = stoull(mix_out_output_desc.second.get<string>("global_index")); // this is, I believe, presently supplied as a string by the API, probably to avoid overflow
 			amountOutput.public_key = mix_out_output_desc.second.get<string>("public_key");
 			amountOutput.rct = mix_out_output_desc.second.get_optional<string>("rct");
-			amountAndOuts.outputs.push_back(amountOutput);
+			amountAndOuts.outputs.push_back(std::move(amountOutput));
 		}
-		mix_outs.push_back(amountAndOuts);
+		mix_outs.push_back(std::move(amountAndOuts));
 	}
 	Send_Step2_RetVals retVals;
 	monero_transfer_utils::send_step2__try_create_transaction(
@@ -511,13 +512,13 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 	} else {
 		if (retVals.tx_must_be_reconstructed) {
 			root.put(ret_json_key__send__tx_must_be_reconstructed(), true);
-			root.put(ret_json_key__send__fee_actually_needed(), std::move(RetVals_Transforms::str_from(retVals.fee_actually_needed))); // must be passed back
+			root.put(ret_json_key__send__fee_actually_needed(), RetVals_Transforms::str_from(retVals.fee_actually_needed)); // must be passed back
 		} else {
 			root.put(ret_json_key__send__tx_must_be_reconstructed(), false); // so consumers have it available
-			root.put(ret_json_key__send__serialized_signed_tx(), std::move(*(retVals.signed_serialized_tx_string)));
-			root.put(ret_json_key__send__tx_hash(), std::move(*(retVals.tx_hash_string)));
-			root.put(ret_json_key__send__tx_key(), std::move(*(retVals.tx_key_string)));
-			root.put(ret_json_key__send__tx_pub_key(), std::move(*(retVals.tx_pub_key_string)));
+			root.put(ret_json_key__send__serialized_signed_tx(), *(retVals.signed_serialized_tx_string));
+			root.put(ret_json_key__send__tx_hash(), *(retVals.tx_hash_string));
+			root.put(ret_json_key__send__tx_key(), *(retVals.tx_key_string));
+			root.put(ret_json_key__send__tx_pub_key(), *(retVals.tx_pub_key_string));
 		}
 	}
 	return ret_json_from_root(root);
@@ -561,7 +562,7 @@ string serial_bridge::decodeRct(const string &args_string)
 		if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), ecdh_info.amount)) {
 			return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
 		}
-		rv.ecdhInfo.push_back(ecdh_info);
+		rv.ecdhInfo.push_back(ecdh_info); // rct keys aren't movable
 	}
 	BOOST_FOREACH(boost::property_tree::ptree::value_type &outPk_desc, rv_desc.get_child("outPk"))
 	{
@@ -571,7 +572,7 @@ string serial_bridge::decodeRct(const string &args_string)
 			return error_ret_json_from_message("Invalid rv.outPk[].mask");
 		}
 		// FIXME: does dest need to be placed on the key?
-		rv.outPk.push_back(outPk);
+		rv.outPk.push_back(outPk); // rct keys aren't movable
 	}
 	//
 	rct::key mask;
@@ -584,7 +585,7 @@ string serial_bridge::decodeRct(const string &args_string)
 	} catch (std::exception const& e) {
 		return error_ret_json_from_message(e.what());
 	}
-	stringstream decoded_amount_ss;
+	ostringstream decoded_amount_ss;
 	decoded_amount_ss << decoded_amount;
 	//
 	boost::property_tree::ptree root;

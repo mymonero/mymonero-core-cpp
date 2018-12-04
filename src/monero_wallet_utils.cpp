@@ -193,7 +193,7 @@ bool monero_wallet_utils::decoded_seed(
 	// FIXME: any other input sanitization to do here?
 	//
 	const epee::wipeable_string &mnemonic_string__ref = mnemonic_string; // re-obtain wipeable_string ref
-	std::stringstream stream(mnemonic_string); // to count words…
+	std::istringstream stream(mnemonic_string); // to count words…
 	unsigned long word_count = std::distance(std::istream_iterator<std::string>(stream), std::istream_iterator<std::string>());
 	//	unsigned long word_count = boost::range::distance(boost::algorithm::make_split_iterator(mnemonic_string, boost::algorithm::is_space())); // TODO: get this workin
 	//
