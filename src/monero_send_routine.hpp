@@ -177,26 +177,26 @@ namespace monero_send_routine
 	// - Routine entrypoint
 	struct Async_SendFunds_Args
 	{ // TODO: add a way to pass native structures if available
-		const string &from_address_string;
-		const string &sec_viewKey_string;
-		const string &sec_spendKey_string;
-		const string &pub_spendKey_string;
-		const string &to_address_string;
+		string from_address_string;
+		string sec_viewKey_string;
+		string sec_spendKey_string;
+		string pub_spendKey_string;
+		string to_address_string;
 		optional<string> payment_id_string;
 		uint64_t sending_amount;
 		bool is_sweeping;
 		uint32_t simple_priority;
-		const send__get_unspent_outs_fn_type &get_unspent_outs_fn;
-		const send__get_random_outs_fn_type &get_random_outs_fn;
-		const send__submit_raw_tx_fn_type &submit_raw_tx_fn;
-		const send__status_update_fn_type &status_update_fn;
-		const send__error_cb_fn_type &error_cb_fn;
-		const send__success_cb_fn_type &success_cb_fn;
+		send__get_unspent_outs_fn_type get_unspent_outs_fn;
+		send__get_random_outs_fn_type get_random_outs_fn;
+		send__submit_raw_tx_fn_type submit_raw_tx_fn;
+		send__status_update_fn_type status_update_fn;
+		send__error_cb_fn_type error_cb_fn;
+		send__success_cb_fn_type success_cb_fn;
 		//
 		optional<uint64_t> unlock_time; // default 0
 		optional<cryptonote::network_type> nettype;
 	};
-	void async__send_funds(const Async_SendFunds_Args &args);
+	void async__send_funds(Async_SendFunds_Args args);
 }
 
 #endif /* monero_send_routine_hpp */
