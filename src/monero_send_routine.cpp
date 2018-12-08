@@ -42,7 +42,6 @@
 #include "monero_key_image_utils.hpp"
 #include "monero_address_utils.hpp"
 //
-using namespace std;
 using namespace crypto;
 using namespace std;
 using namespace boost;
