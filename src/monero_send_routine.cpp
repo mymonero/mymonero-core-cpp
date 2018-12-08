@@ -452,7 +452,7 @@ void _reenterable_construct_and_send_tx(
 //
 //
 // Entrypoint
-void monero_send_routine::async__send_funds(const Async_SendFunds_Args &args)
+void monero_send_routine::async__send_funds(Async_SendFunds_Args args)
 {
 	uint64_t usable__sending_amount = args.is_sweeping ? 0 : args.sending_amount;
 	crypto::secret_key sec_viewKey{};

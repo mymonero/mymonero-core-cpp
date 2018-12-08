@@ -196,7 +196,7 @@ namespace monero_send_routine
 		optional<uint64_t> unlock_time; // default 0
 		optional<cryptonote::network_type> nettype;
 	};
-	void async__send_funds(const Async_SendFunds_Args &args);
+	void async__send_funds(Async_SendFunds_Args args);
 }
 
 #endif /* monero_send_routine_hpp */
