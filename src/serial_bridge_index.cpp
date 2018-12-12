@@ -761,3 +761,23 @@ string serial_bridge::derive_subaddress_public_key(const string &args_string)
 	//
 	return ret_json_from_root(root);
 }
+string serial_bridge::derivation_to_scalar(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	crypto::key_derivation derivation;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("derivation"), derivation)) {
+		return error_ret_json_from_message("Invalid 'derivation'");
+	}
+	std::size_t output_index = stoul(json_root.get<string>("output_index"));
+	crypto::ec_scalar scalar = AUTO_VAL_INIT(scalar);
+	crypto::derivation_to_scalar(derivation, output_index, scalar);
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(scalar));
+	//
+	return ret_json_from_root(root);
+}
+
