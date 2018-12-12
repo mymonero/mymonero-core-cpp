@@ -1229,7 +1229,7 @@ BOOST_AUTO_TEST_CASE(bridged__decodeRctSimple)
 	}
 	root.add_child("rv", rv);
 	//
-	auto ret_string = serial_bridge::decodeRct(args_string_from_root(root));
+	auto ret_string = serial_bridge::decodeRctSimple(args_string_from_root(root));
 	stringstream ret_stream;
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
