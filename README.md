@@ -209,13 +209,19 @@ When they fail, some of these functions return only a key-value `err_msg`.
 
 **`generate_key_image`**
 
-* Args: `sec_viewKey_string: String`, `sec_spendKey_string: String`, `pub_spendKey_string: String`, `tx_pub_key: String`, `out_index: UInt64String`
+* Args: `sec_viewKey_string: String`, `sec_spendKey_string: String`, `pub_spendKey_string: String`, `tx_pub_key: String`, `out_index: UInt32String`
 
 * Returns: `err_msg: String` *OR* `retVal: String`
 	
 **`generate_key_derivation`**
 
 * Args: `pub: String`, `sec: String`
+
+* Returns: `err_msg: String` *OR* `retVal: String`
+	
+**`derivation_to_scalar`**
+
+* Args: `derivation: String`, `output_index: UInt32String`
 
 * Returns: `err_msg: String` *OR* `retVal: String`
 
@@ -231,7 +237,7 @@ When they fail, some of these functions return only a key-value `err_msg`.
 
 * Returns: `err_msg: String` *OR* `retVal: String`
 
-**`decodeRct`**
+**`decodeRct`, `decodeRctSimple`**
 
 * Args: `i: UInt32String`, `sk: String`, `rv: DecodeRCT_RV` where
 
@@ -261,6 +267,18 @@ Useful for displaying an estimated fee – To obtain exact fees, see "Creating a
 	* `priority: UInt32String`
 
 * Returns: `retVal: UInt64String`
+
+
+**`estimate_rct_tx_size`**
+
+* Args: 
+	* `n_inputs: UInt32String`
+	* `mixin: UInt32String`
+	* `n_outputs: UInt32String`
+	* `extra_size: UInt32String`
+	* `bulletproof: BoolString`
+
+* Returns: `retVal: UInt32String`
 
 
 #### Creating and Sending Transactions
