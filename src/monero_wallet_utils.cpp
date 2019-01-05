@@ -1,6 +1,6 @@
 //
 //  monero_wallet_utils.cpp
-//  Copyright (c) 2014-2018, MyMonero.com
+//  Copyright (c) 2014-2019, MyMonero.com
 //
 //  All rights reserved.
 //
