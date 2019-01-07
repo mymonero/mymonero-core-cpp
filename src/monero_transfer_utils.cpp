@@ -283,7 +283,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	// TODO: factor this out to get spendable balance for display in the MM wallet:
 	while (using_outs_amount < potential_total && remaining_unusedOuts.size() > 0) {
 		auto out = pop_random_value(remaining_unusedOuts);
-		if (!use_rct && out.rct != none) {
+		if (!use_rct && (out.rct != none && (*out.rct).empty() == false)) {
 			// out.rct is set by the server
 			continue; // skip rct outputs if not creating rct tx
 		}
@@ -292,7 +292,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 //				cout << "Not sweeping, and found a dusty (though maybe mixable) output... skipping it!" << endl;
 				continue;
 			}
-			if (out.rct == none) { // Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!
+			if (out.rct == none || (*out.rct).empty()) { // Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!
 //				cout << "Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!" << endl;
 				continue;
 			} else {
@@ -496,7 +496,7 @@ void monero_transfer_utils::create_transaction(
 		}
 		auto src = tx_source_entry{};
 		src.amount = outputs[out_index].amount;
-		src.rct = outputs[out_index].rct != none;
+		src.rct = outputs[out_index].rct != none && (*(outputs[out_index].rct)).empty() == false;
 		//
 		typedef cryptonote::tx_source_entry::output_entry tx_output_entry;
 		if (mix_outs.size() != 0) {
@@ -527,12 +527,12 @@ void monero_transfer_utils::create_transaction(
 				}
 				oe.second.dest = rct::pk2rct(public_key);
 				//
-				if (mix_out__output.rct != boost::none) {
+				if (mix_out__output.rct != boost::none && (*(mix_out__output.rct)).empty() == false) {
 					rct::key commit;
 					_rct_hex_to_rct_commit(*mix_out__output.rct, commit);
 					oe.second.mask = commit;
 				} else {
-					if (outputs[out_index].rct != boost::none) {
+					if (outputs[out_index].rct != boost::none && (*(outputs[out_index].rct)).empty() == false) {
 						retVals.errCode = mixRCTOutsMissingCommit;
 						return;
 					}
@@ -555,7 +555,7 @@ void monero_transfer_utils::create_transaction(
 		}
 		real_oe.second.dest = rct::pk2rct(public_key);
 		//
-		if (outputs[out_index].rct != none) {
+		if (outputs[out_index].rct != none && (*(outputs[out_index].rct)).empty() == false) {
 			rct::key commit;
 			_rct_hex_to_rct_commit(*(outputs[out_index].rct), commit);
 			real_oe.second.mask = commit; //add commitment for real input

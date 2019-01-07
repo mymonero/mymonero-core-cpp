@@ -403,6 +403,9 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		out.amount = stoull(output_desc.second.get<string>("amount"));
 		out.public_key = output_desc.second.get<string>("public_key");
 		out.rct = output_desc.second.get_optional<string>("rct");
+		if (out.rct != none && (*out.rct).empty() == true) {
+			out.rct = none; // just in case it's an empty string, send to 'none' (even though receiving code now handles empty strs)
+		}
 		out.global_index = stoull(output_desc.second.get<string>("global_index"));
 		out.index = stoull(output_desc.second.get<string>("index"));
 		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
@@ -452,7 +455,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
  				auto& out_ptree = out_ptree_pair.second;
 				out_ptree.put("amount", RetVals_Transforms::str_from(out.amount));
 				out_ptree.put("public_key", out.public_key);
-				if (out.rct != none) {
+				if (out.rct != none && (*out.rct).empty() == false) {
 					out_ptree.put("rct", *out.rct); 
 				}
 				out_ptree.put("global_index", RetVals_Transforms::str_from(out.global_index));
@@ -481,6 +484,9 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 		out.amount = stoull(output_desc.second.get<string>("amount"));
 		out.public_key = output_desc.second.get<string>("public_key");
 		out.rct = output_desc.second.get_optional<string>("rct");
+		if (out.rct != none && (*out.rct).empty() == true) {
+			out.rct = none; // send to 'none' if empty str for safety
+		}
 		out.global_index = stoull(output_desc.second.get<string>("global_index"));
 		out.index = stoull(output_desc.second.get<string>("index"));
 		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
