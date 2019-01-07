@@ -56,7 +56,7 @@ namespace monero_send_routine
 	// Abstracted Send routine
 	// - Accessory types - Callbacks - Data fetch hooks
 	typedef std::function<void(
-		const property_tree::ptree // opted not to send str but already parsed structure - this may not be optimal but makes it so that e.g. emscr_async_bridge doesn't have to send the response as an escaped JSON string nor redundantly parse/stringify
+		const property_tree::ptree & // opted not to send str but already parsed structure - this may not be optimal but makes it so that e.g. emscr_async_bridge doesn't have to send the response as an escaped JSON string nor redundantly parse/stringify
 	)> api_fetch_cb_fn;
 	//
 	struct LightwalletAPI_Req_GetUnspentOuts

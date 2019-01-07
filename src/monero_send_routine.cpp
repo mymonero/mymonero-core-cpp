@@ -343,7 +343,7 @@ void _reenterable_construct_and_send_tx(
 		step1_retVals,
 		constructionAttempt
 	] (
-		property_tree::ptree res
+		const property_tree::ptree &res
 	) -> void {
 		auto parsed_res = new__parsed_res__get_random_outs(res);
 		if (parsed_res.err_msg != none) {
@@ -405,7 +405,7 @@ void _reenterable_construct_and_send_tx(
 			step1_retVals,
 			step2_retVals
 		] (
-			property_tree::ptree res
+			const property_tree::ptree &res
 		) -> void {
 			// not actually expecting anything in a success response, so no need to parse
 			SendFunds_Success_RetVals success_retVals;
@@ -487,7 +487,7 @@ void monero_send_routine::async__send_funds(Async_SendFunds_Args args)
 		usable__sending_amount,
 		sec_viewKey, sec_spendKey, pub_spendKey
 	] (
-		property_tree::ptree res
+		const property_tree::ptree &res
 	) -> void {
 		auto parsed_res = new__parsed_res__get_unspent_outs(
 			res,
