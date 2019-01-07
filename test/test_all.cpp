@@ -1247,6 +1247,31 @@ BOOST_AUTO_TEST_CASE(bridged__decodeRctSimple)
 	cout << "bridged__decodeRctSimple: amount_string: " << amount_string << endl;
 	BOOST_REQUIRE(amount_string == "10000000000");
 }
+//
+BOOST_AUTO_TEST_CASE(bridged__encrypt_payment_id)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("payment_id", "f0756322689f8299");
+	root.put("public_key", "9c8bd8a9ff8703ddd5e28a36dc5c5586d2ec0b4bfd9190adeea825db5808ead2");
+	root.put("secret_key", "74f277a60613a4efa33258b9814c78e0ff7a53cf8d2cd248ee921ac7f607f800");
+	//
+	auto ret_string = serial_bridge::encrypt_payment_id(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	optional<string> str = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	BOOST_REQUIRE(str != none);
+	BOOST_REQUIRE((*str).size() > 0);
+	cout << "bridged__encrypt_payment_id: " << *str << endl;
+	BOOST_REQUIRE(*str == "6565253f11d43de5");
+}
 
 //
 //
