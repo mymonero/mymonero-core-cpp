@@ -780,4 +780,28 @@ string serial_bridge::derivation_to_scalar(const string &args_string)
 	//
 	return ret_json_from_root(root);
 }
-
+string serial_bridge::encrypt_payment_id(const string &args_string) 
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	crypto::hash8 payment_id;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("payment_id"), payment_id)) {
+		return error_ret_json_from_message("Invalid 'payment_id'");
+	}
+	crypto::public_key public_key;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("public_key"), public_key)) {
+		return error_ret_json_from_message("Invalid 'public_key'");
+	}
+	crypto::secret_key secret_key;
+	if (!epee::string_tools::hex_to_pod(json_root.get<string>("secret_key"), secret_key)) {
+		return error_ret_json_from_message("Invalid 'secret_key'");
+	}
+	hw::device &hwdev = hw::get_device("default");
+	hwdev.encrypt_payment_id(payment_id, public_key, secret_key);
+	boost::property_tree::ptree root;
+	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(payment_id));
+	return ret_json_from_root(root);
+}
