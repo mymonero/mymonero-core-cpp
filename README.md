@@ -76,7 +76,7 @@ Contributors credited in releases.
 
 ## Authors, Contributors, and Advisors
 
-* 💫 `[Paul Shapiro](https://github.com/paulshapiro)` Lead dev, maintainer
+* 💫 [`Paul Shapiro`](https://github.com/paulshapiro) Lead dev, maintainer
 
 * 🍄 `luigi1111`
 
