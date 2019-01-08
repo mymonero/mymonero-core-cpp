@@ -74,13 +74,20 @@ Contributors credited in releases.
 
 * Branches and PRs should be made from and to the `develop` branch, which gets merged to `master` for tagged releases
 
-## Regular and Main Contributors
+## Authors, Contributors, and Advisors
 
-* 💫 `endogenic` ([Paul Shapiro](https://github.com/paulshapiro)) Lead dev, maintainer
+* 💫 `[Paul Shapiro](https://github.com/paulshapiro)` Lead dev, maintainer
+
+* 🍄 `luigi1111`
 
 * 🤵 `vtnerd` C++ & Monero advisory
 
 * 🐮 `moneromooo-monero` Major Monero contributor; Advisory
+
+* 🦁 `ndorf` C++ & Monero expertise, architecture, code contributions
+
+* 🏍 `gutenye` Code contributions
+
 
 ## Embedding the C++
 
@@ -377,17 +384,3 @@ The values which must be passed between functions have (almost entirely) consist
 		* `tx_hash: String`
 		* `tx_key: String`
 	
-
-## Authors & Contributors
-
-* Paul Shapiro
-
-* luigi1111
-
-* vtnerd
-
-* ndorf
-
-* moneromoooo
-
-* gutenye
