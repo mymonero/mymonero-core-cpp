@@ -378,3 +378,16 @@ The values which must be passed between functions have (almost entirely) consist
 		* `tx_key: String`
 	
 
+## Authors & Contributors
+
+* Paul Shapiro
+
+* luigi1111
+
+* vtnerd
+
+* ndorf
+
+* moneromoooo
+
+* gutenye
