@@ -56,22 +56,6 @@ uint64_t monero_fee_utils::get_base_fee( // added as of v8
 ) {
 	return fee_per_b;
 }
-uint64_t monero_fee_utils::get_fee_quantization_mask(
-	use_fork_rules_fn_type use_fork_rules_fn
-) {
-//	if(m_light_wallet) {
-		return 1; // "TODO"
-//	}
-//	bool use_per_byte_fee = use_fork_rules(HF_VERSION_PER_BYTE_FEE, 0);
-//	if (!use_per_byte_fee)
-//		return 1;
-//
-//	uint64_t fee_quantization_mask;
-//	boost::optional<std::string> result = m_node_rpc_proxy.get_fee_quantization_mask(fee_quantization_mask);
-//	if (result)
-//		return 1;
-//	return fee_quantization_mask;
-}
 //
 uint64_t monero_fee_utils::estimated_tx_network_fee(
 	uint64_t base_fee,

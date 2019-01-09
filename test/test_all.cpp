@@ -176,6 +176,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 			root.put("payment_id_string", "d2f602b240fbe624"); // optl
 			root.put("sending_amount", "0");
 			root.put("fee_per_b", "24658");
+			root.put("fee_mask", "10000");
 			root.put("priority", "1");
 			root.add_child("unspent_outs", unspent_outs);
 			if (fee_actually_needed_string != none) {
@@ -324,6 +325,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amountWOnlyDusty)
 	root.put("payment_id_string", "d2f602b240fbe624"); // optl
 	root.put("sending_amount", "1000000");
 	root.put("fee_per_b", "24658");
+	root.put("fee_mask", "10000");
 	root.put("priority", "1");
 	root.add_child("unspent_outs", unspent_outs);
 
@@ -380,6 +382,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			root.put("payment_id_string", "d2f602b240fbe624"); // optl
 			root.put("sending_amount", "200000000");
 			root.put("fee_per_b", "24658");
+			root.put("fee_mask", "10000");
 			root.put("priority", "1");
 			root.add_child("unspent_outs", unspent_outs);
 			if (fee_actually_needed_string != none) {
@@ -465,6 +468,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			root.put("sec_viewKey_string", "7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104");
 			root.put("sec_spendKey_string", "4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803");
 			root.put("fee_per_b", "24658");
+			root.put("fee_mask", "10000");
 			root.put("unlock_time", "0");
 			root.put("priority", "1");
 			root.add_child("mix_outs", mix_outs);
@@ -847,6 +851,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
 	//
 	boost::property_tree::ptree root;
 	root.put("fee_per_b", "24658");
+	root.put("fee_mask", "10000");
 	root.put("priority", "2");
 	//
 	auto ret_string = serial_bridge::estimated_tx_network_fee(args_string_from_root(root));
@@ -1320,6 +1325,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 			root.put("payment_id_string", "d2f602b240fbe624"); // optl
 			root.put("sending_amount", "1000000000000");
 			root.put("fee_per_b", "166333");
+			root.put("fee_mask", "10000");
 			root.put("priority", "1");
 			root.add_child("unspent_outs", unspent_outs);
 			if (fee_actually_needed_string != none) {
@@ -1404,6 +1410,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 			root.put("sec_viewKey_string", "9ef8e116d2c774b207a2dd6a234dab8f5d54becc04aa26ccbd6f1f67e8427308");
 			root.put("sec_spendKey_string", "4acde2a96d5085423fcc8713c878448b35e45900f4e9cf2c0b643eb4268e140e");
 			root.put("fee_per_b", "166333");
+			root.put("fee_mask", "10000");
 			root.put("unlock_time", "0");
 			root.put("priority", "1");
 			root.add_child("mix_outs", mix_outs);

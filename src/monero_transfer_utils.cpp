@@ -218,6 +218,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	//
 	const vector<SpendableOutput> &unspent_outs,
 	uint64_t fee_per_b, // per v8
+	uint64_t fee_quantization_mask,
 	//
 	optional<uint64_t> passedIn_attemptAt_fee
 ) {
@@ -252,7 +253,6 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	}
 	const uint64_t base_fee = get_base_fee(fee_per_b); // in other words, fee_per_b
 	const uint64_t fee_multiplier = get_fee_multiplier(simple_priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
-	const uint64_t fee_quantization_mask = get_fee_quantization_mask(use_fork_rules_fn);
 	//
 	uint64_t attempt_at_min_fee;
 	if (passedIn_attemptAt_fee == none) {
@@ -391,6 +391,7 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 	uint32_t simple_priority,
 	const vector<SpendableOutput> &using_outs,
 	uint64_t fee_per_b, // per v8
+	uint64_t fee_quantization_mask,
 	vector<RandomAmountOutputs> &mix_outs, // cannot be const due to convenience__create_transaction's mutability requirement
 	use_fork_rules_fn_type use_fork_rules_fn,
 	uint64_t unlock_time, // or 0
@@ -422,7 +423,7 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 		*create_tx__retVals.tx, blob_size,
 		get_base_fee(fee_per_b)/*i.e. fee_per_b*/,
 		get_fee_multiplier(simple_priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn),
-		get_fee_quantization_mask(use_fork_rules_fn)
+		fee_quantization_mask
 	);
 	if (fee_actually_needed > fee_amount) {
 //		cout << "Need to reconstruct tx with fee of at least " << fee_actually_needed << "." << endl;

@@ -156,6 +156,7 @@ namespace monero_send_routine
 		optional<string> err_msg;
 		// OR
 		optional<uint64_t> per_byte_fee;
+		optional<uint64_t> fee_mask;
 		optional<vector<SpendableOutput>> unspent_outs;
 	};
 	struct LightwalletAPI_Res_GetRandomOuts

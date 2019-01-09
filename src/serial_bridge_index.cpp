@@ -431,6 +431,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		},
 		unspent_outs,
 		stoull(json_root.get<string>("fee_per_b")), // per v8
+		stoull(json_root.get<string>("fee_mask")),
 		//
 		optl__passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
 	);
@@ -525,6 +526,7 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 		stoul(json_root.get<string>("priority")),
 		using_outs,
 		stoull(json_root.get<string>("fee_per_b")),
+		stoull(json_root.get<string>("fee_mask")),
 		mix_outs,
 		[] (uint8_t version, int64_t early_blocks) -> bool
 		{

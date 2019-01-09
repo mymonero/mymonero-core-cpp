@@ -112,6 +112,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 	const public_key &pub_spendKey
 ) {
 	uint64_t final__per_byte_fee = 0;
+	uint64_t fee_mask = 10000; // just a fallback value - no real reason to set this here normally
 	try {
 		optional<uint64_t> possible__uint64 = _possible_uint64_from_json(res, "per_byte_fee");
 		if (possible__uint64 != none) {
@@ -122,7 +123,20 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 		string err_msg = "Unspent outs: Unrecognized per-byte fee format";
 		return {
 			err_msg,
-			none, none
+			none, none, none
+		};
+	}
+	try {
+		optional<uint64_t> possible__uint64 = _possible_uint64_from_json(res, "fee_mask");
+		if (possible__uint64 != none) {
+			fee_mask = *possible__uint64;
+		}
+	} catch (const std::exception &e) {
+		cout << "Unspent outs fee_mask parse error: " << e.what() << endl;
+		string err_msg = "Unspent outs: Unrecognized fee_mask format";
+		return {
+			err_msg,
+			none, none, none
 		};
 	}
 	if (final__per_byte_fee == 0) {
@@ -130,13 +144,14 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 			optional<uint64_t> possible__uint64 = _possible_uint64_from_json(res, "per_kb_fee");
 			if (possible__uint64 != none) {
 				final__per_byte_fee = (*possible__uint64) / 1024; // scale from kib to b
+				fee_mask = 10000; // just to be explicit
 			}
 		} catch (const std::exception &e) {
 			cout << "Unspent outs per-kb-fee parse error: " << e.what() << endl;
 			string err_msg = "Unspent outs: Unrecognized per-kb fee format";
 			return {
 				err_msg,
-				none, none
+				none, none, none
 			};
 		}
 	}
@@ -144,7 +159,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 		string err_msg = "Unable to get a per-byte fee from server response.";
 		return {
 			err_msg,
-			none, none
+			none, none, none
 		};
 	}
 	vector<SpendableOutput> unspent_outs;
@@ -164,7 +179,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 				string err_msg = "Invalid tx pub key";
 				return {
 					err_msg,
-					none, none
+					none, none, none
 				};
 			}
 		}
@@ -177,7 +192,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 				string err_msg = "Expected unspent output to have an \"index\"";
 				return {
 					err_msg,
-					none, none
+					none, none, none
 				};
 			}
 		} catch (const std::exception &e) {
@@ -185,7 +200,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 			string err_msg = "Unspent outs: Unrecognized output index format";
 			return {
 				err_msg,
-				none, none
+				none, none, none
 			};
 		}
 		bool isOutputSpent = false; // let's see…
@@ -203,7 +218,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 					string err_msg = "Unable to generate key image";
 					return {
 						err_msg,
-						none, none
+						none, none, none
 					};
 				}
 				auto calculated_key_image_string = epee::string_tools::pod_to_hex(retVals.calculated_key_image);
@@ -229,7 +244,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 	}
 	return LightwalletAPI_Res_GetUnspentOuts{
 		none,
-		final__per_byte_fee, unspent_outs
+		final__per_byte_fee, fee_mask, unspent_outs
 	};
 }
 LightwalletAPI_Res_GetRandomOuts monero_send_routine::new__parsed_res__get_random_outs(
@@ -296,6 +311,7 @@ struct _SendFunds_ConstructAndSendTx_Args
 	//
 	const vector<SpendableOutput> &unspent_outs;
 	uint64_t fee_per_b;
+	uint64_t fee_quantization_mask;
 	//
 	// cached
 	const secret_key &sec_viewKey;
@@ -327,6 +343,7 @@ void _reenterable_construct_and_send_tx(
 		},
 		args.unspent_outs,
 		args.fee_per_b,
+		args.fee_quantization_mask,
 		//
 		passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
 	);
@@ -367,6 +384,7 @@ void _reenterable_construct_and_send_tx(
 			args.simple_priority,
 			step1_retVals.using_outs,
 			args.fee_per_b,
+			args.fee_quantization_mask,
 			*(parsed_res.mix_outs),
 			[] (uint8_t version, int64_t early_blocks) -> bool
 			{
@@ -508,6 +526,7 @@ void monero_send_routine::async__send_funds(Async_SendFunds_Args args)
 			//
 			*(parsed_res.unspent_outs),
 			*(parsed_res.per_byte_fee),
+			*(parsed_res.fee_mask),
 			//
 			sec_viewKey, sec_spendKey
 		});
