@@ -724,7 +724,7 @@ BOOST_AUTO_TEST_CASE(bridged__are_equal_mnemonics__caps)
 	//
 	boost::property_tree::ptree root;
 	root.put("a", "Neubau umarmen Abart umarmen Turban feilen Brett Bargeld Episode Milchkuh Substanz Jahr Armband Maibaum Tand Grünalge Tabak erziehen Federboa Lobrede Tenor Leuchter Curry Diskurs Tenor");
-			 root.put("b", "Neubau umarm Abart umarmen Turban feilen Brett Bargel Epis Milchkuh Subst Jahr Armband Maib Tand Grüna Tabak erzie Feder Lobre Tenor Leuch Curry Diskurs Tenor");
+			 root.put("b", "neubau umarm Abart umarmen Turban feilen Brett Bargel Epis Milchkuh Subst Jahr Armband Maib Tand Grüna Tabak erzie Feder Lobre Tenor Leuch Curry Diskurs tenor");
 	//
 	auto ret_string = serial_bridge::are_equal_mnemonics(args_string_from_root(root));
 	stringstream ret_stream;
@@ -740,7 +740,6 @@ BOOST_AUTO_TEST_CASE(bridged__are_equal_mnemonics__caps)
 	BOOST_REQUIRE(*value != false);
 	cout << "bridged__are_equal_mnemonics__caps: " << *value << endl;
 }
-
 //
 BOOST_AUTO_TEST_CASE(bridged__mnemonic_from_seed)
 {
