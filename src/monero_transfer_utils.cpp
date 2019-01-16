@@ -152,6 +152,17 @@ bool _rct_hex_to_decrypted_mask(
 	std::string encrypted_mask_str = rct_string.substr(64,64);
 	THROW_WALLET_EXCEPTION_IF(!string_tools::validate_hex(64, encrypted_mask_str), error::wallet_internal_error, "Invalid rct mask: " + encrypted_mask_str);
 	string_tools::hex_to_pod(encrypted_mask_str, encrypted_mask);
+
+	// Openmonero sends the Identity mask for coinbase outputs (as it should), but unencrypted
+	// So don't do the decrypt step here if the mask sent is the Identity mask
+	rct::key I;
+	rct::identity(I);
+	if (encrypted_mask == I)
+	{
+		memcpy(decrypted_mask.bytes, encrypted_mask.bytes, sizeof(decrypted_mask));
+		return true;
+	}
+
 	//
 	// Decrypt the mask
 	crypto::key_derivation derivation;
