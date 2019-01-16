@@ -82,7 +82,7 @@ bool monero_transfer_utils::is_tx_spendtime_unlocked(
 		// XXX: this needs to be fast, so we'd need to get the starting heights
 		// from the daemon to be correct once voting kicks in
 		uint64_t v2height = nettype == TESTNET ? 624634 : nettype == STAGENET ? (uint64_t)-1/*TODO*/ : 1009827;
-		uint64_t leeway = block_height < v2height ? CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_SECONDS_V1 : CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_SECONDS_V2;
+		uint64_t leeway = CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_SECONDS_V2;
 		if(current_time + leeway >= unlock_time)
 			return true;
 		else
