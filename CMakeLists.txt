@@ -1,7 +1,8 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 project(TEST)
 enable_testing()
@@ -107,8 +108,7 @@ set(
     ${MONERO_SRC}/contrib/libsodium/src/crypto_verify/verify.c
 )
 # needed for slow-hash
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -maes")
+add_compile_options(-maes)
 
 #Run through each source
 foreach(testSrc ${TEST_SRCS})
