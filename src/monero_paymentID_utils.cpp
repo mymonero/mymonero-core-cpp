@@ -29,13 +29,14 @@
 //  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //
-
 #include "monero_paymentID_utils.hpp"
+#import <regex>
 #include "cryptonote_basic.h"
 #include "cryptonote_basic/blobdatatype.h"
-//
 #include "string_tools.h"
 using namespace epee;
+using namespace std;
+using namespace boost;
 //
 //
 crypto::hash8 monero_paymentID_utils::new_short_plain_paymentID()
@@ -85,4 +86,28 @@ bool monero_paymentID_utils::parse_payment_id(const std::string& payment_id_str,
 		return true;
 	}
 	return false;
+}
+//
+bool monero_paymentID_utils::is_a_valid_or_not_a_payment_id_of_length(const string &str, size_t length)
+{
+	if (str.size() != length) {
+		return false;
+	}
+	stringstream ss;
+	ss << "^[0-9a-fA-F]{" << length << "}$";
+	if (regex_match(str, regex(ss.str()))) {
+		return true;
+	}
+	return false;
+}
+bool monero_paymentID_utils::is_a_valid_or_not_a_payment_id(optional<string> str)
+{
+	if (str == boost::none || str->empty()) {
+		return true; // not a payment id b/c it's nil
+	}
+	if (is_a_valid_or_not_a_payment_id_of_length(*str, payment_id_length__short)
+		|| is_a_valid_or_not_a_payment_id_of_length(*str, payment_id_length__long)) {
+		return true;
+	}
+	return false; // not a match but not empty/nil either
 }

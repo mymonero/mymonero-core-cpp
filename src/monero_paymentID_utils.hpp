@@ -34,19 +34,30 @@
 #define monero_paymentID_utils_hpp
 
 #include <stdio.h>
+#include <boost/optional.hpp>
 #include "crypto.h"
 
 namespace monero_paymentID_utils
 {
+	using namespace std;
+	using namespace boost;
+	//
+	// Constants
+	static const size_t payment_id_length__short = 16;
+	static const size_t payment_id_length__long = 64;
 	//
 	// Generating Payment IDs
 	crypto::hash8 new_short_plain_paymentID();
-	std::string new_short_plain_paymentID_string();
+	string new_short_plain_paymentID_string();
 	//
 	// Parsing and Detecting Payment IDs
-	bool parse_long_payment_id(const std::string& payment_id_str, crypto::hash& payment_id);
-	bool parse_short_payment_id(const std::string& payment_id_str, crypto::hash8& payment_id);
-	bool parse_payment_id(const std::string& payment_id_str, crypto::hash& payment_id);
+	bool parse_long_payment_id(const string& payment_id_str, crypto::hash& payment_id);
+	bool parse_short_payment_id(const string& payment_id_str, crypto::hash8& payment_id);
+	bool parse_payment_id(const string& payment_id_str, crypto::hash& payment_id);
+	//
+	// Validating payment IDs
+	bool is_a_valid_or_not_a_payment_id_of_length(const string &str, size_t length);
+	bool is_a_valid_or_not_a_payment_id(optional<string> str); // this checks 16 and then 64 len strs
 }
 
 #endif /* monero_paymentID_utils_hpp */
