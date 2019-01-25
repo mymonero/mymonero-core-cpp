@@ -53,7 +53,7 @@ namespace serial_bridge_utils
 	string string_from_nettype(network_type nettype);
 	//
 	struct RetVals_Transforms
-	{
+	{ // TODO: can these be generalized with generics?
 		static string str_from(uint64_t v)
 		{
 			std::ostringstream o;
@@ -61,6 +61,12 @@ namespace serial_bridge_utils
 			return o.str();
 		}
 		static string str_from(uint32_t v)
+		{
+			std::ostringstream o;
+			o << v;
+			return o.str();
+		}
+		static string str_from(bool v)
 		{
 			std::ostringstream o;
 			o << v;
