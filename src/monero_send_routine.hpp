@@ -34,6 +34,7 @@
 //
 #include <boost/optional.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 //
 #include "string_tools.h"
 #include "crypto.h"
@@ -68,6 +69,20 @@ namespace monero_send_routine
 		bool use_dust; // true; send-funds is now coded to filter unmixable and below threshold dust properly when sweeping and not sweeping
 		const string dust_threshold; // uint64_string; String(MoneroConstants.dustThreshold, radix: 10)
 	};
+	static inline string json_string_from_req_GetUnspentOuts(const LightwalletAPI_Req_GetUnspentOuts &req_params)
+	{
+		boost::property_tree::ptree req_params_root;
+		req_params_root.put("address", req_params.address);
+		req_params_root.put("view_key", req_params.view_key);
+		req_params_root.put("amount", req_params.amount);
+		req_params_root.put("dust_threshold", req_params.dust_threshold);
+		req_params_root.put("use_dust", req_params.use_dust);
+		req_params_root.put("mixin", req_params.mixin);
+		stringstream req_params_ss;
+		boost::property_tree::write_json(req_params_ss, req_params_root, false/*pretty*/);
+		//
+		return req_params_ss.str();
+	}
 	LightwalletAPI_Req_GetUnspentOuts new__req_params__get_unspent_outs( // used internally and by emscr async send impl
 		string from_address_string,
 		string sec_viewKey_string
@@ -82,6 +97,23 @@ namespace monero_send_routine
 		const vector<string> amounts;
 		const size_t count; // =mixin+1
 	};
+	static inline string json_string_from_req_GetRandomOuts(const LightwalletAPI_Req_GetRandomOuts &req_params)
+	{
+		boost::property_tree::ptree req_params_root;
+		boost::property_tree::ptree amounts_ptree;
+		BOOST_FOREACH(const string &amount_string, req_params.amounts)
+		{
+			property_tree::ptree amount_child;
+			amount_child.put("", amount_string);
+			amounts_ptree.push_back(std::make_pair("", amount_child));
+		}
+		req_params_root.add_child("amounts", amounts_ptree);
+		req_params_root.put("count", req_params.count);
+		stringstream req_params_ss;
+		boost::property_tree::write_json(req_params_ss, req_params_root, false/*pretty*/);
+
+		return req_params_ss.str();
+	}
 	LightwalletAPI_Req_GetRandomOuts new__req_params__get_random_outs( // used internally and by emscr async send impl
 		vector<SpendableOutput> &step1__using_outs
 	);
@@ -96,6 +128,18 @@ namespace monero_send_routine
 		const string view_key;
 		const string tx; // serialized tx
 	};
+	static inline string json_string_from_req_SubmitRawTx(const LightwalletAPI_Req_SubmitRawTx &req_params)
+	{
+		boost::property_tree::ptree req_params_root;
+		boost::property_tree::ptree amounts_ptree;
+		req_params_root.put("address", std::move(req_params.address));
+		req_params_root.put("view_key", std::move(req_params.view_key));
+		req_params_root.put("tx", std::move(req_params.tx));
+		stringstream req_params_ss;
+		boost::property_tree::write_json(req_params_ss, req_params_root, false/*pretty*/);
+		//
+		return req_params_ss.str();
+	}
 	typedef std::function<void(
 		LightwalletAPI_Req_SubmitRawTx, // req_params - use these for making the request
 		api_fetch_cb_fn // fn cb … call this after the request responds (successfully)
