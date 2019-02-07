@@ -98,7 +98,7 @@ CreateTransactionErrorCode _add_pid_to_tx_extra(
 	vector<uint8_t> &extra
 ) { // Detect hash8 or hash32 char hex string as pid and configure 'extra' accordingly
 	bool r = false;
-	if (payment_id_string != none) {
+	if (payment_id_string != none && payment_id_string->size() > 0) {
 		crypto::hash payment_id;
 		r = monero_paymentID_utils::parse_long_payment_id(*payment_id_string, payment_id);
 		if (r) {
