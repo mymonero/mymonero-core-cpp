@@ -1,4 +1,7 @@
-# MyMonero Core C++
+# Loki Core C++
+
+This is the Loki fork of the Monero-core-cpp repository, this work is used directly in https:lokilocker.com
+Credit for a majority of this work goes to the MyMonero team, we have only made small modifications to accommodate some of the changes Loki has made 
 
 1. What's in this Repo?
 1. Setup
