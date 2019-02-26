@@ -459,7 +459,12 @@ void monero_transfer_utils::create_transaction(
 	//
 	uint32_t fake_outputs_count = fixed_mixinsize();
 	bool bulletproof = true;
-	const rct::RangeProofType range_proof_type = bulletproof ? rct::RangeProofPaddedBulletproof : rct::RangeProofBorromean;
+	rct::RangeProofType range_proof_type = bulletproof ? rct::RangeProofPaddedBulletproof : rct::RangeProofBorromean;
+	int bp_version = bulletproof ? (use_fork_rules_fn(HF_VERSION_SMALLER_BP, -10) ? 2 : 1) : 0;
+	const rct::RCTConfig rct_config {
+		range_proof_type,
+		bp_version,
+	};
 	//
 	if (mix_outs.size() != outputs.size() && fake_outputs_count != 0) {
 		retVals.errCode = wrongNumberOfMixOutsProvided;
@@ -663,7 +668,7 @@ void monero_transfer_utils::create_transaction(
 		sender_account_keys, subaddresses,
 		sources, splitted_dsts, change_dst.addr, extra,
 		tx, unlock_time, tx_key, additional_tx_keys,
-		true, range_proof_type,
+		true, rct_config,
 		/*m_multisig ? &msout : */NULL
 	);
 	LOG_PRINT_L2("constructed tx, r="<<r);
