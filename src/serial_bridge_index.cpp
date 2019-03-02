@@ -579,6 +579,8 @@ string serial_bridge::decodeRct(const string &args_string)
 		rv.type = rct::RCTTypeFull;
 	} else if (rv_type_int == rct::RCTTypeBulletproof) {
 		rv.type = rct::RCTTypeBulletproof;
+	} else if (rv_type_int == rct::RCTTypeBulletproof2) {
+		rv.type = rct::RCTTypeBulletproof2;
 	} else {
 		return error_ret_json_from_message("Invalid 'rv.type'");
 	}
@@ -650,6 +652,8 @@ string serial_bridge::decodeRctSimple(const string &args_string)
 		rv.type = rct::RCTTypeFull;
 	} else if (rv_type_int == rct::RCTTypeBulletproof) {
 		rv.type = rct::RCTTypeBulletproof;
+	} else if (rv_type_int == rct::RCTTypeBulletproof2) {
+		rv.type = rct::RCTTypeBulletproof2;
 	} else {
 		return error_ret_json_from_message("Invalid 'rv.type'");
 	}
