@@ -36,13 +36,26 @@
 #ifndef monero_fork_rules_hpp
 #define monero_fork_rules_hpp
 
-#include "crypto.h"
+#include <functional>
+#include <stdint.h>
 
 namespace monero_fork_rules
 {
 	typedef std::function<bool(uint8_t/*version*/, int64_t/*early_blocks*/)> use_fork_rules_fn_type;
 	//
 	bool lightwallet_hardcoded__use_fork_rules(uint8_t version, int64_t early_blocks); // convenience - to be called by a use_fork_rules_fn_type implementation
+	//
+	// The fork_version should be the actual current network fork version.
+	// If zero, it is ignored and the resulting functor always returns true.
+	inline use_fork_rules_fn_type make_use_fork_rules_fn(uint8_t fork_version)
+	{
+		return 0 != fork_version ?
+			[fork_version](uint8_t desired_version, int64_t/*early_blocks is ignored*/)
+			{
+				return desired_version <= fork_version;
+			}
+			: use_fork_rules_fn_type(lightwallet_hardcoded__use_fork_rules);
+	}
 	//
 	uint32_t fixed_ringsize(); // not mixinsize, which would be ringsize-1
 	uint32_t fixed_mixinsize(); // not ringsize, which would be mixinsize+1
