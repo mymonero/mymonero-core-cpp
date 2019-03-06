@@ -1276,6 +1276,65 @@ BOOST_AUTO_TEST_CASE(bridged__decodeRctSimple)
 	cout << "bridged__decodeRctSimple: amount_string: " << amount_string << endl;
 	BOOST_REQUIRE(amount_string == "10000000000");
 }
+// with bulletproof2
+BOOST_AUTO_TEST_CASE(bridged__decodeRctSimple_with_bulletproof2)
+{
+	using namespace serial_bridge;
+	//
+	boost::property_tree::ptree root;
+	root.put("i", "1");
+	root.put("sk", "6d610888e25f36701f394ffdd90a65b0dabcf9af5e08dc1508f261d1518ef302");
+	
+	boost::property_tree::ptree rv;
+	{
+		rv.put("type", "4");
+		//
+		boost::property_tree::ptree ecdhInfo;
+		{
+			boost::property_tree::ptree ecdh_info;
+			ecdh_info.put("amount", "4ecd30261cf20abd");
+			ecdhInfo.push_back(std::make_pair("", ecdh_info));
+		}
+		{
+			boost::property_tree::ptree ecdh_info;
+			ecdh_info.put("amount", "f024c943ea864831");
+			ecdhInfo.push_back(std::make_pair("", ecdh_info));
+		}
+		rv.add_child("ecdhInfo", ecdhInfo);
+		//
+		boost::property_tree::ptree outPk;
+		{
+			boost::property_tree::ptree an_outPk;
+			an_outPk.put("mask", "f665a172ea10f19da0d5af66554951ea94d36ee2570e34e1ce4f65aa55c5f53b");
+			outPk.push_back(std::make_pair("", an_outPk));
+		}
+		{
+			boost::property_tree::ptree an_outPk;
+			an_outPk.put("mask", "a3befe86882b1dac68c34d907168a41939603e4bcb0b61500e526d54c44000f0");
+			outPk.push_back(std::make_pair("", an_outPk));
+		}
+		rv.add_child("outPk", outPk);
+	}
+	root.add_child("rv", rv);
+	//
+	auto ret_string = serial_bridge::decodeRctSimple(args_string_from_root(root));
+	stringstream ret_stream;
+	ret_stream << ret_string;
+	boost::property_tree::ptree ret_tree;
+	boost::property_tree::read_json(ret_stream, ret_tree);
+	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	if (err_string != none) {
+		BOOST_REQUIRE_MESSAGE(false, *err_string);
+	}
+	string mask_string = ret_tree.get<string>(ret_json_key__decodeRct_mask());
+	BOOST_REQUIRE(mask_string.size() > 0);
+	cout << "bridged__decodeRctSimple_with_bulletproof2: mask_string: " << mask_string << endl;
+	BOOST_REQUIRE(mask_string == "b90780ff4f16d9ae3d3e3b84aebd5ebc0c7d37e5197fef9353a400409b743903");
+	string amount_string = ret_tree.get<string>(ret_json_key__decodeRct_amount());
+	BOOST_REQUIRE(amount_string.size() > 0);
+	cout << "bridged__decodeRctSimple_with_bulletproof2: amount_string: " << amount_string << endl;
+	BOOST_REQUIRE(amount_string == "2000000000");
+}
 //
 BOOST_AUTO_TEST_CASE(bridged__encrypt_payment_id)
 {

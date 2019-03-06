@@ -661,11 +661,20 @@ string serial_bridge::decodeRctSimple(const string &args_string)
 	{
 		assert(ecdh_info_desc.first.empty()); // array elements have no names
 		auto ecdh_info = rct::ecdhTuple{};
-		if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("mask"), ecdh_info.mask)) {
-			return error_ret_json_from_message("Invalid rv.ecdhInfo[].mask");
-		}
-		if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), ecdh_info.amount)) {
-			return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
+		if (rv.type == rct::RCTTypeBulletproof2) {
+			// crypto::hash8 amount;
+			// if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), amount)) {
+			if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), (crypto::hash8&)ecdh_info.amount)) {
+				return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
+			}
+			// ecdh_info.amount = (rct::key&)amount;
+		} else {
+			if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("mask"), ecdh_info.mask)) {
+				return error_ret_json_from_message("Invalid rv.ecdhInfo[].mask");
+			}
+			if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), ecdh_info.amount)) {
+				return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
+			}
 		}
 		rv.ecdhInfo.push_back(ecdh_info);
 	}
