@@ -242,9 +242,11 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 			unspent_outs.push_back(std::move(out));
 		}
 	}
+	auto fork_version = res.get_optional<uint8_t>("fork_version");
 	return LightwalletAPI_Res_GetUnspentOuts{
 		none,
-		final__per_byte_fee, fee_mask, unspent_outs
+		final__per_byte_fee, fee_mask, unspent_outs,
+		fork_version ? *fork_version : static_cast<uint8_t>(0)
 	};
 }
 LightwalletAPI_Res_GetRandomOuts monero_send_routine::new__parsed_res__get_random_outs(
@@ -312,6 +314,7 @@ struct _SendFunds_ConstructAndSendTx_Args
 	const vector<SpendableOutput> &unspent_outs;
 	uint64_t fee_per_b;
 	uint64_t fee_quantization_mask;
+	uint8_t fork_version;
 	//
 	// cached
 	const secret_key &sec_viewKey;
@@ -329,6 +332,8 @@ void _reenterable_construct_and_send_tx(
 ) {
 	args.status_update_fn(calculatingFee);
 	//
+	auto use_fork_rules = monero_fork_rules::make_use_fork_rules_fn(args.fork_version);
+	//
 	Send_Step1_RetVals step1_retVals;
 	monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 		step1_retVals,
@@ -337,10 +342,7 @@ void _reenterable_construct_and_send_tx(
 		args.sending_amount,
 		args.is_sweeping,
 		args.simple_priority,
-		[] (uint8_t version, int64_t early_blocks) -> bool
-		{
-			return lightwallet_hardcoded__use_fork_rules(version, early_blocks);
-		},
+		use_fork_rules,
 		args.unspent_outs,
 		args.fee_per_b,
 		args.fee_quantization_mask,
@@ -358,7 +360,8 @@ void _reenterable_construct_and_send_tx(
 	api_fetch_cb_fn get_random_outs_fn__cb_fn = [
 		args,
 		step1_retVals,
-		constructionAttempt
+		constructionAttempt,
+		use_fork_rules
 	] (
 		const property_tree::ptree &res
 	) -> void {
@@ -386,10 +389,7 @@ void _reenterable_construct_and_send_tx(
 			args.fee_per_b,
 			args.fee_quantization_mask,
 			*(parsed_res.mix_outs),
-			[] (uint8_t version, int64_t early_blocks) -> bool
-			{
-				return lightwallet_hardcoded__use_fork_rules(version, early_blocks);
-			},
+			std::move(use_fork_rules),
 			args.unlock_time,
 			args.nettype
 		);
@@ -527,6 +527,7 @@ void monero_send_routine::async__send_funds(Async_SendFunds_Args args)
 			*(parsed_res.unspent_outs),
 			*(parsed_res.per_byte_fee),
 			*(parsed_res.fee_mask),
+			parsed_res.fork_version,
 			//
 			sec_viewKey, sec_spendKey
 		});

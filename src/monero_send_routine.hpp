@@ -202,6 +202,7 @@ namespace monero_send_routine
 		optional<uint64_t> per_byte_fee;
 		optional<uint64_t> fee_mask;
 		optional<vector<SpendableOutput>> unspent_outs;
+		uint8_t fork_version;
 	};
 	struct LightwalletAPI_Res_GetRandomOuts
 	{
