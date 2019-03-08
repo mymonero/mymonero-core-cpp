@@ -311,13 +311,15 @@ string serial_bridge::estimated_tx_network_fee(const string &args_string)
 		// it will already have thrown an exception
 		return error_ret_json_from_message("Invalid JSON");
 	}
+	uint8_t fork_version = 0; // if missing
+	optional<string> optl__fork_version_string = json_root.get_optional<string>("fork_version");
+	if (optl__fork_version_string != none) {
+		fork_version = stoul(*optl__fork_version_string);
+	}
 	uint64_t fee = monero_fee_utils::estimated_tx_network_fee(
 		stoull(json_root.get<string>("fee_per_b")),
 		stoul(json_root.get<string>("priority")),
-		[] (uint8_t version, int64_t early_blocks) -> bool
-		{
-			return lightwallet_hardcoded__use_fork_rules(version, early_blocks);
-		}
+		monero_fork_rules::make_use_fork_rules_fn(fork_version)
 	);
 	std::ostringstream o;
 	o << fee;
@@ -417,6 +419,11 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 	if (optl__passedIn_attemptAt_fee_string != none) {
 		optl__passedIn_attemptAt_fee = stoull(*optl__passedIn_attemptAt_fee_string);
 	}
+	uint8_t fork_version = 0; // if missing
+	optional<string> optl__fork_version_string = json_root.get_optional<string>("fork_version");
+	if (optl__fork_version_string != none) {
+		fork_version = stoul(*optl__fork_version_string);
+	}
 	Send_Step1_RetVals retVals;
 	monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 		retVals,
@@ -425,10 +432,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		stoull(json_root.get<string>("sending_amount")),
 		json_root.get<bool>("is_sweeping"),
 		stoul(json_root.get<string>("priority")),
-		[] (uint8_t version, int64_t early_blocks) -> bool
-		{
-			return lightwallet_hardcoded__use_fork_rules(version, early_blocks);
-		},
+		monero_fork_rules::make_use_fork_rules_fn(fork_version),
 		unspent_outs,
 		stoull(json_root.get<string>("fee_per_b")), // per v8
 		stoull(json_root.get<string>("fee_mask")),
@@ -511,6 +515,11 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 		}
 		mix_outs.push_back(std::move(amountAndOuts));
 	}
+	uint8_t fork_version = 0; // if missing
+	optional<string> optl__fork_version_string = json_root.get_optional<string>("fork_version");
+	if (optl__fork_version_string != none) {
+		fork_version = stoul(*optl__fork_version_string);
+	}
 	Send_Step2_RetVals retVals;
 	monero_transfer_utils::send_step2__try_create_transaction(
 		retVals,
@@ -528,10 +537,7 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 		stoull(json_root.get<string>("fee_per_b")),
 		stoull(json_root.get<string>("fee_mask")),
 		mix_outs,
-		[] (uint8_t version, int64_t early_blocks) -> bool
-		{
-		   return lightwallet_hardcoded__use_fork_rules(version, early_blocks);
-		},
+		monero_fork_rules::make_use_fork_rules_fn(fork_version),
 		stoull(json_root.get<string>("unlock_time")),
 		nettype_from_string(json_root.get<string>("nettype_string"))
 	);

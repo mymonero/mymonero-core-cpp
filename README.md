@@ -272,6 +272,7 @@ Useful for displaying an estimated fee – To obtain exact fees, see "Creating a
 * Args: 
 	* `fee_per_b: UInt64String`
 	* `priority: UInt32String`
+	* `fork_version: UInt8String`
 
 * Returns: `retVal: UInt64String`
 
@@ -318,6 +319,7 @@ The values which must be passed between functions have (almost entirely) consist
 	* `priority: UInt32String` of `1`–`4`
 	* `fee_per_b: UInt64String`
 	* `fee_mask: UInt64String`
+	* `fork_version: UInt8String`
 	* `unspent_outs: [UnspentOutput]` - fully parsed server response
 	* `payment_id_string: Optional<String>`
 	* `passedIn_attemptAt_fee: Optional<UInt64String>`
@@ -356,6 +358,7 @@ The values which must be passed between functions have (almost entirely) consist
 	* `priority: UInt32String` of `1`–`4`
 	* `fee_per_b: UInt64String`
 	* `fee_mask: UInt64String`
+	* `fork_version: UInt8String`
 	* `using_outs: [UnspentOutput]` returned by step1
 	* `mix_outs: [MixAmountAndOuts]` defined below
 	* `unlock_time: UInt64String`

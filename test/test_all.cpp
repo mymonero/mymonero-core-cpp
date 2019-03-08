@@ -104,10 +104,8 @@ BOOST_AUTO_TEST_CASE(wallet)
 #include "../src/monero_fork_rules.hpp"
 BOOST_AUTO_TEST_CASE(transfers__fee)
 {
-	monero_fork_rules::use_fork_rules_fn_type use_fork_rules_fn = [] (uint8_t version, int64_t early_blocks) -> bool
-	{
-		return monero_fork_rules::lightwallet_hardcoded__use_fork_rules(version, early_blocks);
-	};
+	uint8_t fork_version = 10;
+	auto use_fork_rules_fn = monero_fork_rules::make_use_fork_rules_fn(fork_version);
 	uint64_t fee_per_b = 24658;
 	uint32_t priority = 2;
 	uint64_t est_fee = monero_fee_utils::estimated_tx_network_fee(fee_per_b, priority, use_fork_rules_fn);
@@ -177,6 +175,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 			root.put("sending_amount", "0");
 			root.put("fee_per_b", "24658");
 			root.put("fee_mask", "10000");
+			root.put("fork_version", "10");
 			root.put("priority", "1");
 			root.add_child("unspent_outs", unspent_outs);
 			if (fee_actually_needed_string != none) {
@@ -262,6 +261,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 			root.put("sec_spendKey_string", "4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803");
 			root.put("fee_per_b", "24658");
 			root.put("fee_mask", "10000");
+			root.put("fork_version", "10");
 			root.put("unlock_time", "0");
 			root.put("priority", "1");
 			root.add_child("mix_outs", mix_outs);
@@ -327,6 +327,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amountWOnlyDusty)
 	root.put("sending_amount", "1000000");
 	root.put("fee_per_b", "24658");
 	root.put("fee_mask", "10000");
+	root.put("fork_version", "10");
 	root.put("priority", "1");
 	root.add_child("unspent_outs", unspent_outs);
 
@@ -385,6 +386,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			root.put("sending_amount", "200000000");
 			root.put("fee_per_b", "24658");
 			root.put("fee_mask", "10000");
+			root.put("fork_version", "10");
 			root.put("priority", "1");
 			root.add_child("unspent_outs", unspent_outs);
 			if (fee_actually_needed_string != none) {
@@ -471,6 +473,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			root.put("sec_spendKey_string", "4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803");
 			root.put("fee_per_b", "24658");
 			root.put("fee_mask", "10000");
+			root.put("fork_version", "10");
 			root.put("unlock_time", "0");
 			root.put("priority", "1");
 			root.add_child("mix_outs", mix_outs);
@@ -876,6 +879,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
 	boost::property_tree::ptree root;
 	root.put("fee_per_b", "24658");
 	root.put("fee_mask", "10000");
+	root.put("fork_version", "10");
 	root.put("priority", "2");
 	//
 	auto ret_string = serial_bridge::estimated_tx_network_fee(args_string_from_root(root));
@@ -1409,6 +1413,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 			root.put("sending_amount", "1000000000000");
 			root.put("fee_per_b", "166333");
 			root.put("fee_mask", "10000");
+			root.put("fork_version", "10");
 			root.put("priority", "1");
 			root.add_child("unspent_outs", unspent_outs);
 			if (fee_actually_needed_string != none) {
@@ -1494,6 +1499,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 			root.put("sec_spendKey_string", "4acde2a96d5085423fcc8713c878448b35e45900f4e9cf2c0b643eb4268e140e");
 			root.put("fee_per_b", "166333");
 			root.put("fee_mask", "10000");
+			root.put("fork_version", "10");
 			root.put("unlock_time", "0");
 			root.put("priority", "1");
 			root.add_child("mix_outs", mix_outs);
