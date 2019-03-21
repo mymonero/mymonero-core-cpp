@@ -81,6 +81,35 @@ string serial_bridge_utils::string_from_nettype(network_type nettype)
 	}
 }
 //
+// Shared - Parsing - Values
+optional<double> serial_bridge_utils::none_or_double_from(const boost::property_tree::ptree &json, const string &key)
+{
+	optional<string> str = json.get_optional<string>(key);
+	if (str != none) {
+		return stod(*str); // this may throw an exception - allowing it to bubble up here
+	}
+	optional<double> dbl_orNone = json.get_optional<double>(key);
+	//
+	return dbl_orNone;
+}
+optional<bool> serial_bridge_utils::none_or_bool_from(const boost::property_tree::ptree &json, const string &key)
+{
+	optional<string> str = json.get_optional<string>(key);
+	if (str != none) {
+		if (*str == "true" || *str == "1") {
+			return true;
+		} else if (*str == "false" || *str == "0") {
+			return false;
+		} else {
+			BOOST_THROW_EXCEPTION(logic_error("Unable to parse bool string"));
+			return none;
+		}
+	}
+	optional<bool> bool_orNone = json.get_optional<bool>(key);
+	//
+	return bool_orNone;
+}
+//
 // Shared - Parsing - Args
 bool serial_bridge_utils::parsed_json_root(const string &args_string, boost::property_tree::ptree &json_root)
 {
