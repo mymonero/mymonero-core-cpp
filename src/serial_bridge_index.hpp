@@ -63,6 +63,7 @@ namespace serial_bridge
 	//
 	string estimated_tx_network_fee(const string &args_string);
 	string estimate_fee(const string &args_string);
+	string estimate_tx_weight(const string &args_string);
 	string estimate_rct_tx_size(const string &args_string);
 	//
 	string generate_key_image(const string &args_string);
