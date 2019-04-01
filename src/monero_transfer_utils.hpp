@@ -1,6 +1,6 @@
 //
 //  monero_transfer_utils.hpp
-//  Copyright (c) 2014-2018, MyMonero.com
+//  Copyright (c) 2014-2019, MyMonero.com
 //
 //  All rights reserved.
 //
@@ -106,6 +106,7 @@ namespace monero_transfer_utils
 		couldntDecodeToAddress			= 18,
 		invalidPID						= 19,
 		enteredAmountTooLow				= 20,
+		cantGetDecryptedMaskFromRCTHex	= 21,
 		needMoreMoneyThanFound			= 90
 	};
 	static inline string err_msg_from_err_code__create_transaction(CreateTransactionErrorCode code)
@@ -132,7 +133,7 @@ namespace monero_transfer_utils
 			case resultFeeNotEqualToGiven:
 				return "Result fee not equal to given fee";
 			case needMoreMoneyThanFound:
-				return "Need more money than found";
+				return "Spendable balance too low";
 			case invalidDestinationAddress:
 				return "Invalid destination address";
 			case nonZeroPIDWithIntAddress:
@@ -155,8 +156,13 @@ namespace monero_transfer_utils
 				return "Invalid payment ID";
 			case enteredAmountTooLow:
 				return "The amount you've entered is too low";
+			case cantGetDecryptedMaskFromRCTHex:
+				return "Can't get decrypted mask from 'rct' hex";
 		}
 	}
+	//
+	// See monero_send_routine for actual app-lvl interface used by lightwallets 
+	//
 	//
 	// Send_Step* functions procedure for integrators:
 	//	1. call GetUnspentOuts endpoint
@@ -183,7 +189,7 @@ namespace monero_transfer_utils
 	void send_step1__prepare_params_for_get_decoys(
 		Send_Step1_RetVals &retVals,
 		//
-		optional<string> payment_id_string,
+		const optional<string>& payment_id_string,
 		uint64_t sending_amount,
 		bool is_sweeping,
 		uint32_t simple_priority,
@@ -191,6 +197,7 @@ namespace monero_transfer_utils
 		//
 		const vector<SpendableOutput> &unspent_outs,
 		uint64_t fee_per_b, // per v8
+		uint64_t fee_quantization_mask,
 		//
 		optional<uint64_t> passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
 	);
@@ -207,22 +214,24 @@ namespace monero_transfer_utils
 		optional<string> signed_serialized_tx_string;
 		optional<string> tx_hash_string;
 		optional<string> tx_key_string; // this includes additional_tx_keys
+		optional<string> tx_pub_key_string; // from get_tx_pub_key_from_extra()
 	};
 	void send_step2__try_create_transaction(
 		Send_Step2_RetVals &retVals,
 		//
-		string from_address_string,
-		string sec_viewKey_string,
-		string sec_spendKey_string,
-		string to_address_string,
-		optional<string> payment_id_string,
+		const string &from_address_string,
+		const string &sec_viewKey_string,
+		const string &sec_spendKey_string,
+		const string &to_address_string,
+		const optional<string>& payment_id_string,
 		uint64_t final_total_wo_fee, // this gets passed to create_transaction's 'sending_amount'
 		uint64_t change_amount,
 		uint64_t fee_amount,
 		uint32_t simple_priority,
-		vector<SpendableOutput> &using_outs,
+		const vector<SpendableOutput> &using_outs,
 		uint64_t fee_per_b, // per v8
-		vector<RandomAmountOutputs> &mix_outs,
+		uint64_t fee_quantization_mask,
+		vector<RandomAmountOutputs> &mix_outs, // it gets sorted
 		use_fork_rules_fn_type use_fork_rules_fn,
 		uint64_t unlock_time, // or 0
 		cryptonote::network_type nettype
@@ -238,6 +247,7 @@ namespace monero_transfer_utils
 		optional<string> signed_serialized_tx_string;
 		optional<string> tx_hash_string;
 		optional<string> tx_key_string; // this includes additional_tx_keys
+		optional<string> tx_pub_key_string; // from get_tx_pub_key_from_extra()
 		optional<transaction> tx; // for block weight
 		optional<size_t> txBlob_byteLength;
 	};
@@ -247,12 +257,12 @@ namespace monero_transfer_utils
 		const string &sec_viewKey_string,
 		const string &sec_spendKey_string,
 		const string &to_address_string,
-		optional<string> payment_id_string,
+		const optional<string>& payment_id_string,
 		uint64_t sending_amount,
 		uint64_t change_amount,
 		uint64_t fee_amount,
-		vector<SpendableOutput> &outputs,
-		vector<RandomAmountOutputs> &mix_outs,
+		const vector<SpendableOutput> &outputs,
+		vector<RandomAmountOutputs> &mix_outs, // get sorted
 		use_fork_rules_fn_type use_fork_rules_fn,
 		uint64_t unlock_time							= 0, // or 0
 		network_type nettype 							= MAINNET
@@ -274,9 +284,9 @@ namespace monero_transfer_utils
 		uint64_t sending_amount,
 		uint64_t change_amount,
 		uint64_t fee_amount,
-		vector<SpendableOutput> &outputs,
+		const vector<SpendableOutput> &outputs,
 		vector<RandomAmountOutputs> &mix_outs,
-		std::vector<uint8_t> &extra, // this is not declared const b/c it may have the output tx pub key appended to it
+		const std::vector<uint8_t> &extra, // this is not declared const b/c it may have the output tx pub key appended to it
 		use_fork_rules_fn_type use_fork_rules_fn,
 		uint64_t unlock_time							= 0, // or 0
 		bool rct 										= true,

@@ -1,6 +1,6 @@
 //
 //  monero_wallet_utils.cpp
-//  Copyright (c) 2014-2018, MyMonero.com
+//  Copyright (c) 2014-2019, MyMonero.com
 //
 //  All rights reserved.
 //
@@ -163,24 +163,37 @@ bool monero_wallet_utils::are_equal_mnemonics(const string &words_a, const strin
 const uint32_t stable_32B_seed_mnemonic_word_count = 25;
 const uint32_t legacy_16B_seed_mnemonic_word_count = 13;
 
+bool _areBothSpaceChars(char lhs, char rhs) {
+	return lhs == rhs && lhs == ' ';
+}
 bool monero_wallet_utils::decoded_seed(
-	const epee::wipeable_string &mnemonic_string__ref,
+	const epee::wipeable_string &arg__mnemonic_string__ref,
 	MnemonicDecodedSeed_RetVals &retVals
 ) {
 	retVals = {};
 	//
 	// sanitize inputs
-	if (mnemonic_string__ref.empty()) {
+	if (arg__mnemonic_string__ref.empty()) {
 		retVals.did_error = true;
 		retVals.err_string = "Please enter a valid seed";
 		//
 		return false;
 	}
-	string mnemonic_string = string(mnemonic_string__ref.data(), mnemonic_string__ref.size()); // just going to take a copy rather than require people to pass mutable string in.
+	string mnemonic_string = string(arg__mnemonic_string__ref.data(), arg__mnemonic_string__ref.size()); // just going to take a copy rather than require people to pass mutable string in.
+	// input sanitization
 	boost::algorithm::to_lower(mnemonic_string); // critical
-	// TODO: strip wrapping whitespace? anything else?
 	//
-	std::stringstream stream(mnemonic_string); // to count words…
+	// converting undesireable whitespace chars to spaces, then removing redundant spaces (this ensures "word\nword"->"word word"
+	std::replace(mnemonic_string.begin(), mnemonic_string.end(), '\r', ' ');
+	std::replace(mnemonic_string.begin(), mnemonic_string.end(), '\n', ' ');
+	std::replace(mnemonic_string.begin(), mnemonic_string.end(), '\t', ' ');
+	std::string::iterator new_end = std::unique(mnemonic_string.begin(), mnemonic_string.end(), _areBothSpaceChars);
+	mnemonic_string.erase(new_end, mnemonic_string.end());
+	//
+	// FIXME: any other input sanitization to do here?
+	//
+	const epee::wipeable_string &mnemonic_string__ref = mnemonic_string; // re-obtain wipeable_string ref
+	std::istringstream stream(mnemonic_string); // to count words…
 	unsigned long word_count = std::distance(std::istream_iterator<std::string>(stream), std::istream_iterator<std::string>());
 	//	unsigned long word_count = boost::range::distance(boost::algorithm::make_split_iterator(mnemonic_string, boost::algorithm::is_space())); // TODO: get this workin
 	//

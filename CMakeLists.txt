@@ -1,7 +1,8 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 project(TEST)
 enable_testing()
@@ -9,32 +10,8 @@ enable_testing()
 #Prep ourselves for compiling boost
 find_package(Boost COMPONENTS 
     unit_test_framework REQUIRED
-    # atomic REQUIRED
-    # chrono REQUIRED
-    # context REQUIRED
-    # date_time REQUIRED
-    # exception REQUIRED
-    # filesystem REQUIRED
-    # graph REQUIRED
-    # iostreams REQUIRED
-    # math_c99 REQUIRED
-    # math_c99f REQUIRED
-    # math_c99l REQUIRED
-    # math_tr1 REQUIRED
-    # math_tr1f REQUIRED
-    # math_tr1l REQUIRED
-    # prg_exec_monitor REQUIRED
-    # program_options REQUIRED
-    # random REQUIRED
-    # regex REQUIRED
-    # serialization REQUIRED
-    # signals REQUIRED
     system REQUIRED
-    # test_exec_monitor REQUIRED
     thread REQUIRED
-    # timer REQUIRED
-    # wave REQUIRED
-    # wserialization REQUIRED
 )
 
 set(MONERO_SRC "contrib/monero-core-custom")
@@ -73,12 +50,16 @@ set(
     src/monero_fee_utils.cpp
     src/monero_transfer_utils.hpp
     src/monero_transfer_utils.cpp
+    src/monero_send_routine.hpp
+    src/monero_send_routine.cpp
     src/monero_fork_rules.hpp
     src/monero_fork_rules.cpp
     src/monero_wallet_utils.hpp
     src/monero_wallet_utils.cpp
     src/serial_bridge_index.hpp
     src/serial_bridge_index.cpp
+    src/serial_bridge_utils.hpp
+    src/serial_bridge_utils.cpp
     src/tools__ret_vals.hpp
     src/tools__ret_vals.cpp
     #
@@ -87,7 +68,7 @@ set(
     ${MONERO_SRC}/cryptonote_basic/cryptonote_format_utils.cpp
     ${MONERO_SRC}/crypto/crypto.cpp
     ${MONERO_SRC}/crypto/hash.c
-    ${MONERO_SRC}/crypto/slow-hash.c
+    ${MONERO_SRC}/crypto/slow-hash-dummied.cpp
     ${MONERO_SRC}/crypto/oaes_lib.c
     ${MONERO_SRC}/crypto/crypto-ops.c
     ${MONERO_SRC}/crypto/crypto-ops-data.c
@@ -127,8 +108,7 @@ set(
     ${MONERO_SRC}/contrib/libsodium/src/crypto_verify/verify.c
 )
 # needed for slow-hash
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -maes")
+add_compile_options(-maes)
 
 #Run through each source
 foreach(testSrc ${TEST_SRCS})

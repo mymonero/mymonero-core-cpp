@@ -35,6 +35,7 @@
 #include "wallet_errors.h"
 #include "string_tools.h"
 #include "monero_paymentID_utils.hpp"
+#include "monero_key_image_utils.hpp"
 //
 using namespace std;
 using namespace crypto;
@@ -46,6 +47,7 @@ using namespace tools; // for error::
 using namespace monero_transfer_utils;
 using namespace monero_fork_rules;
 using namespace monero_fee_utils;
+using namespace monero_key_image_utils; // for API response parsing
 //
 // Transfer parsing/derived properties
 bool monero_transfer_utils::is_transfer_unlocked(
@@ -91,12 +93,13 @@ bool monero_transfer_utils::is_tx_spendtime_unlocked(
 	return false;
 }
 //
+namespace {
 CreateTransactionErrorCode _add_pid_to_tx_extra(
-	optional<string> payment_id_string,
+	const optional<string>& payment_id_string,
 	vector<uint8_t> &extra
 ) { // Detect hash8 or hash32 char hex string as pid and configure 'extra' accordingly
 	bool r = false;
-	if (payment_id_string != none) {
+	if (payment_id_string != none && payment_id_string->size() > 0) {
 		crypto::hash payment_id;
 		r = monero_paymentID_utils::parse_long_payment_id(*payment_id_string, payment_id);
 		if (r) {
@@ -147,8 +150,26 @@ bool _rct_hex_to_decrypted_mask(
 	if (rct_string.empty()) {
 		return false;
 	}
-	// rct_string is a string with length 64+64+64 (<rct commit> + <encrypted mask> + <rct amount>)
+	// rct_string is a magic value if output is RCT and coinbase
+	if (rct_string == "coinbase") {
+		decrypted_mask = rct::identity();
+		return true;
+	}
+	auto make_key_derivation = [&]() {
+		crypto::key_derivation derivation;
+		bool r = generate_key_derivation(tx_pub_key, view_secret_key, derivation);
+		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Failed to generate key derivation");
+		crypto::secret_key scalar;
+		crypto::derivation_to_scalar(derivation, internal_output_index, scalar);
+		return rct::sk2rct(scalar);
+	};
 	rct::key encrypted_mask;
+	// rct_string is a string with length 64+16 (<rct commit> + <amount>) if RCT version 2
+	if (rct_string.size() < 64 * 2) {
+		decrypted_mask = rct::genCommitmentMask(make_key_derivation());
+		return true;
+	}
+	// rct_string is a string with length 64+64+64 (<rct commit> + <encrypted mask> + <rct amount>)
 	std::string encrypted_mask_str = rct_string.substr(64,64);
 	THROW_WALLET_EXCEPTION_IF(!string_tools::validate_hex(64, encrypted_mask_str), error::wallet_internal_error, "Invalid rct mask: " + encrypted_mask_str);
 	string_tools::hex_to_pod(encrypted_mask_str, encrypted_mask);
@@ -164,13 +185,16 @@ bool _rct_hex_to_decrypted_mask(
 	}
 
 	//
+	if (encrypted_mask == rct::identity()) {
+		// backward compatibility; should no longer be needed after v11 mainnet fork
+		decrypted_mask = encrypted_mask;
+		return true;
+	}
+	//
 	// Decrypt the mask
-	crypto::key_derivation derivation;
-	bool r = generate_key_derivation(tx_pub_key, view_secret_key, derivation);
-	THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Failed to generate key derivation");
-	crypto::secret_key scalar;
-	crypto::derivation_to_scalar(derivation, internal_output_index, scalar);
-	sc_sub(decrypted_mask.bytes,encrypted_mask.bytes,rct::hash_to_scalar(rct::sk2rct(scalar)).bytes);
+	sc_sub(decrypted_mask.bytes,
+		encrypted_mask.bytes,
+		rct::hash_to_scalar(make_key_derivation()).bytes);
 	
 	return true;
 }
@@ -180,9 +204,8 @@ bool _verify_sec_key(const crypto::secret_key &secret_key, const crypto::public_
 	bool r = crypto::secret_key_to_public_key(secret_key, calculated_pub);
 	return r && public_key == calculated_pub;
 }
+} // unnamed namespace
 //
-//
-//----------------------------------------------------------------------------------------------------
 namespace
 {
 	template<typename T>
@@ -191,9 +214,9 @@ namespace
 		CHECK_AND_ASSERT_MES(!vec.empty(), T(), "Vector must be non-empty");
 		CHECK_AND_ASSERT_MES(idx < vec.size(), T(), "idx out of bounds");
 
-		T res = vec[idx];
+		T res = std::move(vec[idx]);
 		if (idx + 1 != vec.size()) {
-			vec[idx] = vec.back();
+			vec[idx] = std::move(vec.back());
 		}
 		vec.resize(vec.size() - 1);
 		
@@ -211,11 +234,12 @@ namespace
 }
 //
 //
+//
 // Decomposed Send procedure
 void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	Send_Step1_RetVals &retVals,
 	//
-	optional<string> payment_id_string,
+	const optional<string>& payment_id_string,
 	uint64_t sending_amount,
 	bool is_sweeping,
 	uint32_t simple_priority,
@@ -223,6 +247,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	//
 	const vector<SpendableOutput> &unspent_outs,
 	uint64_t fee_per_b, // per v8
+	uint64_t fee_quantization_mask,
 	//
 	optional<uint64_t> passedIn_attemptAt_fee
 ) {
@@ -257,7 +282,6 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	}
 	const uint64_t base_fee = get_base_fee(fee_per_b); // in other words, fee_per_b
 	const uint64_t fee_multiplier = get_fee_multiplier(simple_priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
-	const uint64_t fee_quantization_mask = get_fee_quantization_mask(use_fork_rules_fn);
 	//
 	uint64_t attempt_at_min_fee;
 	if (passedIn_attemptAt_fee == none) {
@@ -288,25 +312,21 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	// TODO: factor this out to get spendable balance for display in the MM wallet:
 	while (using_outs_amount < potential_total && remaining_unusedOuts.size() > 0) {
 		auto out = pop_random_value(remaining_unusedOuts);
-		if (!use_rct && out.rct != none) {
+		if (!use_rct && (out.rct != none && (*out.rct).empty() == false)) {
 			// out.rct is set by the server
 			continue; // skip rct outputs if not creating rct tx
 		}
 		if (out.amount < monero_fork_rules::dust_threshold()) { // amount is dusty..
-			if (!is_sweeping) {
-//				cout << "Not sweeping, and found a dusty (though maybe mixable) output... skipping it!" << endl;
-				continue;
-			}
-			if (out.rct == none) { // Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!
-//				cout << "Sweeping, and found a dusty but unmixable (non-rct) output... skipping it!" << endl;
+			if (out.rct == none || (*out.rct).empty()) {
+//				cout << "Found a dusty but unmixable (non-rct) output... skipping it!" << endl;
 				continue;
 			} else {
-//				cout << "Sweeping and found a dusty but mixable (rct) amount... keeping it!" << endl;
+//				cout << "Found a dusty but mixable (rct) amount... keeping it!" << endl;
 			}
 		}
-		retVals.using_outs.push_back(out);
 		using_outs_amount += out.amount;
 //		cout << "Using output: " << out.amount << " - " << out.public_key << endl;
+		retVals.using_outs.push_back(std::move(out));
 	}
 	retVals.spendable_balance = using_outs_amount; // must store for needMoreMoneyThanFound return
 	// Note: using_outs and using_outs_amount may still get modified below (so retVals.spendable_balance gets updated)
@@ -341,10 +361,12 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	} else {
 		total_incl_fees = sending_amount + needed_fee; // because fee changed because using_outs.size() was updated
 		while (using_outs_amount < total_incl_fees && remaining_unusedOuts.size() > 0) { // add outputs 1 at a time till we either have them all or can meet the fee
-			auto out = pop_random_value(remaining_unusedOuts);
-//			cout << "Using output: " << out.amount << " - " << out.public_key << endl;
-			retVals.using_outs.push_back(out);
-			using_outs_amount += out.amount;
+			{
+				auto out = pop_random_value(remaining_unusedOuts);
+//				cout << "Using output: " << out.amount << " - " << out.public_key << endl;
+				using_outs_amount += out.amount;
+				retVals.using_outs.push_back(std::move(out));
+			}
 			retVals.spendable_balance = using_outs_amount; // must store for needMoreMoneyThanFound return
 			//
 			// Recalculate fee, total incl fees
@@ -383,18 +405,19 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 void monero_transfer_utils::send_step2__try_create_transaction(
 	Send_Step2_RetVals &retVals,
 	//
-	string from_address_string,
-	string sec_viewKey_string,
-	string sec_spendKey_string,
-	string to_address_string,
-	optional<string> payment_id_string,
+	const string &from_address_string,
+	const string &sec_viewKey_string,
+	const string &sec_spendKey_string,
+	const string &to_address_string,
+	const optional<string>& payment_id_string,
 	uint64_t final_total_wo_fee,
 	uint64_t change_amount,
 	uint64_t fee_amount,
 	uint32_t simple_priority,
-	vector<SpendableOutput> &using_outs,
+	const vector<SpendableOutput> &using_outs,
 	uint64_t fee_per_b, // per v8
-	vector<RandomAmountOutputs> &mix_outs,
+	uint64_t fee_quantization_mask,
+	vector<RandomAmountOutputs> &mix_outs, // cannot be const due to convenience__create_transaction's mutability requirement
 	use_fork_rules_fn_type use_fork_rules_fn,
 	uint64_t unlock_time, // or 0
 	cryptonote::network_type nettype
@@ -425,7 +448,7 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 		*create_tx__retVals.tx, blob_size,
 		get_base_fee(fee_per_b)/*i.e. fee_per_b*/,
 		get_fee_multiplier(simple_priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn),
-		get_fee_quantization_mask(use_fork_rules_fn)
+		fee_quantization_mask
 	);
 	if (fee_actually_needed > fee_amount) {
 //		cout << "Need to reconstruct tx with fee of at least " << fee_actually_needed << "." << endl;
@@ -436,6 +459,7 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 	retVals.signed_serialized_tx_string = std::move(*(create_tx__retVals.signed_serialized_tx_string));
 	retVals.tx_hash_string = std::move(*(create_tx__retVals.tx_hash_string));
 	retVals.tx_key_string = std::move(*(create_tx__retVals.tx_key_string));
+	retVals.tx_pub_key_string = std::move(*(create_tx__retVals.tx_pub_key_string));
 }
 //
 //
@@ -450,9 +474,9 @@ void monero_transfer_utils::create_transaction(
 	uint64_t sending_amount,
 	uint64_t change_amount,
 	uint64_t fee_amount,
-	vector<SpendableOutput> &outputs,
-	vector<RandomAmountOutputs> &mix_outs,
-	std::vector<uint8_t> &extra,
+	const vector<SpendableOutput> &outputs,
+	vector<RandomAmountOutputs> &mix_outs, 
+	const std::vector<uint8_t> &extra,
 	use_fork_rules_fn_type use_fork_rules_fn,
 	uint64_t unlock_time, // or 0
 	bool rct,
@@ -464,7 +488,12 @@ void monero_transfer_utils::create_transaction(
 	//
 	uint32_t fake_outputs_count = fixed_mixinsize();
 	bool bulletproof = true;
-	const rct::RangeProofType range_proof_type = bulletproof ? rct::RangeProofPaddedBulletproof : rct::RangeProofBorromean;
+	rct::RangeProofType range_proof_type = bulletproof ? rct::RangeProofPaddedBulletproof : rct::RangeProofBorromean;
+	int bp_version = bulletproof ? (use_fork_rules_fn(HF_VERSION_SMALLER_BP, -10) ? 2 : 1) : 0;
+	const rct::RCTConfig rct_config {
+		range_proof_type,
+		bp_version,
+	};
 	//
 	if (mix_outs.size() != outputs.size() && fake_outputs_count != 0) {
 		retVals.errCode = wrongNumberOfMixOutsProvided;
@@ -498,7 +527,7 @@ void monero_transfer_utils::create_transaction(
 		}
 		auto src = tx_source_entry{};
 		src.amount = outputs[out_index].amount;
-		src.rct = outputs[out_index].rct != none;
+		src.rct = outputs[out_index].rct != none && (*(outputs[out_index].rct)).empty() == false;
 		//
 		typedef cryptonote::tx_source_entry::output_entry tx_output_entry;
 		if (mix_outs.size() != 0) {
@@ -529,12 +558,12 @@ void monero_transfer_utils::create_transaction(
 				}
 				oe.second.dest = rct::pk2rct(public_key);
 				//
-				if (mix_out__output.rct != boost::none) {
+				if (mix_out__output.rct != boost::none && (*(mix_out__output.rct)).empty() == false) {
 					rct::key commit;
 					_rct_hex_to_rct_commit(*mix_out__output.rct, commit);
 					oe.second.mask = commit;
 				} else {
-					if (outputs[out_index].rct != boost::none) {
+					if (outputs[out_index].rct != boost::none && (*(outputs[out_index].rct)).empty() == false) {
 						retVals.errCode = mixRCTOutsMissingCommit;
 						return;
 					}
@@ -557,7 +586,9 @@ void monero_transfer_utils::create_transaction(
 		}
 		real_oe.second.dest = rct::pk2rct(public_key);
 		//
-		if (outputs[out_index].rct != none) {
+		if (outputs[out_index].rct != none
+				&& outputs[out_index].rct->empty() == false
+				&& *outputs[out_index].rct != "coinbase") {
 			rct::key commit;
 			_rct_hex_to_rct_commit(*(outputs[out_index].rct), commit);
 			real_oe.second.mask = commit; //add commitment for real input
@@ -592,13 +623,17 @@ void monero_transfer_utils::create_transaction(
 		src.rct = outputs[out_index].rct != boost::none && (*(outputs[out_index].rct)).empty() == false;
 		if (src.rct) {
 			rct::key decrypted_mask;
-			_rct_hex_to_decrypted_mask(
+			bool r = _rct_hex_to_decrypted_mask(
 				*(outputs[out_index].rct),
 				sender_account_keys.m_view_secret_key,
 				tx_pub_key,
 				internal_output_index,
 				decrypted_mask
 			);
+			if (!r) {
+				retVals.errCode = cantGetDecryptedMaskFromRCTHex;
+				return;
+			}
 			src.mask = decrypted_mask;
 //			rct::key calculated_commit = rct::commit(outputs[out_index].amount, decrypted_mask);
 //			rct::key parsed_commit;
@@ -608,9 +643,7 @@ void monero_transfer_utils::create_transaction(
 //				return;
 //			}
 		} else {
-			rct::key I;
-			rct::identity(I);
-			src.mask = I; // in JS MM code this was left as null for generate_key_image_helper_rct to, I think, fill in with identity I
+			rct::identity(src.mask); // in the original cn_utils impl this was left as null for generate_key_image_helper_rct to fill in with identity I
 		}
 		// not doing multisig here yet
 		src.multisig_kLRki = rct::multisig_kLRki({rct::zero(), rct::zero(), rct::zero(), rct::zero()});
@@ -658,14 +691,13 @@ void monero_transfer_utils::create_transaction(
 	}
 	//
 	cryptonote::transaction tx;
-	auto sources_copy = sources;
 	crypto::secret_key tx_key;
 	std::vector<crypto::secret_key> additional_tx_keys;
 	bool r = cryptonote::construct_tx_and_get_tx_key(
 		sender_account_keys, subaddresses,
 		sources, splitted_dsts, change_dst.addr, extra,
 		tx, unlock_time, tx_key, additional_tx_keys,
-		true, range_proof_type,
+		true, rct_config,
 		/*m_multisig ? &msout : */NULL
 	);
 	LOG_PRINT_L2("constructed tx, r="<<r);
@@ -693,11 +725,11 @@ void monero_transfer_utils::convenience__create_transaction(
 	const string &sec_viewKey_string,
 	const string &sec_spendKey_string,
 	const string &to_address_string,
-	optional<string> payment_id_string,
+	const optional<string>& payment_id_string,
 	uint64_t sending_amount,
 	uint64_t change_amount,
 	uint64_t fee_amount,
-	vector<SpendableOutput> &outputs,
+	const vector<SpendableOutput> &outputs,
 	vector<RandomAmountOutputs> &mix_outs,
 	use_fork_rules_fn_type use_fork_rules_fn,
 	uint64_t unlock_time,
@@ -790,14 +822,23 @@ void monero_transfer_utils::convenience__create_transaction(
 	// signed serialized tx
 	retVals.signed_serialized_tx_string = epee::string_tools::buff_to_hex_nodelimer(cryptonote::tx_to_blob(*actualCall_retVals.tx));
 	// (concatenated) tx key
-	ostringstream oss;
 	{
+		ostringstream oss;
 		oss << epee::string_tools::pod_to_hex(*actualCall_retVals.tx_key);
 		for (size_t i = 0; i < (*actualCall_retVals.additional_tx_keys).size(); ++i) {
 			oss << epee::string_tools::pod_to_hex((*actualCall_retVals.additional_tx_keys)[i]);
 		}
+		retVals.tx_key_string = oss.str();
 	}
-	retVals.tx_key_string = oss.str();
+	{
+		ostringstream oss;
+		oss << epee::string_tools::pod_to_hex(get_tx_pub_key_from_extra(*actualCall_retVals.tx));
+		retVals.tx_pub_key_string = oss.str();
+	}
 	retVals.tx = *actualCall_retVals.tx; // for calculating block weight; FIXME: std::move?
+	//
+//	cout << "out 0: " << string_tools::pod_to_hex(boost::get<txout_to_key>((*(actualCall_retVals.tx)).vout[0].target).key) << endl;
+//	cout << "out 1: " << string_tools::pod_to_hex(boost::get<txout_to_key>((*(actualCall_retVals.tx)).vout[1].target).key) << endl;
+	//	
 	retVals.txBlob_byteLength = txBlob_byteLength;
 }

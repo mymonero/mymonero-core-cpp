@@ -1,6 +1,6 @@
 //
 //  monero_fee_utils.hpp
-//  Copyright (c) 2014-2018, MyMonero.com
+//  Copyright (c) 2014-2019, MyMonero.com
 //
 //  All rights reserved.
 //
@@ -56,7 +56,6 @@ namespace monero_fee_utils
 	uint64_t get_fee_multiplier(uint32_t priority, uint32_t default_priority, int fee_algorithm, use_fork_rules_fn_type use_fork_rules_fn);
 	int get_fee_algorithm(use_fork_rules_fn_type use_fork_rules_fn);
 	uint64_t get_base_fee(uint64_t fee_per_b);
-	uint64_t get_fee_quantization_mask(use_fork_rules_fn_type use_fork_rules_fn);
 	//
 	uint64_t estimate_fee(bool use_per_byte_fee, bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, uint64_t base_fee, uint64_t fee_multiplier, uint64_t fee_quantization_mask);
 	//
