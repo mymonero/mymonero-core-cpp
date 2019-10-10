@@ -1,8 +1,8 @@
 //
-//  monero_key_image_utils.hpp
+//  monero_devices.hpp
 //  MyMonero
 //
-//  Created by Paul Shapiro on 1/2/18.
+//  Created by Paul Shapiro on 10/11/19.
 //  Copyright (c) 2014-2019, MyMonero.com
 //
 //  All rights reserved.
@@ -32,29 +32,21 @@
 //  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //
-#ifndef monero_key_image_utils_hpp
-#define monero_key_image_utils_hpp
+#ifndef monero_devices_hpp
+#define monero_devices_hpp
 //
-#include "crypto.h"
-#include "cryptonote_basic.h"
-#include "cryptonote_basic/account.h"
+#include <unordered_map>
+#include "device/device.hpp"
+#include "device/device_default.hpp"
+#include "monero_account_store.hpp"
 //
-using namespace tools;
-#include "tools__ret_vals.hpp"
-//
-namespace monero_key_image_utils
+//#define CORE_DEVICE_ALLOC_FN
+namespace monero_devices
 {
-	struct KeyImageRetVals: RetVals_base
+	struct Factory
 	{
-		crypto::key_image calculated_key_image;
+		static monero_account_store::AccountStore::hwdevice_alloc_fn_type CORE_DEVICE_ALLOC_FN;
 	};
-	bool new__key_image(
-		const cryptonote::account_keys &sender_account_keys,
-		const crypto::public_key& tx_public_key,
-		const crypto::public_key& out_public_key,
-		uint64_t out_index,
-		KeyImageRetVals &retVals
-	);
 }
 //
-#endif /* monero_key_image_utils_hpp */
+#endif /* monero_devices_hpp */

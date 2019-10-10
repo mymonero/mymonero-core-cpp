@@ -42,17 +42,22 @@
 #include "monero_paymentID_utils.hpp"
 #include "monero_wallet_utils.hpp"
 #include "monero_key_image_utils.hpp"
+#include "monero_account_store.hpp"
 #include "wallet_errors.h"
 #include "string_tools.h"
 #include "ringct/rctSigs.h"
 //
 #include "serial_bridge_utils.hpp"
+#include "device/device_default.hpp"
+
+#include "monero_devices.hpp"
 
 using namespace std;
 using namespace boost;
 using namespace cryptonote;
 using namespace monero_transfer_utils;
 using namespace monero_fork_rules;
+using namespace monero_account_store;
 //
 using namespace serial_bridge;
 using namespace serial_bridge_utils;
@@ -191,6 +196,141 @@ string serial_bridge::are_equal_mnemonics(const string &args_string)
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), equal);
 	//
+	return ret_json_from_root(root);
+}
+boost::optional<AccountStore::HWDevInitParams> _new_devinitparams(
+	const boost::property_tree::ptree &json_root
+) {
+	using namespace monero_account_store;
+	using namespace monero_devices;
+	
+	boost::optional<string> device_name = json_root.get_optional<string>("device_name");
+	boost::optional<AccountStore::HWDevInitParams> hwdev_init_params = none;
+	network_type nettype = MAINNET;
+	boost::optional<string> optl__nettype_string = json_root.get_optional<string>("nettype_string");
+	if (optl__nettype_string != none) {
+		nettype = nettype_from_string(*optl__nettype_string);
+	}
+	if (device_name) {
+		hwdev_init_params = AccountStore::HWDevInitParams{
+			Factory::CORE_DEVICE_ALLOC_FN,
+			*device_name,
+			json_root.get<string>("device_type"), // if device_name set, device_type mandatory
+			nettype
+		};
+	}
+	return hwdev_init_params;
+}
+string serial_bridge::register_account__mnemonic(const string &args_string)
+{
+	using namespace monero_account_store;
+	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	boost::optional<AccountStore::HWDevInitParams> hwdev_init_params = _new_devinitparams(json_root);
+	AccountStore::NewStoredAccountParams params{
+		json_root.get<string>("account_name"),
+		hwdev_init_params,
+	};
+	AccountStore::StoredAccountRetVals retVals;
+	bool r = AccountStore::shared()->new_stored_account_with_mnemonic(
+		params,
+		json_root.get<string>("mnemonic_string"),
+		retVals
+	);
+	boost::property_tree::ptree root;
+	if (retVals.err_code != none) {
+		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Expected r to be false when there's an err_code");
+		root.put(ret_json_key__any__err_code(), *retVals.err_code);
+	}
+	return ret_json_from_root(root);
+}
+string serial_bridge::register_account__seed(const string &args_string)
+{
+	using namespace monero_account_store;
+	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	boost::optional<AccountStore::HWDevInitParams> hwdev_init_params = _new_devinitparams(json_root);
+	AccountStore::NewStoredAccountParams params{
+		json_root.get<string>("account_name"),
+		hwdev_init_params,
+	};
+	AccountStore::StoredAccountRetVals retVals;
+	bool r = AccountStore::shared()->new_stored_account_with_seed(
+		params,
+		json_root.get<string>("seed_string"),
+		json_root.get<string>("wordset_name"),
+		retVals
+	);
+	boost::property_tree::ptree root;
+	if (retVals.err_code != none) {
+		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Expected r to be false when there's an err_code");
+		root.put(ret_json_key__any__err_code(), *retVals.err_code);
+	}
+	return ret_json_from_root(root);
+}
+string serial_bridge::register_account__keys(const string &args_string)
+{
+	using namespace monero_account_store;
+	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	boost::optional<AccountStore::HWDevInitParams> hwdev_init_params = _new_devinitparams(json_root);
+	AccountStore::NewStoredAccountParams params{
+		json_root.get<string>("account_name"),
+		hwdev_init_params,
+	};
+	AccountStore::StoredAccountRetVals retVals;
+	bool r = AccountStore::shared()->new_stored_account_with_key_strings(
+		params,
+		json_root.get<string>("address_string"),
+		json_root.get<string>("sec_viewKey_string"),
+		json_root.get<string>("sec_spendKey_string"),
+		nettype_from_string(json_root.get<string>("nettype_string")),
+		retVals
+	);
+	boost::property_tree::ptree root;
+	if (retVals.err_code != none) {
+		THROW_WALLET_EXCEPTION_IF(r, error::wallet_internal_error, "Expected r to be false when there's an err_code");
+		root.put(ret_json_key__any__err_code(), *retVals.err_code);
+	}
+	return ret_json_from_root(root);
+}
+string serial_bridge::register_account__keys_on_device(const string &args_string)
+{
+	using namespace monero_account_store;
+	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	boost::optional<AccountStore::HWDevInitParams> hwdev_init_params = _new_devinitparams(json_root);
+	AccountStore::NewStoredAccountParams params{
+		json_root.get<string>("account_name"),
+		hwdev_init_params,
+	};
+	AccountStore::StoredAccountRetVals retVals;
+	bool r = AccountStore::shared()->new_stored_account_with_keys_on_device(
+		params,
+		nettype_from_string(json_root.get<string>("nettype_string")),
+		retVals
+	);
+	boost::property_tree::ptree root;
+	if (retVals.err_code != none) {
+		THROW_WALLET_EXCEPTION_IF(r, error::wallet_internal_error, "Expected r to be false when there's an err_code");
+		root.put(ret_json_key__any__err_code(), *retVals.err_code);
+	}
 	return ret_json_from_root(root);
 }
 string serial_bridge::address_and_keys_from_seed(const string &args_string)
@@ -335,7 +475,6 @@ string serial_bridge::estimate_fee(const string &args_string)
 	if (!parsed_json_root(args_string, json_root)) {
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	//
 	bool use_per_byte_fee = json_root.get<bool>("use_per_byte_fee");
 	bool use_rct = json_root.get<bool>("use_rct");
 	int n_inputs = stoul(json_root.get<string>("n_inputs"));
@@ -365,7 +504,6 @@ string serial_bridge::estimate_tx_weight(const string &args_string)
 	if (!parsed_json_root(args_string, json_root)) {
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	//
 	bool use_rct = json_root.get<bool>("use_rct");
 	int n_inputs = stoul(json_root.get<string>("n_inputs"));
 	int mixin = stoul(json_root.get<string>("mixin"));
@@ -405,32 +543,25 @@ string serial_bridge::estimate_rct_tx_size(const string &args_string)
 	return ret_json_from_root(root);
 }
 //
-string serial_bridge::generate_key_image(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	crypto::secret_key sec_viewKey{};
-	crypto::secret_key sec_spendKey{};
-	crypto::public_key pub_spendKey{};
+string _generate_key_image__account(
+	const boost::property_tree::ptree &json_root,
+	const cryptonote::account_base &account
+) {
+	crypto::public_key output_pub_key{};
 	crypto::public_key tx_pub_key{};
+//	auto nettype = nettype_from_string(json_root.get<string>("nettype_string"));
 	{
 		bool r = false;
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("sec_viewKey_string")), sec_viewKey);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid secret view key");
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("sec_spendKey_string")), sec_spendKey);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid secret spend key");
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("pub_spendKey_string")), pub_spendKey);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid public spend key");
+		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("public_key")), output_pub_key);
+		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid output pub key");
 		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("tx_pub_key")), tx_pub_key);
 		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid tx pub key");
 	}
+	//
 	monero_key_image_utils::KeyImageRetVals retVals;
 	bool r = monero_key_image_utils::new__key_image(
-		pub_spendKey, sec_spendKey, sec_viewKey, tx_pub_key,
-		stoull(json_root.get<string>("out_index")),
+		account.get_keys(),
+		tx_pub_key, output_pub_key, stoull(json_root.get<string>("out_index")),
 		retVals
 	);
 	if (!r) {
@@ -440,6 +571,22 @@ string serial_bridge::generate_key_image(const string &args_string)
 	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(retVals.calculated_key_image));
 	//
 	return ret_json_from_root(root);
+}
+string serial_bridge::generate_key_image(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	boost::optional<std::shared_ptr<account_base>> account_ptr = monero_account_store::AccountStore::shared()->stored_account(json_root.get<string>("account_name"));
+	if (account_ptr == boost::none) {
+		return error_ret_json_from_message("No such device");
+	}
+	return _generate_key_image__account(
+		json_root,
+		**account_ptr
+	);
 }
 //
 string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &args_string)
@@ -533,7 +680,10 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 		// it will already have thrown an exception
 		return error_ret_json_from_message("Invalid JSON");
 	}
-	//
+	boost::optional<std::shared_ptr<account_base>> optl__account_ptr = monero_account_store::AccountStore::shared()->stored_account(json_root.get<string>("account_name"));
+	if (optl__account_ptr == boost::none) {
+		return error_ret_json_from_message("No such device");
+	}
 	vector<SpendableOutput> using_outs;
 	BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, json_root.get_child("using_outs"))
 	{
@@ -577,9 +727,7 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 	monero_transfer_utils::send_step2__try_create_transaction(
 		retVals,
 		//
-		json_root.get<string>("from_address_string"),
-		json_root.get<string>("sec_viewKey_string"),
-		json_root.get<string>("sec_spendKey_string"),
+		**optl__account_ptr,
 		json_root.get<string>("to_address_string"),
 		json_root.get_optional<string>("payment_id_string"),
 		stoull(json_root.get<string>("final_total_wo_fee")),

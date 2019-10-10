@@ -47,6 +47,7 @@ extern "C" {
 //
 using namespace monero_wallet_utils;
 using namespace crypto; // for extension
+using namespace cryptonote;
 //
 // 16 byte seeds
 void cn_pad_by_fast_hash__C(const uint8_t *in, size_t inlen, uint8_t *md, int mdlen)
@@ -280,6 +281,26 @@ SeedDecodedMnemonic_RetVals monero_wallet_utils::mnemonic_string_from_seed_hex_s
 	return retVals;
 }
 //
+bool monero_wallet_utils::account_with(
+	const string &mnemonic_string,
+	WalletDescriptionRetVals &retVals,
+	account_base &account, // pass an default-constructed account_base
+	MnemonicDecodedSeed_RetVals &decodedSeed_retVals
+) {
+	bool r = decoded_seed(mnemonic_string, decodedSeed_retVals);
+	if (!r) {
+		retVals.did_error = true;
+		retVals.err_string = *decodedSeed_retVals.err_string; // TODO: assert?
+		return false;
+	}
+	account.generate(
+		*decodedSeed_retVals.optl__sec_seed, // is this an extra copy? maybe have consumer pass ref as arg instead
+		true/*recover*/,
+		false/*two_random*/,
+		decodedSeed_retVals.from_legacy16B_lw_seed // assumed set if r
+	);
+	return true;
+}
 bool monero_wallet_utils::wallet_with(
 	const string &mnemonic_string,
 	WalletDescriptionRetVals &retVals,
@@ -288,19 +309,11 @@ bool monero_wallet_utils::wallet_with(
 	retVals = {};
 	//
 	MnemonicDecodedSeed_RetVals decodedSeed_retVals;
-	bool r = decoded_seed(mnemonic_string, decodedSeed_retVals);
-	if (!r) {
-		retVals.did_error = true;
-		retVals.err_string = *decodedSeed_retVals.err_string; // TODO: assert?
+	cryptonote::account_base account{}; // this initializes the wallet and should call the default constructor
+	bool r = account_with(mnemonic_string, retVals, account, decodedSeed_retVals);
+	if (!r) { // retVals has already been populated by account_with, so just return
 		return false;
 	}
-	cryptonote::account_base account{}; // this initializes the wallet and should call the default constructor
-	account.generate(
-		*decodedSeed_retVals.optl__sec_seed, // is this an extra copy? maybe have consumer pass ref as arg instead
-		true/*recover*/,
-		false/*two_random*/,
-		decodedSeed_retVals.from_legacy16B_lw_seed // assumed set if r
-	);
 	const cryptonote::account_keys& keys = account.get_keys();
 	retVals.optl__desc = WalletDescription{
 		*decodedSeed_retVals.optl__sec_seed_string, // assumed non nil if r

@@ -35,11 +35,26 @@ include_directories("${MONERO_SRC}/contrib/libsodium/include/sodium")
 include_directories("test")
 
 # keeping test files in a separate source directory 
-file(GLOB TEST_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/test_*.cpp)
+file(GLOB TEST_CASE_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} 
+    test/test_*.cpp
+)
+set(
+    TESTS_ADDTL_SRC_FILES
+    #
+    test/device_mymonero/device_mymonero_base.cpp
+    test/device_mymonero/device_mymonero_base.hpp
+    test/device_mymonero/device_mymonero.cpp
+    test/device_mymonero/device_mymonero.hpp
+)
 
 set(
     SRC_FILES
     #
+    src/monero_devices.hpp
+    src/monero_devices.cpp
+    #
+    src/monero_account_store.hpp
+    src/monero_account_store.cpp
     src/monero_address_utils.hpp
     src/monero_address_utils.cpp
     src/monero_paymentID_utils.hpp
@@ -111,12 +126,13 @@ set(
 add_compile_options(-maes)
 
 #Run through each source
-foreach(testSrc ${TEST_SRCS})
+foreach(testSrc ${TEST_CASE_SRCS})
     # extract the filename without an extension (NAME_WE)
     get_filename_component(testName ${testSrc} NAME_WE)
     add_executable(
         ${testName}
         ${testSrc}
+        ${TESTS_ADDTL_SRC_FILES}
         ${SRC_FILES}
     )
     target_link_libraries(

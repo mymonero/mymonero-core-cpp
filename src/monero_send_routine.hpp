@@ -212,9 +212,7 @@ namespace monero_send_routine
 	};
 	LightwalletAPI_Res_GetUnspentOuts new__parsed_res__get_unspent_outs(
 		const property_tree::ptree &res,
-		const secret_key &sec_viewKey,
-		const secret_key &sec_spendKey,
-		const public_key &pub_spendKey
+		const cryptonote::account_base &account
 	);
 	LightwalletAPI_Res_GetRandomOuts new__parsed_res__get_random_outs(
 		const property_tree::ptree &res
@@ -223,10 +221,7 @@ namespace monero_send_routine
 	// - Routine entrypoint
 	struct Async_SendFunds_Args
 	{ // TODO: add a way to pass native structures if available
-		string from_address_string;
-		string sec_viewKey_string;
-		string sec_spendKey_string;
-		string pub_spendKey_string;
+		std::shared_ptr<account_base> account_ptr;
 		string to_address_string;
 		optional<string> payment_id_string;
 		uint64_t sending_amount;

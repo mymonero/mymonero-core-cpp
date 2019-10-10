@@ -37,6 +37,7 @@
 #include "serialization/binary_archive.h"
 #include "cryptonote_basic.h"
 #include "cryptonote_basic_impl.h"
+#include "cryptonote_basic/account.h"
 
 #include "electrum-words.h"
 #include "mnemonics/singleton.h"
@@ -177,6 +178,12 @@ namespace monero_wallet_utils
 		const string &mnemonic_string,
 		WalletDescriptionRetVals &retVals,
 		network_type nettype
+	);
+	bool account_with( // for convenience - also called by wallet_with
+		const string &mnemonic_string,
+		WalletDescriptionRetVals &retVals,
+		account_base &account, // pass an default-constructed account_base
+		MnemonicDecodedSeed_RetVals &decodedSeed_retVals
 	);
 	//
 	struct WalletComponentsValidationResults: RetVals_base

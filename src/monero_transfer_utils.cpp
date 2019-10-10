@@ -222,8 +222,6 @@ namespace
 	}
 }
 //
-//
-//
 // Decomposed Send procedure
 void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	Send_Step1_RetVals &retVals,
@@ -391,12 +389,11 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 //		// TODO?
 //	}
 }
+
 void monero_transfer_utils::send_step2__try_create_transaction(
 	Send_Step2_RetVals &retVals,
 	//
-	const string &from_address_string,
-	const string &sec_viewKey_string,
-	const string &sec_spendKey_string,
+	const cryptonote::account_base &account,
 	const string &to_address_string,
 	const optional<string>& payment_id_string,
 	uint64_t final_total_wo_fee,
@@ -416,8 +413,7 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 	Convenience_TransactionConstruction_RetVals create_tx__retVals;
 	monero_transfer_utils::convenience__create_transaction(
 		create_tx__retVals,
-		from_address_string,
-		sec_viewKey_string, sec_spendKey_string,
+		account,
 		to_address_string, payment_id_string,
 		final_total_wo_fee, change_amount, fee_amount,
 		using_outs, mix_outs,
@@ -710,9 +706,7 @@ void monero_transfer_utils::create_transaction(
 //
 void monero_transfer_utils::convenience__create_transaction(
 	Convenience_TransactionConstruction_RetVals &retVals,
-	const string &from_address_string,
-	const string &sec_viewKey_string,
-	const string &sec_spendKey_string,
+	const cryptonote::account_base &account,
 	const string &to_address_string,
 	const optional<string>& payment_id_string,
 	uint64_t sending_amount,
@@ -726,20 +720,6 @@ void monero_transfer_utils::convenience__create_transaction(
 ) {
 	retVals.errCode = noError;
 	//
-	cryptonote::address_parse_info from_addr_info;
-	THROW_WALLET_EXCEPTION_IF(!cryptonote::get_account_address_from_str(from_addr_info, nettype, from_address_string), error::wallet_internal_error, "Couldn't parse from-address");
-	cryptonote::account_keys account_keys;
-	{
-		account_keys.m_account_address = from_addr_info.address;
-		//
-		crypto::secret_key sec_viewKey;
-		THROW_WALLET_EXCEPTION_IF(!string_tools::hex_to_pod(sec_viewKey_string, sec_viewKey), error::wallet_internal_error, "Couldn't parse view key");
-		account_keys.m_view_secret_key = sec_viewKey;
-		//
-		crypto::secret_key sec_spendKey;
-		THROW_WALLET_EXCEPTION_IF(!string_tools::hex_to_pod(sec_spendKey_string, sec_spendKey), error::wallet_internal_error, "Couldn't parse spend key");
-		account_keys.m_spend_secret_key = sec_spendKey;
-	}
 	THROW_WALLET_EXCEPTION_IF(
 		to_address_string.find(".") != std::string::npos, // assumed to be an OA address asXMR addresses do not have periods and OA addrs must
 		error::wallet_internal_error,
@@ -783,12 +763,12 @@ void monero_transfer_utils::convenience__create_transaction(
 	//
 	uint32_t subaddr_account_idx = 0;
 	std::unordered_map<crypto::public_key, cryptonote::subaddress_index> subaddresses;
-	subaddresses[account_keys.m_account_address.m_spend_public_key] = {0,0};
+	subaddresses[account.get_keys().m_account_address.m_spend_public_key] = {0,0};
 	//
 	TransactionConstruction_RetVals actualCall_retVals;
 	create_transaction(
 		actualCall_retVals,
-		account_keys, subaddr_account_idx, subaddresses,
+		account.get_keys(), subaddr_account_idx, subaddresses,
 		to_addr_info,
 		sending_amount, change_amount, fee_amount,
 		outputs, mix_outs,

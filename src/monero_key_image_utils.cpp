@@ -33,99 +33,39 @@
 //
 //
 #include "monero_key_image_utils.hpp"
+#include <unordered_map>
+#include "cryptonote_basic/subaddress_index.h"
+#include "cryptonote_format_utils.h"
 //
 using namespace crypto;
 using namespace cryptonote;
 //
 bool monero_key_image_utils::new__key_image(
-	const crypto::public_key& account_pub_spend_key,
-	const crypto::secret_key& account_sec_spend_key,
-	const crypto::secret_key& account_sec_view_key,
+	const cryptonote::account_keys &sender_account_keys,
 	const crypto::public_key& tx_public_key,
+	const crypto::public_key& out_public_key,
 	uint64_t out_index,
 	KeyImageRetVals &retVals
 ) {
-	retVals = {};
-	//
-	bool r = false;
-	//
-	// "Subaddresses aren't supported in mymonero/openmonero yet. Roll out the original scheme:
-	//   compute D = a*R
-	//   compute P = Hs(D || i)*G + B
-	//   compute x = Hs(D || i) + b      (and check if P==x*G)
-	//   compute I = x*Hp(P)"
-	crypto::key_derivation derivation;
-	r = crypto::generate_key_derivation(tx_public_key, account_sec_view_key, derivation);
-	if (!r) {
-		retVals.did_error = true;
-		std::ostringstream ss{};
-		ss << "failed to generate_key_derivation(" << tx_public_key << ", " << account_sec_view_key << ")";
-		retVals.err_string = ss.str();
-		//
-		return false;
-	}
 	cryptonote::keypair in_ephemeral;
-	r = crypto::derive_public_key(derivation, out_index, account_pub_spend_key, in_ephemeral.pub);
-	if (!r) {
-		retVals.did_error = true;
-		std::ostringstream ss{};
-		ss << "failed to derive_public_key (" << derivation << ", " << out_index << ", " << account_pub_spend_key << ")";
-		retVals.err_string = ss.str();
-		//
-		return false;
-	}
-	crypto::derive_secret_key(derivation, out_index, account_sec_spend_key, in_ephemeral.sec);
-	crypto::public_key out_pkey_test;
-	r = crypto::secret_key_to_public_key(in_ephemeral.sec, out_pkey_test);
-	if (!r) {
-		retVals.did_error = true;
-		std::ostringstream ss{};
-		ss << "failed to secret_key_to_public_key(" << in_ephemeral.sec << ")";
-		retVals.err_string = ss.str();
-		//
-		return false;
-	}
-	if (in_ephemeral.pub != out_pkey_test) {
-		retVals.did_error = true;
-		retVals.err_string = "derived secret key doesn't match derived public key";
-		//
-		return false;
-	}
-	crypto::generate_key_image(in_ephemeral.pub, in_ephemeral.sec, retVals.calculated_key_image);
+	std::unordered_map<crypto::public_key, cryptonote::subaddress_index> subaddresses;
+	subaddresses[sender_account_keys.m_account_address.m_spend_public_key] = {0,0}; // the main address
+	std::vector<crypto::public_key> empty__additional_tx_pub_keys; // TODO: is this correct??
 	//
+	bool r = generate_key_image_helper(
+		sender_account_keys,
+		subaddresses,
+		out_public_key,
+		tx_public_key,
+		empty__additional_tx_pub_keys,
+		out_index,
+		in_ephemeral,
+		retVals.calculated_key_image,
+		sender_account_keys.get_device()
+	);
+	if (!r) {
+		LOG_ERROR("Key image generation failed!");
+		return false;
+	}
 	return true;
 }
-
-//+ (NSString *)new_keyImageFrom_tx_pub_key:(NSString *)tx_pub_key_NSString
-//sec_spendKey:(NSString *)sec_spendKey_NSString
-//sec_viewKey:(NSString *)sec_viewKey_NSString
-//pub_spendKey:(NSString *)pub_spendKey_NSString
-//out_index:(uint64_t)out_index
-//{
-//	crypto::secret_key sec_viewKey{};
-//	crypto::secret_key sec_spendKey{};
-//	crypto::public_key pub_spendKey{};
-//	crypto::public_key tx_pub_key{};
-//	{ // Would be nice to find a way to avoid converting these back and forth
-//		bool r = false;
-//		r = string_tools::hex_to_pod(std::string(sec_viewKey_NSString.UTF8String), sec_viewKey);
-//		NSAssert(r, @"Invalid secret view key");
-//		r = string_tools::hex_to_pod(std::string(sec_spendKey_NSString.UTF8String), sec_spendKey);
-//		NSAssert(r, @"Invalid secret spend key");
-//		r = string_tools::hex_to_pod(std::string(pub_spendKey_NSString.UTF8String), pub_spendKey);
-//		NSAssert(r, @"Invalid public spend key");
-//		r = string_tools::hex_to_pod(std::string(tx_pub_key_NSString.UTF8String), tx_pub_key);
-//		NSAssert(r, @"Invalid tx pub key");
-//	}
-//	monero_key_image_utils::KeyImageRetVals retVals;
-//	{
-//		bool r = monero_key_image_utils::new__key_image(pub_spendKey, sec_spendKey, sec_viewKey, tx_pub_key, out_index, retVals);
-//		if (!r) {
-//			return nil; // TODO: return error string? (unwrap optional)
-//		}
-//	}
-//	std::string key_image_hex_string = string_tools::pod_to_hex(retVals.calculated_key_image);
-//	NSString *key_image_hex_NSString = [NSString stringWithUTF8String:key_image_hex_string.c_str()];
-//	//
-//	return key_image_hex_NSString;
-//}

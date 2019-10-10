@@ -219,6 +219,24 @@ namespace monero_transfer_utils
 	void send_step2__try_create_transaction(
 		Send_Step2_RetVals &retVals,
 		//
+		const cryptonote::account_base &account,
+		const string &to_address_string,
+		const optional<string>& payment_id_string,
+		uint64_t final_total_wo_fee,
+		uint64_t change_amount,
+		uint64_t fee_amount,
+		uint32_t simple_priority,
+		const vector<SpendableOutput> &using_outs,
+		uint64_t fee_per_b, // per v8
+		uint64_t fee_quantization_mask,
+		vector<RandomAmountOutputs> &mix_outs, // cannot be const due to convenience__create_transaction's mutability requirement
+		use_fork_rules_fn_type use_fork_rules_fn,
+		uint64_t unlock_time, // or 0
+		cryptonote::network_type nettype
+	);
+	void send_step2__try_create_transaction(
+		Send_Step2_RetVals &retVals,
+		//
 		const string &from_address_string,
 		const string &sec_viewKey_string,
 		const string &sec_spendKey_string,
@@ -253,9 +271,7 @@ namespace monero_transfer_utils
 	};
 	void convenience__create_transaction(
 		Convenience_TransactionConstruction_RetVals &retVals,
-		const string &from_address_string,
-		const string &sec_viewKey_string,
-		const string &sec_spendKey_string,
+		const cryptonote::account_base &account,
 		const string &to_address_string,
 		const optional<string>& payment_id_string,
 		uint64_t sending_amount,

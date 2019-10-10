@@ -75,6 +75,11 @@ namespace serial_bridge
 	string decodeRct(const string &args_string);
 	string decodeRctSimple(const string &args_string);
 	string encrypt_payment_id(const string &args_string);
+	//
+	string register_account__mnemonic(const string &args_string);
+	string register_account__seed(const string &args_string);
+	string register_account__keys(const string &args_string);
+	string register_account__keys_on_device(const string &args_string);
+	//
 }
-
 #endif /* serial_bridge_index_hpp */

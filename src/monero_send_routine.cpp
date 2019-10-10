@@ -52,6 +52,7 @@ using namespace monero_transfer_utils;
 using namespace monero_fork_rules;
 using namespace monero_key_image_utils; // for API response parsing
 using namespace monero_send_routine;
+using namespace monero::address_utils;
 //
 //
 optional<uint64_t> _possible_uint64_from_json(
@@ -107,9 +108,7 @@ LightwalletAPI_Req_GetRandomOuts monero_send_routine::new__req_params__get_rando
 //
 LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unspent_outs(
 	const property_tree::ptree &res,
-	const secret_key &sec_viewKey,
-	const secret_key &sec_spendKey,
-	const public_key &pub_spendKey
+	const cryptonote::account_base &account
 ) {
 	uint64_t final__per_byte_fee = 0;
 	uint64_t fee_mask = 10000; // just a fallback value - no real reason to set this here normally
@@ -183,6 +182,17 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 				};
 			}
 		}
+		crypto::public_key out_pub_key{};
+		{
+			bool r = epee::string_tools::hex_to_pod(output_desc.second.get<string>("public_key"), out_pub_key);
+			if (!r) {
+				string err_msg = "Invalid output pub key";
+				return {
+					err_msg,
+					none, none, none
+				};
+			}
+		}
 		uint64_t output__index;
 		try {
 			optional<uint64_t> possible__uint64 = _possible_uint64_from_json(output_desc.second, "index");
@@ -209,11 +219,7 @@ LightwalletAPI_Res_GetUnspentOuts monero_send_routine::new__parsed_res__get_unsp
 			{
 //				cout << "spend_key_image_string: " << spend_key_image_string.second.data() << endl;
 				KeyImageRetVals retVals;
-				bool r = new__key_image(
-					pub_spendKey, sec_spendKey, sec_viewKey, tx_pub_key,
-					output__index,
-					retVals
-				);
+				bool r = new__key_image(account.get_keys(), tx_pub_key, out_pub_key, output__index, retVals);
 				if (!r) {
 					string err_msg = "Unable to generate key image";
 					return {
@@ -295,9 +301,7 @@ LightwalletAPI_Res_GetRandomOuts monero_send_routine::new__parsed_res__get_rando
 //
 struct _SendFunds_ConstructAndSendTx_Args
 {
-	const string &from_address_string;
-	const string &sec_viewKey_string;
-	const string &sec_spendKey_string;
+	std::shared_ptr<account_base> account_ptr;
 	const string &to_address_string;
 	optional<string> payment_id_string;
 	uint64_t sending_amount;
@@ -315,10 +319,6 @@ struct _SendFunds_ConstructAndSendTx_Args
 	uint64_t fee_per_b;
 	uint64_t fee_quantization_mask;
 	uint8_t fork_version;
-	//
-	// cached
-	const secret_key &sec_viewKey;
-	const secret_key &sec_spendKey;
 	//
 	optional<uint64_t> passedIn_attemptAt_fee;
 	size_t constructionAttempt;
@@ -376,9 +376,7 @@ void _reenterable_construct_and_send_tx(
 		monero_transfer_utils::send_step2__try_create_transaction(
 			step2_retVals,
 			//
-			args.from_address_string,
-			args.sec_viewKey_string,
-			args.sec_spendKey_string,
+			*args.account_ptr,
 			args.to_address_string,
 			args.payment_id_string,
 			step1_retVals.final_total_wo_fee,
@@ -454,8 +452,8 @@ void _reenterable_construct_and_send_tx(
 			args.success_cb_fn(success_retVals);
 		};
 		args.submit_raw_tx_fn(LightwalletAPI_Req_SubmitRawTx{
-			args.from_address_string,
-			args.sec_viewKey_string,
+			args.account_ptr->get_public_address_str(args.nettype), // the 'from' address
+			epee::string_tools::pod_to_hex(args.account_ptr->get_keys().m_view_secret_key),
 			*(step2_retVals.signed_serialized_tx_string)
 		}, submit_raw_tx_fn__cb_fn);
 	};
@@ -472,44 +470,19 @@ void _reenterable_construct_and_send_tx(
 // Entrypoint
 void monero_send_routine::async__send_funds(Async_SendFunds_Args args)
 {
+	auto nettype = args.nettype == none ? MAINNET : *(args.nettype);
 	uint64_t usable__sending_amount = args.is_sweeping ? 0 : args.sending_amount;
-	crypto::secret_key sec_viewKey{};
-	crypto::secret_key sec_spendKey{};
-	crypto::public_key pub_spendKey{};
-	{
-		bool r = false;
-		r = epee::string_tools::hex_to_pod(args.sec_viewKey_string, sec_viewKey);
-		if (!r) {
-			SendFunds_Error_RetVals error_retVals;
-			error_retVals.explicit_errMsg = "Invalid secret view key";
-			args.error_cb_fn(error_retVals);
-			return;
-		}
-		r = epee::string_tools::hex_to_pod(args.sec_spendKey_string, sec_spendKey);
-		if (!r) {
-			SendFunds_Error_RetVals error_retVals;
-			error_retVals.explicit_errMsg = "Invalid sec spend key";
-			args.error_cb_fn(error_retVals);
-			return;
-		}
-		r = epee::string_tools::hex_to_pod(args.pub_spendKey_string, pub_spendKey);
-		if (!r) {
-			SendFunds_Error_RetVals error_retVals;
-			error_retVals.explicit_errMsg = "Invalid public spend key";
-			args.error_cb_fn(error_retVals);
-			return;
-		}
-	}
+	//
 	api_fetch_cb_fn get_unspent_outs_fn__cb_fn = [
 		args,
 		usable__sending_amount,
-		sec_viewKey, sec_spendKey, pub_spendKey
+		nettype
 	] (
 		const property_tree::ptree &res
 	) -> void {
 		auto parsed_res = new__parsed_res__get_unspent_outs(
 			res,
-			sec_viewKey, sec_spendKey, pub_spendKey
+			*args.account_ptr
 		);
 		if (parsed_res.err_msg != none) {
 			SendFunds_Error_RetVals error_retVals;
@@ -518,26 +491,24 @@ void monero_send_routine::async__send_funds(Async_SendFunds_Args args)
 			return;
 		}
 		_reenterable_construct_and_send_tx(_SendFunds_ConstructAndSendTx_Args{
-			args.from_address_string, args.sec_viewKey_string, args.sec_spendKey_string,
+			args.account_ptr,
 			args.to_address_string, args.payment_id_string, usable__sending_amount, args.is_sweeping, args.simple_priority,
 			args.get_random_outs_fn, args.submit_raw_tx_fn, args.status_update_fn, args.error_cb_fn, args.success_cb_fn,
 			args.unlock_time == none ? 0 : *(args.unlock_time),
-			args.nettype == none ? MAINNET : *(args.nettype),
+			nettype,
 			//
 			*(parsed_res.unspent_outs),
 			*(parsed_res.per_byte_fee),
 			*(parsed_res.fee_mask),
-			parsed_res.fork_version,
-			//
-			sec_viewKey, sec_spendKey
+			parsed_res.fork_version
 		});
 	};
 	args.status_update_fn(fetchingLatestBalance);
 	//
 	args.get_unspent_outs_fn(
 		new__req_params__get_unspent_outs(
-			args.from_address_string,
-			args.sec_viewKey_string
+			args.account_ptr->get_public_address_str(nettype), // the 'from' address
+			epee::string_tools::pod_to_hex(args.account_ptr->get_keys().m_view_secret_key)
 		),
 		get_unspent_outs_fn__cb_fn
 	);

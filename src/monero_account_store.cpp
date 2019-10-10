@@ -1,8 +1,8 @@
 //
-//  monero_key_image_utils.hpp
+//  monero_account_store.cpp
 //  MyMonero
 //
-//  Created by Paul Shapiro on 1/2/18.
+//  Created by Paul Shapiro on 10/5/19.
 //  Copyright (c) 2014-2019, MyMonero.com
 //
 //  All rights reserved.
@@ -32,29 +32,18 @@
 //  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //
-#ifndef monero_key_image_utils_hpp
-#define monero_key_image_utils_hpp
+#include "monero_account_store.hpp"
 //
-#include "crypto.h"
-#include "cryptonote_basic.h"
-#include "cryptonote_basic/account.h"
+using namespace crypto;
+using namespace cryptonote;
+using namespace monero_account_store;
 //
-using namespace tools;
-#include "tools__ret_vals.hpp"
+AccountStore *AccountStore::instance = NULL;
 //
-namespace monero_key_image_utils
+AccountStore *AccountStore::shared()
 {
-	struct KeyImageRetVals: RetVals_base
-	{
-		crypto::key_image calculated_key_image;
-	};
-	bool new__key_image(
-		const cryptonote::account_keys &sender_account_keys,
-		const crypto::public_key& tx_public_key,
-		const crypto::public_key& out_public_key,
-		uint64_t out_index,
-		KeyImageRetVals &retVals
-	);
+	if (instance == nullptr) {
+		instance = new AccountStore();
+	}
+	return instance;
 }
-//
-#endif /* monero_key_image_utils_hpp */
