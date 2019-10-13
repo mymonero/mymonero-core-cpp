@@ -86,7 +86,7 @@ namespace monero_account_store
 			if (it == _account_ptrs_by_name.end()) {
 				return false; // not present
 			}
-			_account_ptrs_by_name.erase(it, _account_ptrs_by_name.end());
+			_account_ptrs_by_name.erase(it);
 			return true;
 		}
 		//

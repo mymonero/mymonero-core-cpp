@@ -333,6 +333,24 @@ string serial_bridge::register_account__keys_on_device(const string &args_string
 	}
 	return ret_json_from_root(root);
 }
+//
+string serial_bridge::unstore_account(const string &args_string)
+{
+	using namespace monero_account_store;
+	
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	bool r = AccountStore::shared()->unstore_account(json_root.get<string>("account_name"));
+	boost::property_tree::ptree root;
+	if (!r) {
+		root.put(ret_json_key__any__err_msg(), string("Account did not exist"));
+	}
+	return ret_json_from_root(root);
+}
+//
 string serial_bridge::address_and_keys_from_seed(const string &args_string)
 {
 	boost::property_tree::ptree json_root;

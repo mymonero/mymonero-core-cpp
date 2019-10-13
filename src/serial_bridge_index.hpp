@@ -81,5 +81,7 @@ namespace serial_bridge
 	string register_account__keys(const string &args_string);
 	string register_account__keys_on_device(const string &args_string);
 	//
+	string unstore_account(const string &args_string);
+	//
 }
 #endif /* serial_bridge_index_hpp */
