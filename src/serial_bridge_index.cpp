@@ -213,7 +213,7 @@ boost::optional<AccountStore::HWDevInitParams> _new_devinitparams(
 	}
 	if (device_name) {
 		hwdev_init_params = AccountStore::HWDevInitParams{
-			Factory::CORE_DEVICE_ALLOC_FN,
+			Factory::CORE_DEVICE_LAZYALLOC_FN,
 			*device_name,
 			json_root.get<string>("device_type"), // if device_name set, device_type mandatory
 			nettype

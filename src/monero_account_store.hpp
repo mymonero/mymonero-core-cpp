@@ -111,10 +111,10 @@ namespace monero_account_store
 		};
 		//
 		//
-		typedef std::function<hw::device *(const string &device_name, const string &device_type)> hwdevice_alloc_fn_type;
+		typedef std::function<hw::device *(const string &device_name, const string &device_type)> hwdevice_lazyalloc_fn_type;
 		struct HWDevInitParams
 		{
-			hwdevice_alloc_fn_type alloc_fn; // just initialize and return device, with callbacks set if desired (to approximate metaprogramming)
+			hwdevice_lazyalloc_fn_type lazyalloc_fn; // just initialize and return device, with callbacks set if desired (to approximate metaprogramming)
 			string name; // aka device_name aka device_descriptor
 			string type; // pass 'default'
 			network_type nettype;
@@ -154,10 +154,10 @@ namespace monero_account_store
 			if (params.optl__hwdev_init_params != none) { // if none is specified, software (default) would be used
 				retVals.requires_verify = true; // this must be set so that consumers know to verify
 				string device_descriptor = (*params.optl__hwdev_init_params).name; // this could be a device descriptor path
-				hwdev_ptr = (*params.optl__hwdev_init_params).alloc_fn(
+				hwdev_ptr = (*params.optl__hwdev_init_params).lazyalloc_fn(
 					device_descriptor,
 					(*params.optl__hwdev_init_params).type
-				); // Note: this alloc is put on the consumer so this file doesn't have to know what devices have support compiled in - and note; the alloc_fn will *not* create a new device if the hwdevice registry already has a device at that device_descriptor
+				); // Note: this alloc is put on the consumer so this file doesn't have to know what devices have support compiled in - and note; the lazyalloc_fn will *not* create a new device if the hwdevice registry already has a device at that device_descriptor
 				{ // Device: Fallback registration implementation 
 					try { // determine registration status of device
 						hw::get_device(device_descriptor); // throws; discarding the result

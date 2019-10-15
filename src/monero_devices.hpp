@@ -40,12 +40,12 @@
 #include "device/device_default.hpp"
 #include "monero_account_store.hpp"
 //
-//#define CORE_DEVICE_ALLOC_FN
+//#define CORE_DEVICE_LAZYALLOC_FN
 namespace monero_devices
 {
 	struct Factory
 	{
-		static monero_account_store::AccountStore::hwdevice_alloc_fn_type CORE_DEVICE_ALLOC_FN;
+		static monero_account_store::AccountStore::hwdevice_lazyalloc_fn_type CORE_DEVICE_LAZYALLOC_FN;
 	};
 }
 //

@@ -49,7 +49,7 @@ bool _is_key_on_device(const string &device_type)
 	return device_type != device_type__software;
 }
 
-monero_account_store::AccountStore::hwdevice_alloc_fn_type monero_devices::Factory::CORE_DEVICE_ALLOC_FN = [](
+monero_account_store::AccountStore::hwdevice_lazyalloc_fn_type monero_devices::Factory::CORE_DEVICE_LAZYALLOC_FN = [](
 	const string &device_name, const string &device_type
 ) {
 	try {
