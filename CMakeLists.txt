@@ -125,6 +125,8 @@ set(
 # needed for slow-hash
 add_compile_options(-maes)
 
+add_definitions(-DWITH_TEST_DEVICE_MYMONERO)
+
 #Run through each source
 foreach(testSrc ${TEST_CASE_SRCS})
     # extract the filename without an extension (NAME_WE)

@@ -34,7 +34,9 @@
 //
 #include "monero_devices.hpp"
 //
+#ifdef WITH_TEST_DEVICE_MYMONERO
 #include "../test/device_mymonero/device_mymonero.hpp"
+#endif
 //
 using namespace monero_devices;
 //
@@ -61,7 +63,7 @@ monero_account_store::AccountStore::hwdevice_lazyalloc_fn_type monero_devices::F
 		if (device_type == device_type__software) {
 			hwdev_ptr = new hw::core::device_default;
 		} else if (device_type == device_type__mymonero) {
-			// USE_DEVICE_MYMONERO is already defined in device_mymonero.hpp, so all that needs to occur is the inclusion of the latter
+			// USE_DEVICE_MYMONERO is already defined in device_mymonero.hpp, so all that needs to occur is the inclusion of the latter and setting the flag WITH_TEST_DEVICE_MYMONERO=1
 			#ifdef USE_DEVICE_MYMONERO
 			hwdev_ptr = new hw::mymonero::device_mymonero;
 			#else
