@@ -138,7 +138,7 @@ namespace monero_account_store
 			boost::optional<std::shared_ptr<cryptonote::account_base>> account_ptr;
 		};
 		//
-		bool _new_account_ptr_w_hwdev_unless_exists( // NOTE: If retVals.requires_verify == true, be sure to call _postinit_hwdev_state_validation_code after setting up the account (create_with_*) after calling this function
+		bool __givenLocked_new_account_ptr_w_hwdev_unless_exists( // NOTE: If retVals.requires_verify == true, be sure to call _postinit_hwdev_state_validation_code after setting up the account (create_with_*) after calling this function
 			const NewStoredAccountParams &params,
 			NewAccountPtrWHWDevRetVals &retVals
 		) {
@@ -224,11 +224,29 @@ namespace monero_account_store
 			const crypto::secret_key &sec_spendKey,
 			StoredAccountRetVals &retVals
 		) {
+//			retVals = {}; // _givenLocked_new_stored_account_with_keys will do this
+			store_mutex.lock();
+			bool r = _givenLocked_new_stored_account_with_keys(
+				params,
+				address,
+				sec_viewKey,
+				sec_spendKey,
+				retVals
+			);
+			store_mutex.unlock();
+			return r;
+		}
+		bool _givenLocked_new_stored_account_with_keys(
+			const NewStoredAccountParams &params,
+			const cryptonote::account_public_address &address,
+			const crypto::secret_key &sec_viewKey,
+			const crypto::secret_key &sec_spendKey,
+			StoredAccountRetVals &retVals
+		) {
 			retVals = {};
 			//
-			//
 			NewAccountPtrWHWDevRetVals newPtr_retVals;
-			if (!_new_account_ptr_w_hwdev_unless_exists(params, newPtr_retVals)) {
+			if (!__givenLocked_new_account_ptr_w_hwdev_unless_exists(params, newPtr_retVals)) {
 				retVals.err_code = *newPtr_retVals.err_code;
 				return false;
 			}
@@ -256,6 +274,9 @@ namespace monero_account_store
 			network_type nettype,
 			StoredAccountRetVals &retVals
 		) {
+			store_mutex.lock();
+			retVals = {}; // _givenLocked_new_stored_account_with_keys will do this too but we do it here in case an err must be returned
+			//
 			cryptonote::address_parse_info decoded_address_info;
 			bool r = cryptonote::get_account_address_from_str(
 				decoded_address_info,
@@ -264,42 +285,59 @@ namespace monero_account_store
 			);
 			if (!r) {
 				retVals.err_code = invalidAddress;
+				store_mutex.unlock(); // critical
 				return false;
 			}
 			if (decoded_address_info.is_subaddress) {
 				retVals.err_code = cantOpenAccountWithSubaddress;
+				store_mutex.unlock(); // critical
 				return false;
 			}
 			crypto::secret_key sec_viewKey;
 			r = string_tools::hex_to_pod(sec_viewKey_string, sec_viewKey);
 			if (!r) {
 				retVals.err_code = invalidViewKey;
+				store_mutex.unlock(); // critical
 				return false;
 			}
 			crypto::secret_key sec_spendKey;
 			r = string_tools::hex_to_pod(sec_spendKey_string, sec_spendKey);
 			if (!r) {
 				retVals.err_code = invalidSpendKey;
+				store_mutex.unlock(); // critical
 				return false;
 			}
-			return new_stored_account_with_keys(
+			bool final_r = _givenLocked_new_stored_account_with_keys(
 				params,
 				decoded_address_info.address,
 				sec_viewKey,
 				sec_spendKey,
 				retVals
 			);
+			store_mutex.unlock(); // critical
+			return final_r;
 		}
 		bool new_stored_account_with_mnemonic(
 			const NewStoredAccountParams &params,
 			const string &mnemonic_string,
 			StoredAccountRetVals &retVals
 		) {
+			store_mutex.lock();
+			bool r = _givenLocked_new_stored_account_with_mnemonic(
+				params, mnemonic_string, retVals
+			);
+			store_mutex.unlock();
+			return r;
+		}
+		bool _givenLocked_new_stored_account_with_mnemonic( // NOTE: given locked, do not manage lock within this function at all
+			const NewStoredAccountParams &params,
+			const string &mnemonic_string,
+			StoredAccountRetVals &retVals
+		) {
 			retVals = {};
 			//
-			//
 			NewAccountPtrWHWDevRetVals newPtr_retVals;
-			if (!_new_account_ptr_w_hwdev_unless_exists(params, newPtr_retVals)) {
+			if (!__givenLocked_new_account_ptr_w_hwdev_unless_exists(params, newPtr_retVals)) {
 				retVals.err_code = *newPtr_retVals.err_code;
 				return false;
 			}
@@ -331,7 +369,8 @@ namespace monero_account_store
 			const string &wordset_name,
 			StoredAccountRetVals &retVals
 		) {
-//			retVals = {}; // new_stored_account_with_mnemonic will do this
+			store_mutex.lock(); // we must do this here
+			retVals = {}; // _givenLocked_new_stored_account_with_mnemonic will do this too but we do it here in case an err must be returned
 			//
 			monero_wallet_utils::SeedDecodedMnemonic_RetVals retVals_conv = monero_wallet_utils::mnemonic_string_from_seed_hex_string(
 				seed_string,
@@ -339,24 +378,29 @@ namespace monero_account_store
 			);
 			if (retVals_conv.err_string != none) {
 				retVals.err_code = cantConvertSeedToMnemonic;
+				store_mutex.unlock(); // critical
 				return false;
 			}
-			return new_stored_account_with_mnemonic(
+			bool r = _givenLocked_new_stored_account_with_mnemonic(
 				params,
 				std::string((*(retVals_conv.mnemonic_string)).data(), (*(retVals_conv.mnemonic_string)).size()), // TODO: potentially unnecessary copy
 				retVals
 			);
+			store_mutex.unlock(); // critical
+			return r;
 		}
 		bool new_stored_account_with_keys_on_device(
 			const NewStoredAccountParams &params,
 			network_type nettype,
 			StoredAccountRetVals &retVals
 		) {
+			store_mutex.lock();
 			retVals = {};
 			//
 			NewAccountPtrWHWDevRetVals newPtr_retVals;
-			if (!_new_account_ptr_w_hwdev_unless_exists(params, newPtr_retVals)) {
+			if (!__givenLocked_new_account_ptr_w_hwdev_unless_exists(params, newPtr_retVals)) {
 				retVals.err_code = *newPtr_retVals.err_code;
+				store_mutex.unlock(); // critical
 				return false;
 			}
 			retVals.account_ptr = *newPtr_retVals.account_ptr; // copy existent ptr
@@ -365,23 +409,28 @@ namespace monero_account_store
 			MnemonicDecodedSeed_RetVals decodedSeed_retVals;
 			(*retVals.account_ptr)->create_from_device(
 				(*retVals.account_ptr)->get_device()
-			); // here we rely upon _new_account_ptr_w_hwdev_unless_exists having associated a hwdevice with the account… then we just tell the account to set up with it
+			); // here we rely upon __givenLocked_new_account_ptr_w_hwdev_unless_exists having associated a hwdevice with the account… then we just tell the account to set up with it
 			if (newPtr_retVals.requires_verify != none && *newPtr_retVals.requires_verify == true) {
 				boost::optional<StoredAccount_ErrCode> optl__validation_code = _postinit_hwdev_state_validation_code(*retVals.account_ptr);
 				if (optl__validation_code != none) { // this check must be done, and after the account is set up
 					retVals.err_code = *optl__validation_code;
+					store_mutex.unlock(); // critical
 					return false;
 				}
 			}
 			if (!store_account(params.name_string, *retVals.account_ptr)) {
 				retVals.err_code = didntExistButStoreAccountFailed;
+				store_mutex.unlock(); // critical
 				return false;
 			}
 			//
+			store_mutex.unlock(); // critical
 			return true;
 		}
 		//
 	private:
+		std::mutex store_mutex;
+		//
 		static AccountStore *instance;
 		AccountStore() {}
 		AccountStore(const AccountStore& source) {}
