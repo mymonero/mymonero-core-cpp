@@ -835,10 +835,16 @@ string serial_bridge::decodeRct(const string &args_string)
 	rct::key mask;
 	rct::xmr_amount/*uint64_t*/ decoded_amount;
 	try {
-		decoded_amount = rct::decodeRct(
-			rv, sk, i, mask,
-			hw::get_device("default") // presently this uses the default device but we could let a string be passed to switch the type
-		);
+		boost::optional<string> optl__account_name = json_root.get_optional<string>("account_name");
+		boost::optional<std::shared_ptr<account_base>> optl__account_ptr = none;
+		if (optl__account_name != none) {
+			optl__account_ptr = monero_account_store::AccountStore::shared()->stored_account(*optl__account_name);
+			if (optl__account_ptr == boost::none) {
+				return error_ret_json_from_message("No such device");
+			}
+		}
+		hw::device &hwdev = optl__account_ptr != none ? (*optl__account_ptr)->get_device() : hw::get_device("default");
+		decoded_amount = rct::decodeRct(rv, sk, i, mask, hwdev);
 	} catch (std::exception const& e) {
 		return error_ret_json_from_message(e.what());
 	}
@@ -914,10 +920,16 @@ string serial_bridge::decodeRctSimple(const string &args_string)
 	rct::key mask;
 	rct::xmr_amount/*uint64_t*/ decoded_amount;
 	try {
-		decoded_amount = rct::decodeRctSimple(
-			rv, sk, i, mask,
-			hw::get_device("default") // presently this uses the default device but we could let a string be passed to switch the type
-		);
+		boost::optional<string> optl__account_name = json_root.get_optional<string>("account_name");
+		boost::optional<std::shared_ptr<account_base>> optl__account_ptr = none;
+		if (optl__account_name != none) {
+			optl__account_ptr = monero_account_store::AccountStore::shared()->stored_account(*optl__account_name);
+			if (optl__account_ptr == boost::none) {
+				return error_ret_json_from_message("No such device");
+			}
+		}
+		hw::device &hwdev = optl__account_ptr != none ? (*optl__account_ptr)->get_device() : hw::get_device("default");
+		decoded_amount = rct::decodeRctSimple(rv, sk, i, mask, hwdev);
 	} catch (std::exception const& e) {
 		return error_ret_json_from_message(e.what());
 	}
@@ -1042,7 +1054,15 @@ string serial_bridge::encrypt_payment_id(const string &args_string)
 	if (!epee::string_tools::hex_to_pod(json_root.get<string>("secret_key"), secret_key)) {
 		return error_ret_json_from_message("Invalid 'secret_key'");
 	}
-	hw::device &hwdev = hw::get_device("default");
+	boost::optional<string> optl__account_name = json_root.get_optional<string>("account_name");
+	boost::optional<std::shared_ptr<account_base>> optl__account_ptr = none;
+	if (optl__account_name != none) {
+		optl__account_ptr = monero_account_store::AccountStore::shared()->stored_account(*optl__account_name);
+		if (optl__account_ptr == boost::none) {
+			return error_ret_json_from_message("No such device");
+		}
+	}
+	hw::device &hwdev = optl__account_ptr != none ? (*optl__account_ptr)->get_device() : hw::get_device("default");
 	hwdev.encrypt_payment_id(payment_id, public_key, secret_key);
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(payment_id));
