@@ -476,9 +476,14 @@ void monero_transfer_utils::create_transaction(
 	// TODO: do we need to sort destinations by amount, here, according to 'decompose_destinations'?
 	//
 	uint32_t fake_outputs_count = fixed_mixinsize();
-	bool bulletproof = true;
-	rct::RangeProofType range_proof_type = bulletproof ? rct::RangeProofPaddedBulletproof : rct::RangeProofBorromean;
-	int bp_version = bulletproof ? (use_fork_rules_fn(HF_VERSION_SMALLER_BP, -10) ? 2 : 1) : 0;
+	rct::RangeProofType range_proof_type = rct::RangeProofPaddedBulletproof;
+	int bp_version = 1;
+	if (use_fork_rules_fn(HF_VERSION_CLSAG, -10)) {
+		bp_version = 3;
+	}
+	else if (use_fork_rules_fn(HF_VERSION_SMALLER_BP, -10)) {
+		bp_version = 2;
+	}
 	const rct::RCTConfig rct_config {
 		range_proof_type,
 		bp_version,
@@ -701,7 +706,7 @@ void monero_transfer_utils::create_transaction(
 		return;
 	}
 	bool use_bulletproofs = !tx.rct_signatures.p.bulletproofs.empty();
-	THROW_WALLET_EXCEPTION_IF(use_bulletproofs != bulletproof, error::wallet_internal_error, "Expected tx use_bulletproofs to equal bulletproof flag");
+	THROW_WALLET_EXCEPTION_IF(use_bulletproofs != true, error::wallet_internal_error, "Expected tx use_bulletproofs to equal bulletproof flag");
 	//
 	retVals.tx = tx;
 	retVals.tx_key = tx_key;
