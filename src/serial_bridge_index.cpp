@@ -640,6 +640,8 @@ string serial_bridge::decodeRct(const string &args_string)
 		rv.type = rct::RCTTypeBulletproof;
 	} else if (rv_type_int == rct::RCTTypeBulletproof2) {
 		rv.type = rct::RCTTypeBulletproof2;
+	} else if (rv_type_int == rct::RCTTypeCLSAG) {
+		rv.type = rct::RCTTypeCLSAG;
 	} else {
 		return error_ret_json_from_message("Invalid 'rv.type'");
 	}
@@ -713,6 +715,8 @@ string serial_bridge::decodeRctSimple(const string &args_string)
 		rv.type = rct::RCTTypeBulletproof;
 	} else if (rv_type_int == rct::RCTTypeBulletproof2) {
 		rv.type = rct::RCTTypeBulletproof2;
+	} else if (rv_type_int == rct::RCTTypeCLSAG) {
+		rv.type = rct::RCTTypeCLSAG;
 	} else {
 		return error_ret_json_from_message("Invalid 'rv.type'");
 	}
@@ -720,7 +724,7 @@ string serial_bridge::decodeRctSimple(const string &args_string)
 	{
 		assert(ecdh_info_desc.first.empty()); // array elements have no names
 		auto ecdh_info = rct::ecdhTuple{};
-		if (rv.type == rct::RCTTypeBulletproof2) {
+		if (rv.type >= rct::RCTTypeBulletproof2) {
 			if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), (crypto::hash8&)ecdh_info.amount)) {
 				return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
 			}
