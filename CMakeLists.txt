@@ -110,6 +110,8 @@ set(
 # needed for slow-hash
 add_compile_options(-maes)
 
+add_compile_definitions(MYMONERO_CORE_CUSTOM)
+
 #Run through each source
 foreach(testSrc ${TEST_SRCS})
     # extract the filename without an extension (NAME_WE)
