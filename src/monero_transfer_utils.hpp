@@ -55,10 +55,7 @@ namespace monero_transfer_utils
 	using namespace cryptonote;
 	using namespace monero_fork_rules;
 	using namespace crypto;
-	//
-	bool is_transfer_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, network_type nettype = MAINNET);
-	bool is_tx_spendtime_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, network_type nettype = MAINNET);
-	//
+	
 	// Types - Arguments
 	struct SpendableOutput
 	{
@@ -200,7 +197,7 @@ namespace monero_transfer_utils
 		Send_Step1_RetVals &retVals,
 		//
 		const optional<string>& payment_id_string,
-		uint64_t sending_amount,
+		const vector<uint64_t>& sending_amounts,
 		bool is_sweeping,
 		uint32_t simple_priority,
 		use_fork_rules_fn_type use_fork_rules_fn,
@@ -249,9 +246,9 @@ namespace monero_transfer_utils
 		const string &from_address_string,
 		const string &sec_viewKey_string,
 		const string &sec_spendKey_string,
-		const string &to_address_string,
+		const vector<string> &to_address_strings,
 		const optional<string>& payment_id_string,
-		uint64_t final_total_wo_fee, // this gets passed to create_transaction's 'sending_amount'
+		const vector<uint64_t>& sending_amounts, // this gets passed to create_transaction's 'sending_amount'
 		uint64_t change_amount,
 		uint64_t fee_amount,
 		uint32_t simple_priority,
@@ -283,9 +280,9 @@ namespace monero_transfer_utils
 		const string &from_address_string,
 		const string &sec_viewKey_string,
 		const string &sec_spendKey_string,
-		const string &to_address_string,
+		const vector<string> &to_address_string,
 		const optional<string>& payment_id_string,
-		uint64_t sending_amount,
+		const vector<uint64_t>& sending_amounts,
 		uint64_t change_amount,
 		uint64_t fee_amount,
 		const vector<SpendableOutput> &outputs,
@@ -307,8 +304,8 @@ namespace monero_transfer_utils
 		const account_keys& sender_account_keys, // this will reference a particular hw::device
 		const uint32_t subaddr_account_idx, // pass 0 for no subaddrs
 		const std::unordered_map<crypto::public_key, cryptonote::subaddress_index> &subaddresses,
-		const address_parse_info &to_addr, // this _must_ include correct .is_subaddr
-		uint64_t sending_amount,
+		const vector<address_parse_info> &to_addr, // this _must_ include correct .is_subaddr
+		const vector<uint64_t>& sending_amounts,
 		uint64_t change_amount,
 		uint64_t fee_amount,
 		const vector<SpendableOutput> &outputs,
