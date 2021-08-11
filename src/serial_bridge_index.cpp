@@ -60,158 +60,81 @@ using namespace serial_bridge_utils;
 //
 // Bridge Function Implementations
 //
-string serial_bridge::decode_address(const string &args_string)
+string serial_bridge::decode_address(const string address, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	auto retVals = monero::address_utils::decodedAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
+	auto retVals = monero::address_utils::decodedAddress(address, nettype_from_string(nettype));
 	if (retVals.did_error) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__isSubaddress(), retVals.isSubaddress);
-	root.put(ret_json_key__pub_viewKey_string(), *(retVals.pub_viewKey_string));
-	root.put(ret_json_key__pub_spendKey_string(), *(retVals.pub_spendKey_string));
+	root.put("isSubaddress", retVals.isSubaddress);
+	root.put("publicViewKey", *(retVals.pub_viewKey_string));
+	root.put("publicSpendKey", *(retVals.pub_spendKey_string));
 	if (retVals.paymentID_string != none) {
-		root.put(ret_json_key__paymentID_string(), *(retVals.paymentID_string));
+		root.put("paymentId", *(retVals.paymentID_string));
 	}
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::is_subaddress(const string &args_string)
+bool serial_bridge::is_subaddress(const string address, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	bool retVal = monero::address_utils::isSubAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), retVal);
-	//
-	return ret_json_from_root(root);
+	return monero::address_utils::isSubAddress(address, nettype_from_string(nettype));
 }
-string serial_bridge::is_integrated_address(const string &args_string)
+bool serial_bridge::is_integrated_address(const string address, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	bool retVal = monero::address_utils::isIntegratedAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), retVal);
-	//
-	return ret_json_from_root(root);
+	return monero::address_utils::isIntegratedAddress(address, nettype_from_string(nettype));
 }
-string serial_bridge::new_integrated_address(const string &args_string)
+string serial_bridge::new_integrated_address(const string address, const string paymentId, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	optional<string> retVal = monero::address_utils::new_integratedAddrFromStdAddr(json_root.get<string>("address"), json_root.get<string>("short_pid"), nettype_from_string(json_root.get<string>("nettype_string")));
-	boost::property_tree::ptree root;
-	if (retVal != none) {
-		root.put(ret_json_key__generic_retVal(), *retVal);
-	}
-	//
-	return ret_json_from_root(root);
+	return monero::address_utils::new_integratedAddrFromStdAddr(address, paymentId, nettype_from_string(nettype));
 }
-string serial_bridge::new_payment_id(const string &args_string)
+string serial_bridge::new_payment_id()
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	optional<string> retVal = monero_paymentID_utils::new_short_plain_paymentID_string();
-	boost::property_tree::ptree root;
-	if (retVal != none) {
-		root.put(ret_json_key__generic_retVal(), *retVal);
-	}
-	//
-	return ret_json_from_root(root);
+	return monero_paymentID_utils::new_short_plain_paymentID_string();
 }
-//
-string serial_bridge::newly_created_wallet(const string &args_string)
+
+string serial_bridge::newly_created_wallet(const string localeLanguageCode, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::WalletDescriptionRetVals retVals;
 	bool r = monero_wallet_utils::convenience__new_wallet_with_language_code(
-		json_root.get<string>("locale_language_code"),
+		localeLanguageCode,
 		retVals,
-		nettype_from_string(json_root.get<string>("nettype_string"))
+		nettype_from_string(nettype)
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
-	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
-	//
+
 	boost::property_tree::ptree root;
-	root.put(
-		ret_json_key__mnemonic_string(),
-		std::string((*(retVals.optl__desc)).mnemonic_string.data(), (*(retVals.optl__desc)).mnemonic_string.size())
-	);
-	root.put(ret_json_key__mnemonic_language(), (*(retVals.optl__desc)).mnemonic_language);
-	root.put(ret_json_key__sec_seed_string(), (*(retVals.optl__desc)).sec_seed_string);
-	root.put(ret_json_key__address_string(), (*(retVals.optl__desc)).address_string);
-	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
-	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
-	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
-	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
+	root.put("mnemonic", std::string((*(retVals.optl__desc)).mnemonic_string.data(), (*(retVals.optl__desc)).mnemonic_string.size()));
+	root.put("mnemonicLanguage", (*(retVals.optl__desc)).mnemonic_language);
+	root.put("seed", (*(retVals.optl__desc)).sec_seed_string);
+	root.put("address", (*(retVals.optl__desc)).address_string);
+	root.put("publicViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
+	root.put("privateViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
+	root.put("publicSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
+	root.put("privateSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::are_equal_mnemonics(const string &args_string)
+bool serial_bridge::are_equal_mnemonics(const string mnemonicA, const string mnemonicB)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	bool equal;
-	try {
-		equal = monero_wallet_utils::are_equal_mnemonics(
-			json_root.get<string>("a"),
-			json_root.get<string>("b")
-		);
-	} catch (std::exception const& e) {
-		return error_ret_json_from_message(e.what());
-	}
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), equal);
-	//
-	return ret_json_from_root(root);
+	return monero_wallet_utils::are_equal_mnemonics(mnemonicA, mnemonicB);
 }
-string serial_bridge::address_and_keys_from_seed(const string &args_string)
+string serial_bridge::address_and_keys_from_seed(const string seed, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::ComponentsFromSeed_RetVals retVals;
 	bool r = monero_wallet_utils::address_and_keys_from_seed(
-		json_root.get<string>("seed_string"),
-		nettype_from_string(json_root.get<string>("nettype_string")),
+		seed,
+		nettype_from_string(nettype),
 		retVals
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
-	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
-	//
+
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__address_string(), (*(retVals.optl__val)).address_string);
 	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_viewKey));
@@ -221,16 +144,11 @@ string serial_bridge::address_and_keys_from_seed(const string &args_string)
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::mnemonic_from_seed(const string &args_string)
+string serial_bridge::mnemonic_from_seed(const string seed, const string wordsetName)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::SeedDecodedMnemonic_RetVals retVals = monero_wallet_utils::mnemonic_string_from_seed_hex_string(
-		json_root.get<string>("seed_string"),
-		json_root.get<string>("wordset_name")
+		seed,
+		wordsetName
 	);
 	boost::property_tree::ptree root;
 	if (retVals.err_string != none) {
@@ -240,62 +158,49 @@ string serial_bridge::mnemonic_from_seed(const string &args_string)
 		ret_json_key__generic_retVal(),
 		std::string((*(retVals.mnemonic_string)).data(), (*(retVals.mnemonic_string)).size())
 	);
-	//
+
 	return ret_json_from_root(root);
 }
-string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
+string serial_bridge::seed_and_keys_from_mnemonic(const string mnemonic, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::WalletDescriptionRetVals retVals;
 	bool r = monero_wallet_utils::wallet_with(
-		json_root.get<string>("mnemonic_string"),
+		mnemonic,
 		retVals,
-		nettype_from_string(json_root.get<string>("nettype_string"))
+		nettype_from_string(nettype)
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
 		return error_ret_json_from_message(*retVals.err_string);
 	}
 	monero_wallet_utils::WalletDescription walletDescription = *(retVals.optl__desc);
-	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
-	//
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__sec_seed_string(), (*(retVals.optl__desc)).sec_seed_string);
-	root.put(ret_json_key__mnemonic_language(), (*(retVals.optl__desc)).mnemonic_language);
-	root.put(ret_json_key__address_string(), (*(retVals.optl__desc)).address_string);
-	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
-	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
-	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
-	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
-	//
+	root.put("seed", (*(retVals.optl__desc)).sec_seed_string);
+	root.put("mnemonicLanguage", (*(retVals.optl__desc)).mnemonic_language);
+	root.put("address", (*(retVals.optl__desc)).address_string);
+	root.put("publicViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
+	root.put("privateViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
+	root.put("publicSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
+	root.put("privateSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
+
 	return ret_json_from_root(root);
 }
-string serial_bridge::validate_components_for_login(const string &args_string)
+string serial_bridge::validate_components_for_login(const string address, const string privateViewKey, const string privateSpendKey, const string seed, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::WalletComponentsValidationResults retVals;
 	bool r = monero_wallet_utils::validate_wallet_components_with( // returns !did_error
-		json_root.get<string>("address_string"),
-		json_root.get<string>("sec_viewKey_string"),
-		json_root.get_optional<string>("sec_spendKey_string"),
-		json_root.get_optional<string>("seed_string"),
-		nettype_from_string(json_root.get<string>("nettype_string")),
+		address,
+		privateViewKey,
+		privateSpendKey,
+		seed,
+		nettype_from_string(nettype),
 		retVals
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
 		return error_ret_json_from_message(*retVals.err_string);
 	}
-	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
-	//
+
 	boost::property_tree::ptree root;
 	root.put(ret_json_key__isValid(), retVals.isValid);
 	root.put(ret_json_key__isInViewOnlyMode(), retVals.isInViewOnlyMode);
@@ -304,23 +209,15 @@ string serial_bridge::validate_components_for_login(const string &args_string)
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::estimated_tx_network_fee(const string &args_string)
+
+string serial_bridge::estimated_tx_network_fee(const string priority, const string feePerb, const string forkVersion)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	uint8_t fork_version = 0; // if missing
-	optional<string> optl__fork_version_string = json_root.get_optional<string>("fork_version");
-	if (optl__fork_version_string != none) {
-		fork_version = stoul(*optl__fork_version_string);
-	}
 	uint64_t fee = monero_fee_utils::estimated_tx_network_fee(
-		stoull(json_root.get<string>("fee_per_b")),
-		stoul(json_root.get<string>("priority")),
-		monero_fork_rules::make_use_fork_rules_fn(fork_version)
+		stoull(feePerb),
+		stoul(priority),
+		monero_fork_rules::make_use_fork_rules_fn(stoul(forkVersion))
 	);
+
 	std::ostringstream o;
 	o << fee;
 	//
@@ -329,6 +226,7 @@ string serial_bridge::estimated_tx_network_fee(const string &args_string)
 	//
 	return ret_json_from_root(root);
 }
+
 string serial_bridge::estimate_fee(const string &args_string)
 {
 	boost::property_tree::ptree json_root;
@@ -408,32 +306,35 @@ string serial_bridge::estimate_rct_tx_size(const string &args_string)
 	return ret_json_from_root(root);
 }
 //
-string serial_bridge::generate_key_image(const string &args_string)
+string serial_bridge::generate_key_image(const string txPublicKey, const string privateViewKey, const string publicSpendKey, const string privateSpendKey, const string outputIndex)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	crypto::secret_key sec_viewKey{};
 	crypto::secret_key sec_spendKey{};
 	crypto::public_key pub_spendKey{};
 	crypto::public_key tx_pub_key{};
 	{
 		bool r = false;
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("sec_viewKey_string")), sec_viewKey);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid secret view key");
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("sec_spendKey_string")), sec_spendKey);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid secret spend key");
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("pub_spendKey_string")), pub_spendKey);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid public spend key");
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("tx_pub_key")), tx_pub_key);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid tx pub key");
+		r = epee::string_tools::hex_to_pod(privateViewKey, sec_viewKey);
+		if (!r) {
+			return error_ret_json_from_message("Invalid private view key");
+		}
+		r = epee::string_tools::hex_to_pod(privateSpendKey, sec_spendKey);
+		if (!r) {
+			return error_ret_json_from_message("Invalid private spend key");
+		}
+		r = epee::string_tools::hex_to_pod(publicSpendKey, pub_spendKey);
+		if (!r) {
+			return error_ret_json_from_message("Invalid public spend key");
+		}
+		r = epee::string_tools::hex_to_pod(txPublicKey, tx_pub_key);
+		if (!r) {
+			return error_ret_json_from_message("Invalid tx public key");
+		}
 	}
 	monero_key_image_utils::KeyImageRetVals retVals;
 	bool r = monero_key_image_utils::new__key_image(
 		pub_spendKey, sec_spendKey, sec_viewKey, tx_pub_key,
-		stoull(json_root.get<string>("out_index")),
+		stoull(outputIndex),
 		retVals
 	);
 	if (!r) {

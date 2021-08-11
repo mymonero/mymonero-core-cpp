@@ -44,6 +44,8 @@ using namespace epee;
 #include "wallet_errors.h"
 //
 #include "monero_paymentID_utils.hpp"
+#include "serial_bridge_utils.hpp"
+using namespace serial_bridge_utils;
 //
 // Accessors - Implementations
 DecodedAddress_RetVals address_utils::decodedAddress(const string &addressString, cryptonote::network_type nettype)
@@ -93,12 +95,12 @@ bool address_utils::isIntegratedAddress(const string &addressString, cryptonote:
 	return retVals.paymentID_string != boost::none;
 }
 //
-optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID_string, cryptonote::network_type nettype)
+string address_utils::new_integratedAddrFromStdAddr(const string &std_address_string, const string &short_paymentID_string, cryptonote::network_type nettype)
 {
 	crypto::hash8 payment_id_short;
 	bool didParse = monero_paymentID_utils::parse_short_payment_id(short_paymentID_string, payment_id_short);
 	if (!didParse) {
-		return none;
+		return error_ret_json_from_message("Not a valid payment Id");
 	}
 	cryptonote::address_parse_info info;
 	bool didSucceed = cryptonote::get_account_address_from_str(
@@ -107,20 +109,23 @@ optional<string> address_utils::new_integratedAddrFromStdAddr(const string &std_
 		std_address_string
 	);
 	if (didSucceed == false) {
-		return none;
+		return error_ret_json_from_message("Not a valid address");
 	}
 	if (info.is_subaddress) {
 		THROW_WALLET_EXCEPTION_IF(true, tools::error::wallet_internal_error, "new_integratedAddrFromStdAddr must not be called with a subaddress");
-		return none;
+		return error_ret_json_from_message("Is a subaddress");
 	}
 	if (info.has_payment_id != false) {
 		// could even throw / fatalError here
-		return none; // that was not a std_address!
+		return error_ret_json_from_message("Already assigned a payment Id"); // that was not a std_address!
 	}
 	std::string int_address_string = cryptonote::get_account_integrated_address_as_str(
 		nettype,
 		info.address,
 		payment_id_short
 	);
-	return int_address_string;
+	boost::property_tree::ptree root;
+	root.put("retVal", int_address_string);
+	
+	return ret_json_from_root(root);
 }
