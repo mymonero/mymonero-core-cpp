@@ -151,12 +151,15 @@ bool monero_wallet_utils::are_equal_mnemonics(const string &words_a, const strin
 	//
 	MnemonicDecodedSeed_RetVals retVals__a;
 	r = decoded_seed(std::move(words_a), retVals__a);
-	THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Can't check equality of invalid mnemonic (a)");
-	//
+	if (!r) {
+		return false;
+	}
+	
 	MnemonicDecodedSeed_RetVals retVals__b;
 	r = decoded_seed(std::move(words_b), retVals__b);
-	THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Can't check equality of invalid mnemonic (b)");
-	//
+	if (!r) {
+		return false;
+	}
 	return *(retVals__a.optl__sec_seed) == *(retVals__b.optl__sec_seed);
 }
 //
@@ -225,7 +228,7 @@ bool monero_wallet_utils::decoded_seed(
 		sec_seed_string = string_tools::pod_to_hex(legacy16B_sec_seed); // <- NOTE: we are returning the _LEGACY_ seed as the string… this is important so we don't lose the fact it was 16B/13-word originally!
 	} else {
 		retVals.did_error = true;
-		retVals.err_string = "Please enter a 25- or 13-word secret mnemonic.";
+		retVals.err_string = "Please enter a 25 or 13-word secret mnemonic.";
 		//
 		return false;
 	}
