@@ -69,6 +69,7 @@ optional<uint64_t> _possible_uint64_from_json(
 	}
 	return none;
 }
+
 //
 LightwalletAPI_Req_GetUnspentOuts monero_send_routine::new__req_params__get_unspent_outs(
 	string from_address_string,
@@ -85,6 +86,7 @@ LightwalletAPI_Req_GetUnspentOuts monero_send_routine::new__req_params__get_unsp
 		dustT_ss.str()
 	};
 }
+
 LightwalletAPI_Req_GetRandomOuts monero_send_routine::new__req_params__get_random_outs(
 	const vector<SpendableOutput> &step1__using_outs,
 	const optional<SpendableOutputToRandomAmountOutputs> &prior_attempt_unspent_outs_to_mix_outs
@@ -312,9 +314,9 @@ struct _SendFunds_ConstructAndSendTx_Args
 	const string &from_address_string;
 	const string &sec_viewKey_string;
 	const string &sec_spendKey_string;
-	const string &to_address_string;
+	const vector<string>& to_address_strings;
 	optional<string> payment_id_string;
-	uint64_t sending_amount;
+	const vector<uint64_t>& sending_amounts;
 	bool is_sweeping;
 	uint32_t simple_priority;
 	const send__get_random_outs_fn_type &get_random_outs_fn;
@@ -344,7 +346,7 @@ void _reenterable_construct_and_send_tx(
 	// re-entry params
 	optional<uint64_t> prior_attempt_size_calcd_fee								= none,
 	optional<SpendableOutputToRandomAmountOutputs> prior_attempt_unspent_outs_to_mix_outs		= none,
-	size_t constructionAttempt												= 0
+	size_t constructionAttempt = 0
 ) {
 	args.status_update_fn(calculatingFee);
 	//
@@ -355,7 +357,7 @@ void _reenterable_construct_and_send_tx(
 		step1_retVals,
 		//
 		args.payment_id_string,
-		args.sending_amount,
+		args.sending_amounts,
 		args.is_sweeping,
 		args.simple_priority,
 		use_fork_rules,
@@ -409,6 +411,10 @@ void _reenterable_construct_and_send_tx(
 			return;
 		}
 
+		const vector<uint64_t>& sending_amounts = args.is_sweeping ?
+ 			vector<uint64_t>{step1_retVals.final_total_wo_fee}
+ 			: args.sending_amounts;
+
 		Send_Step2_RetVals step2_retVals;
 		monero_transfer_utils::send_step2__try_create_transaction(
 			step2_retVals,
@@ -416,9 +422,9 @@ void _reenterable_construct_and_send_tx(
 			args.from_address_string,
 			args.sec_viewKey_string,
 			args.sec_spendKey_string,
-			args.to_address_string,
+			args.to_address_strings,
 			args.payment_id_string,
-			step1_retVals.final_total_wo_fee,
+			sending_amounts,
 			step1_retVals.change_amount,
 			step1_retVals.using_fee,
 			args.simple_priority,
@@ -470,17 +476,24 @@ void _reenterable_construct_and_send_tx(
 			success_retVals.mixin = step1_retVals.mixin;
 			{
 				optional<string> returning__payment_id = args.payment_id_string; // separated from submit_raw_tx_fn so that it can be captured w/o capturing all of args (FIXME: does this matter?)
-				if (returning__payment_id == none) {
-					auto decoded = monero::address_utils::decodedAddress(args.to_address_string, args.nettype);
-					if (decoded.did_error) { // would be very strange...
-						SendFunds_Error_RetVals error_retVals;
-						error_retVals.explicit_errMsg = *(decoded.err_string);
-						args.error_cb_fn(error_retVals);
-						return;
-					}
-					if (decoded.paymentID_string != none) {
-						returning__payment_id = std::move(*(decoded.paymentID_string)); // just preserving this as an original return value - this can probably eventually be removed
-					}
+				for (const auto& address : args.to_address_strings) {
+ 						auto decoded = monero::address_utils::decodedAddress(address, args.nettype);
+ 						if (decoded.did_error) { // would be very strange...
+ 							SendFunds_Error_RetVals error_retVals;
+ 							error_retVals.explicit_errMsg = *(decoded.err_string);
+ 							args.error_cb_fn(error_retVals);
+ 							return;
+ 						}
+ 						if (decoded.paymentID_string != none) {
+ 							if (returning__payment_id != none) {
+ 								SendFunds_Error_RetVals error_retVals;
+ 								error_retVals.explicit_errMsg = "Multiple payment IDs in same transaction";
+ 								args.error_cb_fn(error_retVals);
+ 								return;
+ 							}
+
+ 							returning__payment_id = std::move(*(decoded.paymentID_string)); // just preserving this as an original return value - this can probably eventually be removed
+ 						}
 				}
 				success_retVals.final_payment_id = returning__payment_id;
 			}
@@ -510,79 +523,4 @@ void _reenterable_construct_and_send_tx(
 	} else {
 		get_random_outs_fn__cb_fn(boost::property_tree::ptree{});
 	}
-}
-//
-//
-// Entrypoint
-void monero_send_routine::async__send_funds(Async_SendFunds_Args args)
-{
-	uint64_t usable__sending_amount = args.is_sweeping ? 0 : args.sending_amount;
-	crypto::secret_key sec_viewKey{};
-	crypto::secret_key sec_spendKey{};
-	crypto::public_key pub_spendKey{};
-	{
-		bool r = false;
-		r = epee::string_tools::hex_to_pod(args.sec_viewKey_string, sec_viewKey);
-		if (!r) {
-			SendFunds_Error_RetVals error_retVals;
-			error_retVals.explicit_errMsg = "Invalid secret view key";
-			args.error_cb_fn(error_retVals);
-			return;
-		}
-		r = epee::string_tools::hex_to_pod(args.sec_spendKey_string, sec_spendKey);
-		if (!r) {
-			SendFunds_Error_RetVals error_retVals;
-			error_retVals.explicit_errMsg = "Invalid sec spend key";
-			args.error_cb_fn(error_retVals);
-			return;
-		}
-		r = epee::string_tools::hex_to_pod(args.pub_spendKey_string, pub_spendKey);
-		if (!r) {
-			SendFunds_Error_RetVals error_retVals;
-			error_retVals.explicit_errMsg = "Invalid public spend key";
-			args.error_cb_fn(error_retVals);
-			return;
-		}
-	}
-	api_fetch_cb_fn get_unspent_outs_fn__cb_fn = [
-		args,
-		usable__sending_amount,
-		sec_viewKey, sec_spendKey, pub_spendKey
-	] (
-		const property_tree::ptree &res
-	) -> void {
-		auto parsed_res = new__parsed_res__get_unspent_outs(
-			res,
-			sec_viewKey, sec_spendKey, pub_spendKey
-		);
-		if (parsed_res.err_msg != none) {
-			SendFunds_Error_RetVals error_retVals;
-			error_retVals.explicit_errMsg = std::move(*(parsed_res.err_msg));
-			args.error_cb_fn(error_retVals);
-			return;
-		}
-		_reenterable_construct_and_send_tx(_SendFunds_ConstructAndSendTx_Args{
-			args.from_address_string, args.sec_viewKey_string, args.sec_spendKey_string,
-			args.to_address_string, args.payment_id_string, usable__sending_amount, args.is_sweeping, args.simple_priority,
-			args.get_random_outs_fn, args.submit_raw_tx_fn, args.status_update_fn, args.error_cb_fn, args.success_cb_fn,
-			args.unlock_time == none ? 0 : *(args.unlock_time),
-			args.nettype == none ? MAINNET : *(args.nettype),
-			//
-			*(parsed_res.unspent_outs),
-			*(parsed_res.per_byte_fee),
-			*(parsed_res.fee_mask),
-			parsed_res.fork_version,
-			//
-			sec_viewKey, sec_spendKey
-		});
-	};
-	args.status_update_fn(fetchingLatestBalance);
-	//
-	args.get_unspent_outs_fn(
-		new__req_params__get_unspent_outs(
-			args.from_address_string,
-			args.sec_viewKey_string
-		),
-		get_unspent_outs_fn__cb_fn
-	);
 }

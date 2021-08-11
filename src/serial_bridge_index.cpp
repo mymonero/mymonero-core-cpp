@@ -60,387 +60,206 @@ using namespace serial_bridge_utils;
 //
 // Bridge Function Implementations
 //
-string serial_bridge::decode_address(const string &args_string)
+string serial_bridge::decode_address(const string address, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	auto retVals = monero::address_utils::decodedAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
+	auto retVals = monero::address_utils::decodedAddress(address, nettype_from_string(nettype));
 	if (retVals.did_error) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__isSubaddress(), retVals.isSubaddress);
-	root.put(ret_json_key__pub_viewKey_string(), *(retVals.pub_viewKey_string));
-	root.put(ret_json_key__pub_spendKey_string(), *(retVals.pub_spendKey_string));
+	root.put("isSubaddress", retVals.isSubaddress);
+	root.put("publicViewKey", *(retVals.pub_viewKey_string));
+	root.put("publicSpendKey", *(retVals.pub_spendKey_string));
 	if (retVals.paymentID_string != none) {
-		root.put(ret_json_key__paymentID_string(), *(retVals.paymentID_string));
+		root.put("paymentId", *(retVals.paymentID_string));
 	}
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::is_subaddress(const string &args_string)
+bool serial_bridge::is_subaddress(const string address, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	bool retVal = monero::address_utils::isSubAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), retVal);
-	//
-	return ret_json_from_root(root);
+	return monero::address_utils::isSubAddress(address, nettype_from_string(nettype));
 }
-string serial_bridge::is_integrated_address(const string &args_string)
+bool serial_bridge::is_integrated_address(const string address, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	bool retVal = monero::address_utils::isIntegratedAddress(json_root.get<string>("address"), nettype_from_string(json_root.get<string>("nettype_string")));
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), retVal);
-	//
-	return ret_json_from_root(root);
+	return monero::address_utils::isIntegratedAddress(address, nettype_from_string(nettype));
 }
-string serial_bridge::new_integrated_address(const string &args_string)
+string serial_bridge::new_integrated_address(const string address, const string paymentId, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	optional<string> retVal = monero::address_utils::new_integratedAddrFromStdAddr(json_root.get<string>("address"), json_root.get<string>("short_pid"), nettype_from_string(json_root.get<string>("nettype_string")));
-	boost::property_tree::ptree root;
-	if (retVal != none) {
-		root.put(ret_json_key__generic_retVal(), *retVal);
-	}
-	//
-	return ret_json_from_root(root);
+	return monero::address_utils::new_integratedAddrFromStdAddr(address, paymentId, nettype_from_string(nettype));
 }
-string serial_bridge::new_payment_id(const string &args_string)
+string serial_bridge::new_payment_id()
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	optional<string> retVal = monero_paymentID_utils::new_short_plain_paymentID_string();
-	boost::property_tree::ptree root;
-	if (retVal != none) {
-		root.put(ret_json_key__generic_retVal(), *retVal);
-	}
-	//
-	return ret_json_from_root(root);
+	return monero_paymentID_utils::new_short_plain_paymentID_string();
 }
-//
-string serial_bridge::newly_created_wallet(const string &args_string)
+
+string serial_bridge::newly_created_wallet(const string localeLanguageCode, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::WalletDescriptionRetVals retVals;
 	bool r = monero_wallet_utils::convenience__new_wallet_with_language_code(
-		json_root.get<string>("locale_language_code"),
+		localeLanguageCode,
 		retVals,
-		nettype_from_string(json_root.get<string>("nettype_string"))
+		nettype_from_string(nettype)
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
-	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
-	//
+
 	boost::property_tree::ptree root;
-	root.put(
-		ret_json_key__mnemonic_string(),
-		std::string((*(retVals.optl__desc)).mnemonic_string.data(), (*(retVals.optl__desc)).mnemonic_string.size())
-	);
-	root.put(ret_json_key__mnemonic_language(), (*(retVals.optl__desc)).mnemonic_language);
-	root.put(ret_json_key__sec_seed_string(), (*(retVals.optl__desc)).sec_seed_string);
-	root.put(ret_json_key__address_string(), (*(retVals.optl__desc)).address_string);
-	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
-	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
-	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
-	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
+	root.put("mnemonic", std::string((*(retVals.optl__desc)).mnemonic_string.data(), (*(retVals.optl__desc)).mnemonic_string.size()));
+	root.put("mnemonicLanguage", (*(retVals.optl__desc)).mnemonic_language);
+	root.put("seed", (*(retVals.optl__desc)).sec_seed_string);
+	root.put("address", (*(retVals.optl__desc)).address_string);
+	root.put("publicViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
+	root.put("privateViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
+	root.put("publicSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
+	root.put("privateSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::are_equal_mnemonics(const string &args_string)
+bool serial_bridge::are_equal_mnemonics(const string mnemonicA, const string mnemonicB)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	bool equal;
-	try {
-		equal = monero_wallet_utils::are_equal_mnemonics(
-			json_root.get<string>("a"),
-			json_root.get<string>("b")
-		);
-	} catch (std::exception const& e) {
-		return error_ret_json_from_message(e.what());
-	}
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), equal);
-	//
-	return ret_json_from_root(root);
+	return monero_wallet_utils::are_equal_mnemonics(mnemonicA, mnemonicB);
 }
-string serial_bridge::address_and_keys_from_seed(const string &args_string)
+string serial_bridge::address_and_keys_from_seed(const string seed, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::ComponentsFromSeed_RetVals retVals;
 	bool r = monero_wallet_utils::address_and_keys_from_seed(
-		json_root.get<string>("seed_string"),
-		nettype_from_string(json_root.get<string>("nettype_string")),
+		seed,
+		nettype_from_string(nettype),
 		retVals
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
-	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
-	//
+
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__address_string(), (*(retVals.optl__val)).address_string);
-	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_viewKey));
-	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_viewKey));
-	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_spendKey));
-	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_spendKey));
+	root.put("address", (*(retVals.optl__val)).address_string);
+	root.put("publicViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_viewKey));
+	root.put("privateViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_viewKey));
+	root.put("publicSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_spendKey));
+	root.put("privateSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_spendKey));
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::mnemonic_from_seed(const string &args_string)
+string serial_bridge::mnemonic_from_seed(const string seed, const string wordsetName)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::SeedDecodedMnemonic_RetVals retVals = monero_wallet_utils::mnemonic_string_from_seed_hex_string(
-		json_root.get<string>("seed_string"),
-		json_root.get<string>("wordset_name")
+		seed,
+		wordsetName
 	);
 	boost::property_tree::ptree root;
 	if (retVals.err_string != none) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
-	root.put(
-		ret_json_key__generic_retVal(),
-		std::string((*(retVals.mnemonic_string)).data(), (*(retVals.mnemonic_string)).size())
-	);
-	//
+	root.put("retVal", std::string((*(retVals.mnemonic_string)).data(), (*(retVals.mnemonic_string)).size()));
+
 	return ret_json_from_root(root);
 }
-string serial_bridge::seed_and_keys_from_mnemonic(const string &args_string)
+string serial_bridge::seed_and_keys_from_mnemonic(const string mnemonic, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::WalletDescriptionRetVals retVals;
 	bool r = monero_wallet_utils::wallet_with(
-		json_root.get<string>("mnemonic_string"),
+		mnemonic,
 		retVals,
-		nettype_from_string(json_root.get<string>("nettype_string"))
+		nettype_from_string(nettype)
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
 		return error_ret_json_from_message(*retVals.err_string);
 	}
 	monero_wallet_utils::WalletDescription walletDescription = *(retVals.optl__desc);
-	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
-	//
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__sec_seed_string(), (*(retVals.optl__desc)).sec_seed_string);
-	root.put(ret_json_key__mnemonic_language(), (*(retVals.optl__desc)).mnemonic_language);
-	root.put(ret_json_key__address_string(), (*(retVals.optl__desc)).address_string);
-	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
-	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
-	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
-	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
-	//
+	root.put("seed", (*(retVals.optl__desc)).sec_seed_string);
+	root.put("mnemonicLanguage", (*(retVals.optl__desc)).mnemonic_language);
+	root.put("address", (*(retVals.optl__desc)).address_string);
+	root.put("publicViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_viewKey));
+	root.put("privateViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_viewKey));
+	root.put("publicSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).pub_spendKey));
+	root.put("privateSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__desc)).sec_spendKey));
+
 	return ret_json_from_root(root);
 }
-string serial_bridge::validate_components_for_login(const string &args_string)
+string serial_bridge::validate_components_for_login(const string address, const string privateViewKey, const string privateSpendKey, const string seed, const string nettype)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	monero_wallet_utils::WalletComponentsValidationResults retVals;
 	bool r = monero_wallet_utils::validate_wallet_components_with( // returns !did_error
-		json_root.get<string>("address_string"),
-		json_root.get<string>("sec_viewKey_string"),
-		json_root.get_optional<string>("sec_spendKey_string"),
-		json_root.get_optional<string>("seed_string"),
-		nettype_from_string(json_root.get<string>("nettype_string")),
+		address,
+		privateViewKey,
+		privateSpendKey,
+		seed,
+		nettype_from_string(nettype),
 		retVals
 	);
 	bool did_error = retVals.did_error;
 	if (!r) {
 		return error_ret_json_from_message(*retVals.err_string);
 	}
-	THROW_WALLET_EXCEPTION_IF(did_error, error::wallet_internal_error, "Illegal success flag but did_error");
-	//
+
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__isValid(), retVals.isValid);
-	root.put(ret_json_key__isInViewOnlyMode(), retVals.isInViewOnlyMode);
-	root.put(ret_json_key__pub_viewKey_string(), retVals.pub_viewKey_string);
-	root.put(ret_json_key__pub_spendKey_string(), retVals.pub_spendKey_string);
+	root.put("isValid", retVals.isValid);
+	root.put("isViewOnly", retVals.isInViewOnlyMode);
+	root.put("publicViewKey", retVals.pub_viewKey_string);
+	root.put("publicSpendKey", retVals.pub_spendKey_string);
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::estimated_tx_network_fee(const string &args_string)
+
+string serial_bridge::estimated_tx_network_fee(const string priority, const string feePerb, const string forkVersion)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	uint8_t fork_version = 0; // if missing
-	optional<string> optl__fork_version_string = json_root.get_optional<string>("fork_version");
-	if (optl__fork_version_string != none) {
-		fork_version = stoul(*optl__fork_version_string);
-	}
 	uint64_t fee = monero_fee_utils::estimated_tx_network_fee(
-		stoull(json_root.get<string>("fee_per_b")),
-		stoul(json_root.get<string>("priority")),
-		monero_fork_rules::make_use_fork_rules_fn(fork_version)
+		stoull(feePerb),
+		stoul(priority),
+		monero_fork_rules::make_use_fork_rules_fn(stoul(forkVersion))
 	);
+
 	std::ostringstream o;
 	o << fee;
 	//
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
+	root.put("retVal", o.str());
 	//
 	return ret_json_from_root(root);
 }
-string serial_bridge::estimate_fee(const string &args_string)
+
+string serial_bridge::generate_key_image(const string txPublicKey, const string privateViewKey, const string publicSpendKey, const string privateSpendKey, const string outputIndex)
 {
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	//
-	bool use_per_byte_fee = json_root.get<bool>("use_per_byte_fee");
-	bool use_rct = json_root.get<bool>("use_rct");
-	int n_inputs = stoul(json_root.get<string>("n_inputs"));
-	int mixin = stoul(json_root.get<string>("mixin"));
-	int n_outputs = stoul(json_root.get<string>("n_outputs"));
-	size_t extra_size = stoul(json_root.get<string>("extra_size"));
-	bool bulletproof = json_root.get<bool>("bulletproof");
-	bool clsag = json_root.get<bool>("clsag");
-	uint64_t base_fee = stoull(json_root.get<string>("base_fee"));
-	uint64_t fee_quantization_mask = stoull(json_root.get<string>("fee_quantization_mask"));
-	uint32_t priority = stoul(json_root.get<string>("priority"));
-	uint8_t fork_version = stoul(json_root.get<string>("fork_version"));
-	use_fork_rules_fn_type use_fork_rules_fn = monero_fork_rules::make_use_fork_rules_fn(fork_version);
-	uint64_t fee_multiplier = monero_fee_utils::get_fee_multiplier(priority, monero_fee_utils::default_priority(), monero_fee_utils::get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
-	//
-	uint64_t fee = monero_fee_utils::estimate_fee(use_per_byte_fee, use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask);
-	//
-	std::ostringstream o;
-	o << fee;
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
-	//
-	return ret_json_from_root(root);
-}
-string serial_bridge::estimate_tx_weight(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	//
-	bool use_rct = json_root.get<bool>("use_rct");
-	int n_inputs = stoul(json_root.get<string>("n_inputs"));
-	int mixin = stoul(json_root.get<string>("mixin"));
-	int n_outputs = stoul(json_root.get<string>("n_outputs"));
-	size_t extra_size = stoul(json_root.get<string>("extra_size"));
-	bool bulletproof = json_root.get<bool>("bulletproof");
-	bool clsag = json_root.get<bool>("clsag");
-	//
-	uint64_t weight = monero_fee_utils::estimate_tx_weight(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag);
-	//
-	std::ostringstream o;
-	o << weight;
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
-	//
-	return ret_json_from_root(root);
-}
-string serial_bridge::estimate_rct_tx_size(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	std::size_t size = monero_fee_utils::estimate_rct_tx_size(
-		stoul(json_root.get<string>("n_inputs")),
-		stoul(json_root.get<string>("mixin")),
-		stoul(json_root.get<string>("n_outputs")),
-		stoul(json_root.get<string>("extra_size")),
-		json_root.get<bool>("bulletproof"),
-		json_root.get<bool>("clsag")
-	);
-	std::ostringstream o;
-	o << size;
-	//
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
-	//
-	return ret_json_from_root(root);
-}
-//
-string serial_bridge::generate_key_image(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
 	crypto::secret_key sec_viewKey{};
 	crypto::secret_key sec_spendKey{};
 	crypto::public_key pub_spendKey{};
 	crypto::public_key tx_pub_key{};
 	{
 		bool r = false;
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("sec_viewKey_string")), sec_viewKey);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid secret view key");
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("sec_spendKey_string")), sec_spendKey);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid secret spend key");
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("pub_spendKey_string")), pub_spendKey);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid public spend key");
-		r = epee::string_tools::hex_to_pod(std::string(json_root.get<string>("tx_pub_key")), tx_pub_key);
-		THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "Invalid tx pub key");
+		r = epee::string_tools::hex_to_pod(privateViewKey, sec_viewKey);
+		if (!r) {
+			return error_ret_json_from_message("Invalid private view key");
+		}
+		r = epee::string_tools::hex_to_pod(privateSpendKey, sec_spendKey);
+		if (!r) {
+			return error_ret_json_from_message("Invalid private spend key");
+		}
+		r = epee::string_tools::hex_to_pod(publicSpendKey, pub_spendKey);
+		if (!r) {
+			return error_ret_json_from_message("Invalid public spend key");
+		}
+		r = epee::string_tools::hex_to_pod(txPublicKey, tx_pub_key);
+		if (!r) {
+			return error_ret_json_from_message("Invalid tx public key");
+		}
 	}
 	monero_key_image_utils::KeyImageRetVals retVals;
 	bool r = monero_key_image_utils::new__key_image(
 		pub_spendKey, sec_spendKey, sec_viewKey, tx_pub_key,
-		stoull(json_root.get<string>("out_index")),
+		stoull(outputIndex),
 		retVals
 	);
 	if (!r) {
 		return error_ret_json_from_message("Unable to generate key image"); // TODO: return error string? (unwrap optional)
 	}
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(retVals.calculated_key_image));
+	root.put("retVal", epee::string_tools::pod_to_hex(retVals.calculated_key_image));
 	//
 	return ret_json_from_root(root);
 }
@@ -507,7 +326,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		retVals,
 		//
 		json_root.get_optional<string>("payment_id_string"),
-		stoull(json_root.get<string>("sending_amount")),
+		vector<uint64_t>{stoull(json_root.get<string>("sending_amount"))},
 		json_root.get<bool>("is_sweeping"),
 		stoul(json_root.get<string>("priority")),
 		monero_fork_rules::make_use_fork_rules_fn(fork_version),
@@ -520,17 +339,17 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 	);
 	boost::property_tree::ptree root;
 	if (retVals.errCode != noError) {
-		root.put(ret_json_key__any__err_code(), retVals.errCode);
-		root.put(ret_json_key__any__err_msg(), err_msg_from_err_code__create_transaction(retVals.errCode));
+		root.put("err_code", retVals.errCode);
+		root.put("err_msg", err_msg_from_err_code__create_transaction(retVals.errCode));
 		//
 		// The following will be set if errCode==needMoreMoneyThanFound - and i'm depending on them being 0 otherwise
-		root.put(ret_json_key__send__spendable_balance(), RetVals_Transforms::str_from(retVals.spendable_balance));
-		root.put(ret_json_key__send__required_balance(), RetVals_Transforms::str_from(retVals.required_balance));
+		root.put("spendable_balance", RetVals_Transforms::str_from(retVals.spendable_balance));
+		root.put("required_balance", RetVals_Transforms::str_from(retVals.required_balance));
 	} else {
-		root.put(ret_json_key__send__mixin(), RetVals_Transforms::str_from(retVals.mixin));
-		root.put(ret_json_key__send__using_fee(), RetVals_Transforms::str_from(retVals.using_fee));
-		root.put(ret_json_key__send__final_total_wo_fee(), RetVals_Transforms::str_from(retVals.final_total_wo_fee));
-		root.put(ret_json_key__send__change_amount(), RetVals_Transforms::str_from(retVals.change_amount));
+		root.put("mixin", RetVals_Transforms::str_from(retVals.mixin));
+		root.put("using_fee", RetVals_Transforms::str_from(retVals.using_fee));
+		root.put("final_total_wo_fee", RetVals_Transforms::str_from(retVals.final_total_wo_fee));
+		root.put("change_amount", RetVals_Transforms::str_from(retVals.change_amount));
 		{
 			boost::property_tree::ptree using_outs_ptree;
 			BOOST_FOREACH(SpendableOutput &out, retVals.using_outs)
@@ -547,7 +366,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 				out_ptree.put("tx_pub_key", out.tx_pub_key);
 				using_outs_ptree.push_back(out_ptree_pair);
 			}
-			root.add_child(ret_json_key__send__using_outs(), using_outs_ptree);
+			root.add_child("using_outs", using_outs_ptree);
 		}
 	}
 	return ret_json_from_root(root);
@@ -739,9 +558,9 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 		json_root.get<string>("from_address_string"),
 		json_root.get<string>("sec_viewKey_string"),
 		json_root.get<string>("sec_spendKey_string"),
-		json_root.get<string>("to_address_string"),
+		vector<string>{json_root.get<string>("to_address_string")},
 		json_root.get_optional<string>("payment_id_string"),
-		stoull(json_root.get<string>("final_total_wo_fee")),
+		vector<uint64_t>{stoull(json_root.get<string>("final_total_wo_fee"))},
 		stoull(json_root.get<string>("change_amount")),
 		stoull(json_root.get<string>("fee_amount")),
 		stoul(json_root.get<string>("priority")),
@@ -755,297 +574,19 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 	);
 	boost::property_tree::ptree root;
 	if (retVals.errCode != noError) {
-		root.put(ret_json_key__any__err_code(), retVals.errCode);
-		root.put(ret_json_key__any__err_msg(), err_msg_from_err_code__create_transaction(retVals.errCode));
+		root.put("err_code", retVals.errCode);
+		root.put("err_msg", err_msg_from_err_code__create_transaction(retVals.errCode));
 	} else {
 		if (retVals.tx_must_be_reconstructed) {
-			root.put(ret_json_key__send__tx_must_be_reconstructed(), true);
-			root.put(ret_json_key__send__fee_actually_needed(), RetVals_Transforms::str_from(retVals.fee_actually_needed)); // must be passed back
+			root.put("tx_must_be_reconstructed", true);
+			root.put("fee_actually_needed", RetVals_Transforms::str_from(retVals.fee_actually_needed)); // must be passed back
 		} else {
-			root.put(ret_json_key__send__tx_must_be_reconstructed(), false); // so consumers have it available
-			root.put(ret_json_key__send__serialized_signed_tx(), *(retVals.signed_serialized_tx_string));
-			root.put(ret_json_key__send__tx_hash(), *(retVals.tx_hash_string));
-			root.put(ret_json_key__send__tx_key(), *(retVals.tx_key_string));
-			root.put(ret_json_key__send__tx_pub_key(), *(retVals.tx_pub_key_string));
+			root.put("tx_must_be_reconstructed", false); // so consumers have it available
+			root.put("serialized_signed_tx", *(retVals.signed_serialized_tx_string));
+			root.put("tx_hash", *(retVals.tx_hash_string));
+			root.put("tx_key", *(retVals.tx_key_string));
+			root.put("tx_pub_key", *(retVals.tx_pub_key_string));
 		}
 	}
-	return ret_json_from_root(root);
-}
-//
-string serial_bridge::decodeRct(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	rct::key sk;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("sk"), sk)) {
-		return error_ret_json_from_message("Invalid 'sk'");
-	}
-	unsigned int i = stoul(json_root.get<string>("i"));
-	// NOTE: this rv structure parsing could be factored but it presently does not implement a number of sub-components of rv, such as .pseudoOuts
-	auto rv_desc = json_root.get_child("rv");
-	rct::rctSig rv = AUTO_VAL_INIT(rv);
-	unsigned int rv_type_int = stoul(rv_desc.get<string>("type"));
-	// got to be a better way to do this
-	if (rv_type_int == rct::RCTTypeNull) {
-		rv.type = rct::RCTTypeNull;
-	} else if (rv_type_int == rct::RCTTypeSimple) {
-		rv.type = rct::RCTTypeSimple;
-	} else if (rv_type_int == rct::RCTTypeFull) {
-		rv.type = rct::RCTTypeFull;
-	} else if (rv_type_int == rct::RCTTypeBulletproof) {
-		rv.type = rct::RCTTypeBulletproof;
-	} else if (rv_type_int == rct::RCTTypeBulletproof2) {
-		rv.type = rct::RCTTypeBulletproof2;
-	} else if (rv_type_int == rct::RCTTypeCLSAG) {
-		rv.type = rct::RCTTypeCLSAG;
-	} else if (rv_type_int == rct::RCTTypeBulletproofPlus) {
-		rv.type = rct::RCTTypeBulletproofPlus;
-	} else {
-		return error_ret_json_from_message("Invalid 'rv.type'");
-	}
-	BOOST_FOREACH(boost::property_tree::ptree::value_type &ecdh_info_desc, rv_desc.get_child("ecdhInfo"))
-	{
-		assert(ecdh_info_desc.first.empty()); // array elements have no names
-		auto ecdh_info = rct::ecdhTuple{};
-		if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("mask"), ecdh_info.mask)) {
-			return error_ret_json_from_message("Invalid rv.ecdhInfo[].mask");
-		}
-		if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), ecdh_info.amount)) {
-			return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
-		}
-		rv.ecdhInfo.push_back(ecdh_info); // rct keys aren't movable
-	}
-	BOOST_FOREACH(boost::property_tree::ptree::value_type &outPk_desc, rv_desc.get_child("outPk"))
-	{
-		assert(outPk_desc.first.empty()); // array elements have no names
-		auto outPk = rct::ctkey{};
-		if (!epee::string_tools::hex_to_pod(outPk_desc.second.get<string>("mask"), outPk.mask)) {
-			return error_ret_json_from_message("Invalid rv.outPk[].mask");
-		}
-		// FIXME: does dest need to be placed on the key?
-		rv.outPk.push_back(outPk); // rct keys aren't movable
-	}
-	//
-	rct::key mask;
-	rct::xmr_amount/*uint64_t*/ decoded_amount;
-	try {
-		decoded_amount = rct::decodeRct(
-			rv, sk, i, mask,
-			hw::get_device("default") // presently this uses the default device but we could let a string be passed to switch the type
-		);
-	} catch (std::exception const& e) {
-		return error_ret_json_from_message(e.what());
-	}
-	ostringstream decoded_amount_ss;
-	decoded_amount_ss << decoded_amount;
-	//
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__decodeRct_mask(), epee::string_tools::pod_to_hex(mask));
-	root.put(ret_json_key__decodeRct_amount(), decoded_amount_ss.str());
-	//
-	return ret_json_from_root(root);	
-}
-//
-string serial_bridge::decodeRctSimple(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	rct::key sk;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("sk"), sk)) {
-		return error_ret_json_from_message("Invalid 'sk'");
-	}
-	unsigned int i = stoul(json_root.get<string>("i"));
-	// NOTE: this rv structure parsing could be factored but it presently does not implement a number of sub-components of rv, such as .pseudoOuts
-	auto rv_desc = json_root.get_child("rv");
-	rct::rctSig rv = AUTO_VAL_INIT(rv);
-	unsigned int rv_type_int = stoul(rv_desc.get<string>("type"));
-	// got to be a better way to do this
-	if (rv_type_int == rct::RCTTypeNull) {
-		rv.type = rct::RCTTypeNull;
-	} else if (rv_type_int == rct::RCTTypeSimple) {
-		rv.type = rct::RCTTypeSimple;
-	} else if (rv_type_int == rct::RCTTypeFull) {
-		rv.type = rct::RCTTypeFull;
-	} else if (rv_type_int == rct::RCTTypeBulletproof) {
-		rv.type = rct::RCTTypeBulletproof;
-	} else if (rv_type_int == rct::RCTTypeBulletproof2) {
-		rv.type = rct::RCTTypeBulletproof2;
-	} else if (rv_type_int == rct::RCTTypeCLSAG) {
-		rv.type = rct::RCTTypeCLSAG;
-	} else if (rv_type_int == rct::RCTTypeBulletproofPlus) {
-		rv.type = rct::RCTTypeBulletproofPlus;
-	} else {
-		return error_ret_json_from_message("Invalid 'rv.type'");
-	}
-	BOOST_FOREACH(boost::property_tree::ptree::value_type &ecdh_info_desc, rv_desc.get_child("ecdhInfo"))
-	{
-		assert(ecdh_info_desc.first.empty()); // array elements have no names
-		auto ecdh_info = rct::ecdhTuple{};
-		if (rv.type >= rct::RCTTypeBulletproof2) {
-			if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), (crypto::hash8&)ecdh_info.amount)) {
-				return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
-			}
-		} else {
-			if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("mask"), ecdh_info.mask)) {
-				return error_ret_json_from_message("Invalid rv.ecdhInfo[].mask");
-			}
-			if (!epee::string_tools::hex_to_pod(ecdh_info_desc.second.get<string>("amount"), ecdh_info.amount)) {
-				return error_ret_json_from_message("Invalid rv.ecdhInfo[].amount");
-			}
-		}
-		rv.ecdhInfo.push_back(ecdh_info);
-	}
-	BOOST_FOREACH(boost::property_tree::ptree::value_type &outPk_desc, rv_desc.get_child("outPk"))
-	{
-		assert(outPk_desc.first.empty()); // array elements have no names
-		auto outPk = rct::ctkey{};
-		if (!epee::string_tools::hex_to_pod(outPk_desc.second.get<string>("mask"), outPk.mask)) {
-			return error_ret_json_from_message("Invalid rv.outPk[].mask");
-		}
-		// FIXME: does dest need to be placed on the key?
-		rv.outPk.push_back(outPk);
-	}
-	//
-	rct::key mask;
-	rct::xmr_amount/*uint64_t*/ decoded_amount;
-	try {
-		decoded_amount = rct::decodeRctSimple(
-			rv, sk, i, mask,
-			hw::get_device("default") // presently this uses the default device but we could let a string be passed to switch the type
-		);
-	} catch (std::exception const& e) {
-		return error_ret_json_from_message(e.what());
-	}
-	stringstream decoded_amount_ss;
-	decoded_amount_ss << decoded_amount;
-	//
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__decodeRct_mask(), epee::string_tools::pod_to_hex(mask));
-	root.put(ret_json_key__decodeRct_amount(), decoded_amount_ss.str());
-	//
-	return ret_json_from_root(root);	
-}
-string serial_bridge::generate_key_derivation(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	public_key pub_key;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("pub"), pub_key)) {
-		return error_ret_json_from_message("Invalid 'pub'");
-	}
-	secret_key sec_key;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("sec"), sec_key)) {
-		return error_ret_json_from_message("Invalid 'sec'");
-	}
-	crypto::key_derivation derivation = AUTO_VAL_INIT(derivation);
-	if (!crypto::generate_key_derivation(pub_key, sec_key, derivation)) {
-		return error_ret_json_from_message("Unable to generate key derivation");
-	}
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(derivation));
-	//
-	return ret_json_from_root(root);
-}
-string serial_bridge::derive_public_key(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	crypto::key_derivation derivation;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("derivation"), derivation)) {
-		return error_ret_json_from_message("Invalid 'derivation'");
-	}
-	std::size_t output_index = stoul(json_root.get<string>("out_index"));
-	crypto::public_key base;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("pub"), base)) {
-		return error_ret_json_from_message("Invalid 'pub'");
-	}
-	crypto::public_key derived_key = AUTO_VAL_INIT(derived_key);
-	if (!crypto::derive_public_key(derivation, output_index, base, derived_key)) {
-		return error_ret_json_from_message("Unable to derive public key");
-	}
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(derived_key));
-	//
-	return ret_json_from_root(root);
-}
-string serial_bridge::derive_subaddress_public_key(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	crypto::key_derivation derivation;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("derivation"), derivation)) {
-		return error_ret_json_from_message("Invalid 'derivation'");
-	}
-	std::size_t output_index = stoul(json_root.get<string>("out_index"));
-	crypto::public_key out_key;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("output_key"), out_key)) {
-		return error_ret_json_from_message("Invalid 'output_key'");
-	}
-	crypto::public_key derived_key = AUTO_VAL_INIT(derived_key);
-	if (!crypto::derive_subaddress_public_key(out_key, derivation, output_index, derived_key)) {
-		return error_ret_json_from_message("Unable to derive public key");
-	}
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(derived_key));
-	//
-	return ret_json_from_root(root);
-}
-string serial_bridge::derivation_to_scalar(const string &args_string)
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	crypto::key_derivation derivation;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("derivation"), derivation)) {
-		return error_ret_json_from_message("Invalid 'derivation'");
-	}
-	std::size_t output_index = stoul(json_root.get<string>("output_index"));
-	crypto::ec_scalar scalar = AUTO_VAL_INIT(scalar);
-	crypto::derivation_to_scalar(derivation, output_index, scalar);
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(scalar));
-	//
-	return ret_json_from_root(root);
-}
-string serial_bridge::encrypt_payment_id(const string &args_string) 
-{
-	boost::property_tree::ptree json_root;
-	if (!parsed_json_root(args_string, json_root)) {
-		// it will already have thrown an exception
-		return error_ret_json_from_message("Invalid JSON");
-	}
-	crypto::hash8 payment_id;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("payment_id"), payment_id)) {
-		return error_ret_json_from_message("Invalid 'payment_id'");
-	}
-	crypto::public_key public_key;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("public_key"), public_key)) {
-		return error_ret_json_from_message("Invalid 'public_key'");
-	}
-	crypto::secret_key secret_key;
-	if (!epee::string_tools::hex_to_pod(json_root.get<string>("secret_key"), secret_key)) {
-		return error_ret_json_from_message("Invalid 'secret_key'");
-	}
-	hw::device &hwdev = hw::get_device("default");
-	hwdev.encrypt_payment_id(payment_id, public_key, secret_key);
-	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(payment_id));
 	return ret_json_from_root(root);
 }
