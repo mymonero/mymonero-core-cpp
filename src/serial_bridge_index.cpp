@@ -136,11 +136,11 @@ string serial_bridge::address_and_keys_from_seed(const string seed, const string
 	}
 
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__address_string(), (*(retVals.optl__val)).address_string);
-	root.put(ret_json_key__pub_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_viewKey));
-	root.put(ret_json_key__sec_viewKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_viewKey));
-	root.put(ret_json_key__pub_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_spendKey));
-	root.put(ret_json_key__sec_spendKey_string(), epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_spendKey));
+	root.put("address", (*(retVals.optl__val)).address_string);
+	root.put("publicViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_viewKey));
+	root.put("privateViewKey", epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_viewKey));
+	root.put("publicSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__val)).pub_spendKey));
+	root.put("privateSpendKey", epee::string_tools::pod_to_hex((*(retVals.optl__val)).sec_spendKey));
 	//
 	return ret_json_from_root(root);
 }
@@ -202,10 +202,10 @@ string serial_bridge::validate_components_for_login(const string address, const 
 	}
 
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__isValid(), retVals.isValid);
-	root.put(ret_json_key__isInViewOnlyMode(), retVals.isInViewOnlyMode);
-	root.put(ret_json_key__pub_viewKey_string(), retVals.pub_viewKey_string);
-	root.put(ret_json_key__pub_spendKey_string(), retVals.pub_spendKey_string);
+	root.put("isValid", retVals.isValid);
+	root.put("isViewOnly", retVals.isInViewOnlyMode);
+	root.put("publicViewKey", retVals.pub_viewKey_string);
+	root.put("publicSpendKey", retVals.pub_spendKey_string);
 	//
 	return ret_json_from_root(root);
 }
