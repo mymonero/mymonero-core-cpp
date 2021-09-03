@@ -53,11 +53,6 @@ namespace monero_paymentID_utils
 	// Parsing and Detecting Payment IDs
 	bool parse_long_payment_id(const string& payment_id_str, crypto::hash& payment_id);
 	bool parse_short_payment_id(const string& payment_id_str, crypto::hash8& payment_id);
-	bool parse_payment_id(const string& payment_id_str, crypto::hash& payment_id);
-	//
-	// Validating payment IDs
-	bool is_a_valid_or_not_a_payment_id_of_length(const string &str, size_t length);
-	bool is_a_valid_or_not_a_payment_id(optional<string> str); // this checks 16 and then 64 len strs
 }
 
 #endif /* monero_paymentID_utils_hpp */

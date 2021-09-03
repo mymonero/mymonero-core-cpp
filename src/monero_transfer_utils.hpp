@@ -56,9 +56,6 @@ namespace monero_transfer_utils
 	using namespace monero_fork_rules;
 	using namespace crypto;
 	//
-	bool is_transfer_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, network_type nettype = MAINNET);
-	bool is_tx_spendtime_unlocked(uint64_t unlock_time, uint64_t block_height, uint64_t blockchain_size, network_type nettype = MAINNET);
-	//
 	// Types - Arguments
 	struct SpendableOutput
 	{
