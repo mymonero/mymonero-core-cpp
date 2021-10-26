@@ -29,7 +29,7 @@
 //  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //
-#import "monero_address_utils.hpp"
+#include "monero_address_utils.hpp"
 using namespace monero;
 using namespace address_utils;
 //
