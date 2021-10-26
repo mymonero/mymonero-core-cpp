@@ -155,7 +155,7 @@ namespace monero_send_routine
 		submittingTransaction = 5
 	};
 	typedef std::function<void(SendFunds_ProcessStep code)> send__status_update_fn_type;
-	static inline string err_msg_from_err_code__send_funds_step(SendFunds_ProcessStep code)
+	static inline const char *err_msg_from_err_code__send_funds_step(SendFunds_ProcessStep code)
 	{
 		switch (code) {
 			case fetchingLatestBalance:
