@@ -159,6 +159,7 @@ namespace monero_transfer_utils
 			case cantGetDecryptedMaskFromRCTHex:
 				return "Can't get decrypted mask from 'rct' hex";
 		}
+        return "Unknown error";
 	}
 	//
 	// See monero_send_routine for actual app-lvl interface used by lightwallets 

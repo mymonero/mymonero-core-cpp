@@ -169,6 +169,7 @@ namespace monero_send_routine
 			case submittingTransaction:
 				return "Submitted transaction.";
 		}
+        return "Unknown error.";
 	}
 	// - Accessory types - Callbacks - Routine completions
 	struct SendFunds_Error_RetVals
