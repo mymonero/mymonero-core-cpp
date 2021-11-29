@@ -155,7 +155,7 @@ string serial_bridge::mnemonic_from_seed(const string seed, const string wordset
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
 	root.put(
-		ret_json_key__generic_retVal(),
+		"retVal",
 		std::string((*(retVals.mnemonic_string)).data(), (*(retVals.mnemonic_string)).size())
 	);
 
@@ -222,7 +222,7 @@ string serial_bridge::estimated_tx_network_fee(const string priority, const stri
 	o << fee;
 	//
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
+	root.put("retVal", o.str());
 	//
 	return ret_json_from_root(root);
 }
@@ -254,7 +254,7 @@ string serial_bridge::estimate_fee(const string &args_string)
 	std::ostringstream o;
 	o << fee;
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
+	root.put("retVal", o.str());
 	//
 	return ret_json_from_root(root);
 }
@@ -278,7 +278,7 @@ string serial_bridge::estimate_tx_weight(const string &args_string)
 	std::ostringstream o;
 	o << weight;
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
+	root.put("retVal", o.str());
 	//
 	return ret_json_from_root(root);
 }
@@ -301,7 +301,7 @@ string serial_bridge::estimate_rct_tx_size(const string &args_string)
 	o << size;
 	//
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), o.str());
+	root.put("retVal", o.str());
 	//
 	return ret_json_from_root(root);
 }
@@ -341,7 +341,7 @@ string serial_bridge::generate_key_image(const string txPublicKey, const string 
 		return error_ret_json_from_message("Unable to generate key image"); // TODO: return error string? (unwrap optional)
 	}
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(retVals.calculated_key_image));
+	root.put("retVal", epee::string_tools::pod_to_hex(retVals.calculated_key_image));
 	//
 	return ret_json_from_root(root);
 }
@@ -421,17 +421,17 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 	);
 	boost::property_tree::ptree root;
 	if (retVals.errCode != noError) {
-		root.put(ret_json_key__any__err_code(), retVals.errCode);
-		root.put(ret_json_key__any__err_msg(), err_msg_from_err_code__create_transaction(retVals.errCode));
+		root.put("err_code", retVals.errCode);
+		root.put("err_msg", err_msg_from_err_code__create_transaction(retVals.errCode));
 		//
 		// The following will be set if errCode==needMoreMoneyThanFound - and i'm depending on them being 0 otherwise
-		root.put(ret_json_key__send__spendable_balance(), RetVals_Transforms::str_from(retVals.spendable_balance));
-		root.put(ret_json_key__send__required_balance(), RetVals_Transforms::str_from(retVals.required_balance));
+		root.put("spendable_balance", RetVals_Transforms::str_from(retVals.spendable_balance));
+		root.put("required_balance", RetVals_Transforms::str_from(retVals.required_balance));
 	} else {
-		root.put(ret_json_key__send__mixin(), RetVals_Transforms::str_from(retVals.mixin));
-		root.put(ret_json_key__send__using_fee(), RetVals_Transforms::str_from(retVals.using_fee));
-		root.put(ret_json_key__send__final_total_wo_fee(), RetVals_Transforms::str_from(retVals.final_total_wo_fee));
-		root.put(ret_json_key__send__change_amount(), RetVals_Transforms::str_from(retVals.change_amount));
+		root.put("mixin", RetVals_Transforms::str_from(retVals.mixin));
+		root.put("using_fee", RetVals_Transforms::str_from(retVals.using_fee));
+		root.put("final_total_wo_fee", RetVals_Transforms::str_from(retVals.final_total_wo_fee));
+		root.put("change_amount", RetVals_Transforms::str_from(retVals.change_amount));
 		{
 			boost::property_tree::ptree using_outs_ptree;
 			BOOST_FOREACH(SpendableOutput &out, retVals.using_outs)
@@ -448,7 +448,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 				out_ptree.put("tx_pub_key", out.tx_pub_key);
 				using_outs_ptree.push_back(out_ptree_pair);
 			}
-			root.add_child(ret_json_key__send__using_outs(), using_outs_ptree);
+			root.add_child("using_outs", using_outs_ptree);
 		}
 	}
 	return ret_json_from_root(root);
@@ -656,18 +656,18 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 	);
 	boost::property_tree::ptree root;
 	if (retVals.errCode != noError) {
-		root.put(ret_json_key__any__err_code(), retVals.errCode);
-		root.put(ret_json_key__any__err_msg(), err_msg_from_err_code__create_transaction(retVals.errCode));
+		root.put("err_code", retVals.errCode);
+		root.put("err_msg", err_msg_from_err_code__create_transaction(retVals.errCode));
 	} else {
 		if (retVals.tx_must_be_reconstructed) {
-			root.put(ret_json_key__send__tx_must_be_reconstructed(), true);
-			root.put(ret_json_key__send__fee_actually_needed(), RetVals_Transforms::str_from(retVals.fee_actually_needed)); // must be passed back
+			root.put("tx_must_be_reconstructed", true);
+			root.put("fee_actually_needed", RetVals_Transforms::str_from(retVals.fee_actually_needed)); // must be passed back
 		} else {
-			root.put(ret_json_key__send__tx_must_be_reconstructed(), false); // so consumers have it available
-			root.put(ret_json_key__send__serialized_signed_tx(), *(retVals.signed_serialized_tx_string));
-			root.put(ret_json_key__send__tx_hash(), *(retVals.tx_hash_string));
-			root.put(ret_json_key__send__tx_key(), *(retVals.tx_key_string));
-			root.put(ret_json_key__send__tx_pub_key(), *(retVals.tx_pub_key_string));
+			root.put("tx_must_be_reconstructed", false); // so consumers have it available
+			root.put("serialized_signed_tx", *(retVals.signed_serialized_tx_string));
+			root.put("tx_hash", *(retVals.tx_hash_string));
+			root.put("tx_key", *(retVals.tx_key_string));
+			root.put("tx_pub_key", *(retVals.tx_pub_key_string));
 		}
 	}
 	return ret_json_from_root(root);
@@ -742,8 +742,8 @@ string serial_bridge::decodeRct(const string &args_string)
 	decoded_amount_ss << decoded_amount;
 	//
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__decodeRct_mask(), epee::string_tools::pod_to_hex(mask));
-	root.put(ret_json_key__decodeRct_amount(), decoded_amount_ss.str());
+	root.put("mask", epee::string_tools::pod_to_hex(mask));
+	root.put("amount", decoded_amount_ss.str());
 	//
 	return ret_json_from_root(root);	
 }
@@ -823,8 +823,8 @@ string serial_bridge::decodeRctSimple(const string &args_string)
 	decoded_amount_ss << decoded_amount;
 	//
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__decodeRct_mask(), epee::string_tools::pod_to_hex(mask));
-	root.put(ret_json_key__decodeRct_amount(), decoded_amount_ss.str());
+	root.put("mask", epee::string_tools::pod_to_hex(mask));
+	root.put("amount", decoded_amount_ss.str());
 	//
 	return ret_json_from_root(root);	
 }
@@ -848,7 +848,7 @@ string serial_bridge::generate_key_derivation(const string &args_string)
 		return error_ret_json_from_message("Unable to generate key derivation");
 	}
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(derivation));
+	root.put("retVal", epee::string_tools::pod_to_hex(derivation));
 	//
 	return ret_json_from_root(root);
 }
@@ -873,7 +873,7 @@ string serial_bridge::derive_public_key(const string &args_string)
 		return error_ret_json_from_message("Unable to derive public key");
 	}
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(derived_key));
+	root.put("retVal", epee::string_tools::pod_to_hex(derived_key));
 	//
 	return ret_json_from_root(root);
 }
@@ -898,7 +898,7 @@ string serial_bridge::derive_subaddress_public_key(const string &args_string)
 		return error_ret_json_from_message("Unable to derive public key");
 	}
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(derived_key));
+	root.put("retVal", epee::string_tools::pod_to_hex(derived_key));
 	//
 	return ret_json_from_root(root);
 }
@@ -917,7 +917,7 @@ string serial_bridge::derivation_to_scalar(const string &args_string)
 	crypto::ec_scalar scalar = AUTO_VAL_INIT(scalar);
 	crypto::derivation_to_scalar(derivation, output_index, scalar);
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(scalar));
+	root.put("retVal", epee::string_tools::pod_to_hex(scalar));
 	//
 	return ret_json_from_root(root);
 }
@@ -943,6 +943,6 @@ string serial_bridge::encrypt_payment_id(const string &args_string)
 	hw::device &hwdev = hw::get_device("default");
 	hwdev.encrypt_payment_id(payment_id, public_key, secret_key);
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__generic_retVal(), epee::string_tools::pod_to_hex(payment_id));
+	root.put("retVal", epee::string_tools::pod_to_hex(payment_id));
 	return ret_json_from_root(root);
 }

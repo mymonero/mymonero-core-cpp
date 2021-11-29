@@ -388,17 +388,17 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 			ret_stream << ret_string;
 			boost::property_tree::ptree ret_tree;
 			boost::property_tree::read_json(ret_stream, ret_tree);
-			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>("err_code");
 			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
 				if ((CreateTransactionErrorCode)*err_code == monero_transfer_utils::needMoreMoneyThanFound) {
-					optional<string> spendable_balance_string = ret_tree.get_optional<string>(ret_json_key__send__spendable_balance());
+					optional<string> spendable_balance_string = ret_tree.get_optional<string>("spendable_balance");
 					BOOST_REQUIRE(spendable_balance_string != none);
 					BOOST_REQUIRE((*spendable_balance_string).size() > 0);
 		//			uint64_t fee = stoull(*fee_string);
 		//			BOOST_REQUIRE(fee == 135000000);
 					cout << "bridge__transfers__send__sweepDust: step1: needMoreMoneyThanFound: spendable_balance " << *spendable_balance_string << endl;
 					//
-					optional<string> required_balance_string = ret_tree.get_optional<string>(ret_json_key__send__required_balance());
+					optional<string> required_balance_string = ret_tree.get_optional<string>("required_balance");
 					BOOST_REQUIRE(required_balance_string != none);
 					BOOST_REQUIRE((*required_balance_string).size() > 0);
 		//			uint64_t fee = stoull(*fee_string);
@@ -409,35 +409,35 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 				BOOST_REQUIRE_MESSAGE(false, err_msg);
 				// ^--- not expecting anything like needMoreMoneyThanFound errors here
 			}
-			mixin_string = ret_tree.get_optional<string>(ret_json_key__send__mixin());
+			mixin_string = ret_tree.get_optional<string>("mixin");
 			BOOST_REQUIRE(mixin_string != none);
 			BOOST_REQUIRE((*mixin_string).size() > 0);
 			uint64_t mixin = stoull(*mixin_string);
 			BOOST_REQUIRE(mixin == 10);
 			cout << "bridge__transfers__send__sweepDust: mixin " << *mixin_string << endl;
 			//
-			using_fee_string = ret_tree.get_optional<string>(ret_json_key__send__using_fee()); // save this
+			using_fee_string = ret_tree.get_optional<string>("using_fee"); // save this
 			BOOST_REQUIRE(using_fee_string != none);
 			BOOST_REQUIRE((*using_fee_string).size() > 0);
 	//		uint64_t using_fee = stoull(*using_fee_string);
 		//	BOOST_REQUIRE(using_fee == 10); // TODO:?
 			cout << "bridge__transfers__send__sweepDust: step1: using_fee " << *using_fee_string << endl;
 			//
-			using_outs = ret_tree.get_child(ret_json_key__send__using_outs()); // save this for step2
+			using_outs = ret_tree.get_child("using_outs"); // save this for step2
 			BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, using_outs)
 			{
 				assert(output_desc.first.empty()); // array elements have no names
 				cout << "bridge__transfers__send__sweepDust: step1: using_out " << output_desc.second.get<string>("public_key") << endl;
 			}
 			//
-			change_amount_string = ret_tree.get_optional<string>(ret_json_key__send__change_amount());
+			change_amount_string = ret_tree.get_optional<string>("change_amount");
 			BOOST_REQUIRE(change_amount_string != none);
 			BOOST_REQUIRE((*change_amount_string).size() > 0);
 	//		uint64_t change_amount = stoull(*change_amount_string);
 			//	BOOST_REQUIRE(change_amount == 10); // TODO:?
 			cout << "bridge__transfers__send__sweepDust: step1: change_amount " << *change_amount_string << endl;
 			//
-			final_total_wo_fee_string = ret_tree.get_optional<string>(ret_json_key__send__final_total_wo_fee());
+			final_total_wo_fee_string = ret_tree.get_optional<string>("final_total_wo_fee");
 			BOOST_REQUIRE(final_total_wo_fee_string != none);
 			BOOST_REQUIRE((*final_total_wo_fee_string).size() > 0);
 	//		uint64_t final_total_wo_fee = stoull(*final_total_wo_fee_string);
@@ -521,17 +521,17 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 			stringstream ret_stream;
 			ret_stream << ret_string;
 			boost::property_tree::read_json(ret_stream, ret_tree);
-			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>("err_code");
 			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
 				auto err_msg = err_msg_from_err_code__create_transaction((CreateTransactionErrorCode)*err_code);
 				BOOST_REQUIRE_MESSAGE(false, err_msg);
 			}
 			//
-			tx_must_be_reconstructed = ret_tree.get<bool>(ret_json_key__send__tx_must_be_reconstructed());
+			tx_must_be_reconstructed = ret_tree.get<bool>("tx_must_be_reconstructed");
 			cout << "bridge__transfers__send__sweepDust: step2: must tx be reconstructed? " << tx_must_be_reconstructed << endl;
 			if (tx_must_be_reconstructed) {
 				// declared outside the for-loop so that we can use it for subsequent iterations if needed:
-				fee_actually_needed_string = ret_tree.get_optional<string>(ret_json_key__send__fee_actually_needed());
+				fee_actually_needed_string = ret_tree.get_optional<string>("fee_actually_needed");
 				BOOST_REQUIRE(fee_actually_needed_string != none);
 				BOOST_REQUIRE((*fee_actually_needed_string).size() > 0);
 				//
@@ -539,9 +539,9 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 				BOOST_REQUIRE(construction_attempt_n < 7); // not generally expecting to have to do this more than once or twice - i did see < 3 insufficient once so raised this
 				continue; // proceed to next iteration (re-enter tx construction at step1(II) with fee_actually_needed_string from step2(I))
 			}
-			optional<string> tx_hash = ret_tree.get_optional<string>(ret_json_key__send__tx_hash());
-			optional<string> tx_key_string = ret_tree.get_optional<string>(ret_json_key__send__tx_key());
-			optional<string> serialized_signed_tx = ret_tree.get_optional<string>(ret_json_key__send__serialized_signed_tx());
+			optional<string> tx_hash = ret_tree.get_optional<string>("tx_hash");
+			optional<string> tx_key_string = ret_tree.get_optional<string>("tx_key");
+			optional<string> serialized_signed_tx = ret_tree.get_optional<string>("serialized_signed_tx");
 			BOOST_REQUIRE(serialized_signed_tx != none);
 			BOOST_REQUIRE((*serialized_signed_tx).size() > 0);
 			cout << "bridge__transfers__send__sweepDust: serialized_signed_tx: " << *serialized_signed_tx << endl;
@@ -586,7 +586,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amountWOnlyDusty)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+	optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>("err_code");
 	BOOST_REQUIRE_MESSAGE(err_code == none, "Expected no error");
 	BOOST_REQUIRE_MESSAGE(ret_tree.get<string>("using_fee") == string("35190000"), "Expected using_fee of 35190000");
 	BOOST_REQUIRE_MESSAGE(ret_tree.get<string>("final_total_wo_fee") == string("1000000"), "Expected final_total_wo_fee of 1000000");
@@ -649,17 +649,17 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			ret_stream << ret_string;
 			boost::property_tree::ptree ret_tree;
 			boost::property_tree::read_json(ret_stream, ret_tree);
-			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>("err_code");
 			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
 				if ((CreateTransactionErrorCode)*err_code == monero_transfer_utils::needMoreMoneyThanFound) {
-					optional<string> spendable_balance_string = ret_tree.get_optional<string>(ret_json_key__send__spendable_balance());
+					optional<string> spendable_balance_string = ret_tree.get_optional<string>("spendable_balance");
 					BOOST_REQUIRE(spendable_balance_string != none);
 					BOOST_REQUIRE((*spendable_balance_string).size() > 0);
 					//			uint64_t fee = stoull(*fee_string);
 					//			BOOST_REQUIRE(fee == 135000000);
 					cout << "bridge__transfers__send__amount: step1: needMoreMoneyThanFound: spendable_balance " << *spendable_balance_string << endl;
 					//
-					optional<string> required_balance_string = ret_tree.get_optional<string>(ret_json_key__send__required_balance());
+					optional<string> required_balance_string = ret_tree.get_optional<string>("required_balance");
 					BOOST_REQUIRE(required_balance_string != none);
 					BOOST_REQUIRE((*required_balance_string).size() > 0);
 					//			uint64_t fee = stoull(*fee_string);
@@ -670,35 +670,35 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 				BOOST_REQUIRE_MESSAGE(false, err_msg);
 				// ^--- not expecting anything like needMoreMoneyThanFound errors here
 			}
-			mixin_string = ret_tree.get_optional<string>(ret_json_key__send__mixin());
+			mixin_string = ret_tree.get_optional<string>("mixin");
 			BOOST_REQUIRE(mixin_string != none);
 			BOOST_REQUIRE((*mixin_string).size() > 0);
 			uint64_t mixin = stoull(*mixin_string);
 			BOOST_REQUIRE(mixin == 10);
 			cout << "bridge__transfers__send__amount: mixin " << *mixin_string << endl;
 			//
-			using_fee_string = ret_tree.get_optional<string>(ret_json_key__send__using_fee()); // save this
+			using_fee_string = ret_tree.get_optional<string>("using_fee"); // save this
 			BOOST_REQUIRE(using_fee_string != none);
 			BOOST_REQUIRE((*using_fee_string).size() > 0);
 			//		uint64_t using_fee = stoull(*using_fee_string);
 			//	BOOST_REQUIRE(using_fee == 10); // TODO:?
 			cout << "bridge__transfers__send__amount: step1: using_fee " << *using_fee_string << endl;
 			//
-			using_outs = ret_tree.get_child(ret_json_key__send__using_outs()); // save this for step2
+			using_outs = ret_tree.get_child("using_outs"); // save this for step2
 			BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, using_outs)
 			{
 				assert(output_desc.first.empty()); // array elements have no names
 				cout << "bridge__transfers__send__amount: step1: using_out " << output_desc.second.get<string>("public_key") << endl;
 			}
 			//
-			change_amount_string = ret_tree.get_optional<string>(ret_json_key__send__change_amount());
+			change_amount_string = ret_tree.get_optional<string>("change_amount");
 			BOOST_REQUIRE(change_amount_string != none);
 			BOOST_REQUIRE((*change_amount_string).size() > 0);
 			//		uint64_t change_amount = stoull(*change_amount_string);
 			//	BOOST_REQUIRE(change_amount == 10); // TODO:?
 			cout << "bridge__transfers__send__amount: step1: change_amount " << *change_amount_string << endl;
 			//
-			final_total_wo_fee_string = ret_tree.get_optional<string>(ret_json_key__send__final_total_wo_fee());
+			final_total_wo_fee_string = ret_tree.get_optional<string>("final_total_wo_fee");
 			BOOST_REQUIRE(final_total_wo_fee_string != none);
 			BOOST_REQUIRE((*final_total_wo_fee_string).size() > 0);
 			//		uint64_t final_total_wo_fee = stoull(*final_total_wo_fee_string);
@@ -783,17 +783,17 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			stringstream ret_stream;
 			ret_stream << ret_string;
 			boost::property_tree::read_json(ret_stream, ret_tree);
-			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>("err_code");
 			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
 				auto err_msg = err_msg_from_err_code__create_transaction((CreateTransactionErrorCode)*err_code);
 				BOOST_REQUIRE_MESSAGE(false, err_msg);
 			}
 			//
-			tx_must_be_reconstructed = ret_tree.get<bool>(ret_json_key__send__tx_must_be_reconstructed());
+			tx_must_be_reconstructed = ret_tree.get<bool>("tx_must_be_reconstructed");
 			cout << "bridge__transfers__send__amount: step2: must tx be reconstructed? " << tx_must_be_reconstructed << endl;
 			if (tx_must_be_reconstructed) {
 				// declared outside the for-loop so that we can use it for subsequent iterations if needed:
-				fee_actually_needed_string = ret_tree.get_optional<string>(ret_json_key__send__fee_actually_needed());
+				fee_actually_needed_string = ret_tree.get_optional<string>("fee_actually_needed");
 				BOOST_REQUIRE(fee_actually_needed_string != none);
 				BOOST_REQUIRE((*fee_actually_needed_string).size() > 0);
 				//
@@ -801,10 +801,10 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 				BOOST_REQUIRE(construction_attempt_n < 3); // not generally expecting to have to do this more than once or twice
 				continue; // proceed to next iteration (re-enter tx construction at step1(II) with fee_actually_needed_string from step2(I))
 			}
-			optional<string> tx_hash = ret_tree.get_optional<string>(ret_json_key__send__tx_hash());
-			optional<string> tx_key_string = ret_tree.get_optional<string>(ret_json_key__send__tx_key());
-			optional<string> tx_pub_key_string = ret_tree.get_optional<string>(ret_json_key__send__tx_pub_key());
-			optional<string> serialized_signed_tx = ret_tree.get_optional<string>(ret_json_key__send__serialized_signed_tx());
+			optional<string> tx_hash = ret_tree.get_optional<string>("tx_hash");
+			optional<string> tx_key_string = ret_tree.get_optional<string>("tx_key");
+			optional<string> tx_pub_key_string = ret_tree.get_optional<string>("tx_pub_key");
+			optional<string> serialized_signed_tx = ret_tree.get_optional<string>("serialized_signed_tx");
 			BOOST_REQUIRE(serialized_signed_tx != none);
 			BOOST_REQUIRE((*serialized_signed_tx).size() > 0);
 			cout << "bridge__transfers__send__amount: serialized_signed_tx: " << *serialized_signed_tx << endl;
@@ -834,23 +834,23 @@ BOOST_AUTO_TEST_CASE(bridged__decode_address)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>("pub_viewKey_string");
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
 	cout << "bridged__decode_address: pub_viewKey_string: " << *pub_viewKey_string << endl;
-	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>("pub_spendKey_string");
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
 	cout << "bridged__decode_address: pub_spendKey_string: " << *pub_spendKey_string << endl;
-	optional<string> paymentID_string = ret_tree.get_optional<string>(ret_json_key__paymentID_string());
+	optional<string> paymentID_string = ret_tree.get_optional<string>("paymentID_string");
 	BOOST_REQUIRE(paymentID_string != none);
 	BOOST_REQUIRE((*paymentID_string).size() > 0);
 	cout << "bridged__decode_address: paymentID_string: " << *paymentID_string << endl;
-	optional<bool> isSubaddress = ret_tree.get_optional<bool>(ret_json_key__isSubaddress());
+	optional<bool> isSubaddress = ret_tree.get_optional<bool>("isSubaddress");
 	BOOST_REQUIRE(isSubaddress != none);
 	BOOST_REQUIRE(*isSubaddress == false);
 	cout << "bridged__decode_address: isSubaddress: " << *isSubaddress << endl;
@@ -869,11 +869,11 @@ BOOST_AUTO_TEST_CASE(bridged__is_subaddress)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<bool> value = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
+	optional<bool> value = ret_tree.get_optional<bool>("retVal");
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE(*value == false);
 	cout << "bridged__is_subaddress: " << *value << endl;
@@ -892,11 +892,11 @@ BOOST_AUTO_TEST_CASE(bridged__is_integrated_address)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<bool> value = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
+	optional<bool> value = ret_tree.get_optional<bool>("retVal");
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE(*value == true);
 	cout << "bridged__is_integrated_address: " << *value << endl;
@@ -917,11 +917,11 @@ BOOST_AUTO_TEST_CASE(bridged__new_integrated_address)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> value = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> value = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE((*value).size() > 0);
 	BOOST_REQUIRE(boost::equal(*value, string("4DhdwdSDgoS9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqmCzkMP1DMV6WCiNCdsp")));
@@ -939,11 +939,11 @@ BOOST_AUTO_TEST_CASE(bridged__new_short_payment_id)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> value = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> value = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE((*value).size() > 0);
 	cout << "bridged__new_short_payment_id: " << *value << endl;
@@ -962,39 +962,39 @@ BOOST_AUTO_TEST_CASE(bridged__new_wallet)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> mnemonic_string = ret_tree.get_optional<string>(ret_json_key__mnemonic_string());
+	optional<string> mnemonic_string = ret_tree.get_optional<string>("mnemonic_string");
 	BOOST_REQUIRE(mnemonic_string != none);
 	BOOST_REQUIRE((*mnemonic_string).size() > 0);
 	cout << "bridged__new_wallet: mnemonic: " << *mnemonic_string << endl;
-	optional<string> mnemonic_language = ret_tree.get_optional<string>(ret_json_key__mnemonic_language());
+	optional<string> mnemonic_language = ret_tree.get_optional<string>("mnemonic_language");
 	BOOST_REQUIRE(mnemonic_language != none);
 	BOOST_REQUIRE((*mnemonic_language).size() > 0);
 	cout << "bridged__new_wallet: mnemonic_language: " << *mnemonic_language << endl;
-	optional<string> sec_seed_string = ret_tree.get_optional<string>(ret_json_key__sec_seed_string());
+	optional<string> sec_seed_string = ret_tree.get_optional<string>("sec_seed_string");
 	BOOST_REQUIRE(sec_seed_string != none);
 	BOOST_REQUIRE((*sec_seed_string).size() > 0);
 	cout << "bridged__new_wallet: sec_seed: " << *sec_seed_string << endl;
-	optional<string> address_string = ret_tree.get_optional<string>(ret_json_key__address_string());
+	optional<string> address_string = ret_tree.get_optional<string>("address_string");
 	BOOST_REQUIRE(address_string != none);
 	BOOST_REQUIRE((*address_string).size() > 0);
 	cout << "bridged__new_wallet: address: " << *address_string << endl;
-	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>("pub_viewKey_string");
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
 	cout << "bridged__new_wallet: pub_viewKey_string: " << *pub_viewKey_string << endl;
-	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>("pub_spendKey_string");
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
 	cout << "bridged__new_wallet: pub_spendKey_string: " << *pub_spendKey_string << endl;
-	optional<string> sec_viewKey_string = ret_tree.get_optional<string>(ret_json_key__sec_viewKey_string());
+	optional<string> sec_viewKey_string = ret_tree.get_optional<string>("sec_viewKey_string");
 	BOOST_REQUIRE(sec_viewKey_string != none);
 	BOOST_REQUIRE((*sec_viewKey_string).size() > 0);
 	cout << "bridged__new_wallet: sec_viewKey_string: " << *sec_viewKey_string << endl;
-	optional<string> sec_spendKey_string = ret_tree.get_optional<string>(ret_json_key__sec_spendKey_string());
+	optional<string> sec_spendKey_string = ret_tree.get_optional<string>("sec_spendKey_string");
 	BOOST_REQUIRE(sec_spendKey_string != none);
 	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
 	cout << "bridged__new_wallet: sec_spendKey_string: " << *sec_spendKey_string << endl;
@@ -1013,11 +1013,11 @@ BOOST_AUTO_TEST_CASE(bridged__are_equal_mnemonics)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<bool> value = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
+	optional<bool> value = ret_tree.get_optional<bool>("retVal");
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE(*value != false);
 	cout << "bridged__are_equal_mnemonics: " << *value << endl;
@@ -1035,11 +1035,11 @@ BOOST_AUTO_TEST_CASE(bridged__are_equal_mnemonics__caps)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<bool> value = ret_tree.get_optional<bool>(ret_json_key__generic_retVal());
+	optional<bool> value = ret_tree.get_optional<bool>("retVal");
 	BOOST_REQUIRE(value != none);
 	BOOST_REQUIRE(*value != false);
 	cout << "bridged__are_equal_mnemonics__caps: " << *value << endl;
@@ -1058,11 +1058,11 @@ BOOST_AUTO_TEST_CASE(bridged__mnemonic_from_seed)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> mnemonic_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> mnemonic_string = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(mnemonic_string != none);
 	BOOST_REQUIRE((*mnemonic_string).size() > 0);
 	cout << "bridged__mnemonic_from_seed: mnemonic: " << *mnemonic_string << endl;
@@ -1081,36 +1081,36 @@ BOOST_AUTO_TEST_CASE(bridged__seed_and_keys_from_mnemonic)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> mnemonic_language = ret_tree.get_optional<string>(ret_json_key__mnemonic_language());
+	optional<string> mnemonic_language = ret_tree.get_optional<string>("mnemonic_language");
 	BOOST_REQUIRE(mnemonic_language != none);
 	BOOST_REQUIRE((*mnemonic_language).size() > 0);
 	cout << "bridged__seed_and_keys_from_mnemonic: mnemonic_language: " << *mnemonic_language << endl;
-	optional<string> sec_seed_string = ret_tree.get_optional<string>(ret_json_key__sec_seed_string());
+	optional<string> sec_seed_string = ret_tree.get_optional<string>("sec_seed_string");
 	BOOST_REQUIRE(sec_seed_string != none);
 	BOOST_REQUIRE((*sec_seed_string).size() > 0);
 	cout << "bridged__seed_and_keys_from_mnemonic: sec_seed: " << *sec_seed_string << endl;
-	optional<string> address_string = ret_tree.get_optional<string>(ret_json_key__address_string());
+	optional<string> address_string = ret_tree.get_optional<string>("address_string");
 	BOOST_REQUIRE(address_string != none);
 	BOOST_REQUIRE((*address_string).size() > 0);
 	cout << "bridged__seed_and_keys_from_mnemonic: address: " << *address_string << endl;
 	BOOST_REQUIRE((*address_string) == "43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg");
-	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>("pub_viewKey_string");
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
 	cout << "bridged__seed_and_keys_from_mnemonic: pub_viewKey_string: " << *pub_viewKey_string << endl;
-	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>("pub_spendKey_string");
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
 	cout << "bridged__seed_and_keys_from_mnemonic: pub_spendKey_string: " << *pub_spendKey_string << endl;
-	optional<string> sec_viewKey_string = ret_tree.get_optional<string>(ret_json_key__sec_viewKey_string());
+	optional<string> sec_viewKey_string = ret_tree.get_optional<string>("sec_viewKey_string");
 	BOOST_REQUIRE(sec_viewKey_string != none);
 	BOOST_REQUIRE((*sec_viewKey_string).size() > 0);
 	cout << "bridged__seed_and_keys_from_mnemonic: sec_viewKey_string: " << *sec_viewKey_string << endl;
-	optional<string> sec_spendKey_string = ret_tree.get_optional<string>(ret_json_key__sec_spendKey_string());
+	optional<string> sec_spendKey_string = ret_tree.get_optional<string>("sec_spendKey_string");
 	BOOST_REQUIRE(sec_spendKey_string != none);
 	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
 	cout << "bridged__seed_and_keys_from_mnemonic: sec_spendKey_string: " << *sec_spendKey_string << endl;
@@ -1131,10 +1131,10 @@ BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login__subaddress)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	BOOST_REQUIRE(err_string != none);
 	BOOST_REQUIRE((*err_string).compare("Can't log in with a sub-address") == 0);
-	optional<bool> isValid = ret_tree.get_optional<bool>(ret_json_key__isValid());
+	optional<bool> isValid = ret_tree.get_optional<bool>("isValid");
 	BOOST_REQUIRE(isValid == none || *isValid == false);
 }
 BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login)
@@ -1153,21 +1153,21 @@ BOOST_AUTO_TEST_CASE(bridged__validate_components_for_login)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<bool> isValid = ret_tree.get_optional<bool>(ret_json_key__isValid());
+	optional<bool> isValid = ret_tree.get_optional<bool>("isValid");
 	BOOST_REQUIRE(isValid == true);
 	cout << "bridged__validate_components_for_login: isValid: " << isValid << endl;
-	optional<bool> isInViewOnlyMode = ret_tree.get_optional<bool>(ret_json_key__isInViewOnlyMode());
+	optional<bool> isInViewOnlyMode = ret_tree.get_optional<bool>("isInViewOnlyMode");
 	BOOST_REQUIRE(isInViewOnlyMode == false);
 	cout << "bridged__validate_components_for_login: isInViewOnlyMode: " << isInViewOnlyMode << endl;
-	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>("pub_viewKey_string");
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
 	cout << "bridged__validate_components_for_login: pub_viewKey_string: " << *pub_viewKey_string << endl;
-	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>("pub_spendKey_string");
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
 	cout << "bridged__validate_components_for_login: pub_spendKey_string: " << *pub_spendKey_string << endl;
@@ -1187,11 +1187,11 @@ BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> fee_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> fee_string = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(fee_string != none);
 	BOOST_REQUIRE((*fee_string).size() > 0);
 	uint64_t fee = stoull(*fee_string);
@@ -1221,11 +1221,11 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_fee)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> fee_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> fee_string = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(fee_string != none);
 	BOOST_REQUIRE((*fee_string).size() > 0);
 	uint64_t fee = stoull(*fee_string);
@@ -1250,11 +1250,11 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_tx_weight)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> weight_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> weight_string = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(weight_string != none);
 	BOOST_REQUIRE((*weight_string).size() > 0);
 	uint64_t weight = stoull(*weight_string);
@@ -1278,11 +1278,11 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> size_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> size_string = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(size_string != none);
 	BOOST_REQUIRE((*size_string).size() > 0);
 	size_t size = stoul(*size_string);
@@ -1305,11 +1305,11 @@ BOOST_AUTO_TEST_CASE(bridged__generate_key_image)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> key_image_string = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> key_image_string = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(key_image_string != none);
 	BOOST_REQUIRE((*key_image_string).size() > 0);
 	BOOST_REQUIRE(*key_image_string == "ae30ee23051dc0bdf10303fbd3b7d8035a958079eb66516b1740f2c9b02c804e");
@@ -1329,29 +1329,29 @@ BOOST_AUTO_TEST_CASE(bridged__address_and_keys_from_seed)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> address_string = ret_tree.get_optional<string>(ret_json_key__address_string());
+	optional<string> address_string = ret_tree.get_optional<string>("address_string");
 	BOOST_REQUIRE(address_string != none);
 	BOOST_REQUIRE((*address_string).size() > 0);
 	cout << "bridged__address_and_keys_from_seed: address: " << *address_string << endl;
 	BOOST_REQUIRE(*address_string == "43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg");
-	optional<string> pub_viewKey_string = ret_tree.get_optional<string>(ret_json_key__pub_viewKey_string());
+	optional<string> pub_viewKey_string = ret_tree.get_optional<string>("pub_viewKey_string");
 	BOOST_REQUIRE(pub_viewKey_string != none);
 	BOOST_REQUIRE((*pub_viewKey_string).size() > 0);
 	cout << "bridged__address_and_keys_from_seed: pub_viewKey_string: " << *pub_viewKey_string << endl;
-	optional<string> pub_spendKey_string = ret_tree.get_optional<string>(ret_json_key__pub_spendKey_string());
+	optional<string> pub_spendKey_string = ret_tree.get_optional<string>("pub_spendKey_string");
 	BOOST_REQUIRE(pub_spendKey_string != none);
 	BOOST_REQUIRE((*pub_spendKey_string).size() > 0);
 	cout << "bridged__address_and_keys_from_seed: pub_spendKey_string: " << *pub_spendKey_string << endl;
-	optional<string> sec_viewKey_string = ret_tree.get_optional<string>(ret_json_key__sec_viewKey_string());
+	optional<string> sec_viewKey_string = ret_tree.get_optional<string>("sec_viewKey_string");
 	BOOST_REQUIRE(sec_viewKey_string != none);
 	BOOST_REQUIRE((*sec_viewKey_string).size() > 0);
 	BOOST_REQUIRE(*sec_viewKey_string == "7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104");
 	cout << "bridged__address_and_keys_from_seed: sec_viewKey_string: " << *sec_viewKey_string << endl;
-	optional<string> sec_spendKey_string = ret_tree.get_optional<string>(ret_json_key__sec_spendKey_string());
+	optional<string> sec_spendKey_string = ret_tree.get_optional<string>("sec_spendKey_string");
 	BOOST_REQUIRE(sec_spendKey_string != none);
 	BOOST_REQUIRE((*sec_spendKey_string).size() > 0);
 	BOOST_REQUIRE(*sec_spendKey_string == "4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803");
@@ -1372,11 +1372,11 @@ BOOST_AUTO_TEST_CASE(bridged__derive_public_key)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> str = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> str = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(str != none);
 	BOOST_REQUIRE((*str).size() > 0);
 	BOOST_REQUIRE(*str == "da26518ddb54cde24ccfc59f36df13bbe9bdfcb4ef1b223d9ab7bef0a50c8be3");
@@ -1396,11 +1396,11 @@ BOOST_AUTO_TEST_CASE(bridged__derive_subaddress_public_key)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> str = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> str = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(str != none);
 	BOOST_REQUIRE((*str).size() > 0);
 	BOOST_REQUIRE(*str == "dfc9e4a0039e913204c1c0f78e954a7ec7ce291d8ffe88265632f0da9d8de1be");
@@ -1419,11 +1419,11 @@ BOOST_AUTO_TEST_CASE(bridged__generate_key_derivation)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> derivation = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> derivation = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(derivation != none);
 	BOOST_REQUIRE((*derivation).size() > 0);
 	BOOST_REQUIRE(*derivation == "591c749f1868c58f37ec3d2a9d2f08e7f98417ac4f8131e3a57c1fd71273ad00");
@@ -1454,11 +1454,11 @@ BOOST_AUTO_TEST_CASE(bridge__mainnet_pubKeyDerivations)
 		ret_stream << ret_string;
 		boost::property_tree::ptree ret_tree;
 		boost::property_tree::read_json(ret_stream, ret_tree);
-		optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+		optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 		if (err_string != none) {
 			BOOST_REQUIRE_MESSAGE(false, *err_string);
 		}
-		key_derivation = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+		key_derivation = ret_tree.get_optional<string>("retVal");
 		BOOST_REQUIRE(key_derivation != none);
 		BOOST_REQUIRE((*key_derivation).size() > 0);
 		cout << "bridge__mainnet_pubKeyDerivations: key_derivation " << *key_derivation << endl;
@@ -1474,11 +1474,11 @@ BOOST_AUTO_TEST_CASE(bridge__mainnet_pubKeyDerivations)
 		ret_stream << ret_string;
 		boost::property_tree::ptree ret_tree;
 		boost::property_tree::read_json(ret_stream, ret_tree);
-		optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+		optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 		if (err_string != none) {
 			BOOST_REQUIRE_MESSAGE(false, *err_string);
 		}
-		optional<string> derived_pub_key = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+		optional<string> derived_pub_key = ret_tree.get_optional<string>("retVal");
 		BOOST_REQUIRE(derived_pub_key != none);
 		BOOST_REQUIRE((*derived_pub_key).size() > 0);
 		cout << "bridge__mainnet_pubKeyDerivations: Derived pub key " << *derived_pub_key << endl;
@@ -1501,11 +1501,11 @@ BOOST_AUTO_TEST_CASE(bridged__derivation_to_scalar)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> str = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> str = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(str != none);
 	BOOST_REQUIRE((*str).size() > 0);
 	BOOST_REQUIRE(*str == "767a2b9b814b78d55e27ab7fc9bae03253a810c820e7abb4cabadde44b599d04");
@@ -1570,15 +1570,15 @@ BOOST_AUTO_TEST_CASE(bridged__decodeRct)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	string mask_string = ret_tree.get<string>(ret_json_key__decodeRct_mask());
+	string mask_string = ret_tree.get<string>("mask");
 	BOOST_REQUIRE(mask_string.size() > 0);
 	cout << "bridged__decodeRct: mask_string: " << mask_string << endl;
 	BOOST_REQUIRE(mask_string == "3f59c741c9ad560bfea92f42449a180bc8362f1b5ddd957e3b5772dbaf7f840e");
-	string amount_string = ret_tree.get<string>(ret_json_key__decodeRct_amount());
+	string amount_string = ret_tree.get<string>("amount");
 	BOOST_REQUIRE(amount_string.size() > 0);
 	cout << "bridged__decodeRct: amount_string: " << amount_string << endl;
 	BOOST_REQUIRE(amount_string == "4501"); // FIXME is this correct?
@@ -1631,15 +1631,15 @@ BOOST_AUTO_TEST_CASE(bridged__decodeRctSimple)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	string mask_string = ret_tree.get<string>(ret_json_key__decodeRct_mask());
+	string mask_string = ret_tree.get<string>("mask");
 	BOOST_REQUIRE(mask_string.size() > 0);
 	cout << "bridged__decodeRctSimple: mask_string: " << mask_string << endl;
 	BOOST_REQUIRE(mask_string == "51bdfc13c6757758148dd493a77e94073a062622a056a915a457abe6ca6c050b");
-	string amount_string = ret_tree.get<string>(ret_json_key__decodeRct_amount());
+	string amount_string = ret_tree.get<string>("amount");
 	BOOST_REQUIRE(amount_string.size() > 0);
 	cout << "bridged__decodeRctSimple: amount_string: " << amount_string << endl;
 	BOOST_REQUIRE(amount_string == "10000000000");
@@ -1690,15 +1690,15 @@ BOOST_AUTO_TEST_CASE(bridged__decodeRctSimple_with_bulletproof2)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	string mask_string = ret_tree.get<string>(ret_json_key__decodeRct_mask());
+	string mask_string = ret_tree.get<string>("mask");
 	BOOST_REQUIRE(mask_string.size() > 0);
 	cout << "bridged__decodeRctSimple_with_bulletproof2: mask_string: " << mask_string << endl;
 	BOOST_REQUIRE(mask_string == "b90780ff4f16d9ae3d3e3b84aebd5ebc0c7d37e5197fef9353a400409b743903");
-	string amount_string = ret_tree.get<string>(ret_json_key__decodeRct_amount());
+	string amount_string = ret_tree.get<string>("amount");
 	BOOST_REQUIRE(amount_string.size() > 0);
 	cout << "bridged__decodeRctSimple_with_bulletproof2: amount_string: " << amount_string << endl;
 	BOOST_REQUIRE(amount_string == "2000000000");
@@ -1718,11 +1718,11 @@ BOOST_AUTO_TEST_CASE(bridged__encrypt_payment_id)
 	ret_stream << ret_string;
 	boost::property_tree::ptree ret_tree;
 	boost::property_tree::read_json(ret_stream, ret_tree);
-	optional<string> err_string = ret_tree.get_optional<string>(ret_json_key__any__err_msg());
+	optional<string> err_string = ret_tree.get_optional<string>("err_msg");
 	if (err_string != none) {
 		BOOST_REQUIRE_MESSAGE(false, *err_string);
 	}
-	optional<string> str = ret_tree.get_optional<string>(ret_json_key__generic_retVal());
+	optional<string> str = ret_tree.get_optional<string>("retVal");
 	BOOST_REQUIRE(str != none);
 	BOOST_REQUIRE((*str).size() > 0);
 	cout << "bridged__encrypt_payment_id: " << *str << endl;
@@ -1790,17 +1790,17 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 			ret_stream << ret_string;
 			boost::property_tree::ptree ret_tree;
 			boost::property_tree::read_json(ret_stream, ret_tree);
-			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>("err_code");
 			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
 				if ((CreateTransactionErrorCode)*err_code == monero_transfer_utils::needMoreMoneyThanFound) {
-					optional<string> spendable_balance_string = ret_tree.get_optional<string>(ret_json_key__send__spendable_balance());
+					optional<string> spendable_balance_string = ret_tree.get_optional<string>("spendable_balance");
 					BOOST_REQUIRE(spendable_balance_string != none);
 					BOOST_REQUIRE((*spendable_balance_string).size() > 0);
 					//			uint64_t fee = stoull(*fee_string);
 					//			BOOST_REQUIRE(fee == 135000000);
 					cout << "bridge__transfers__send_stagenet_coinbase: step1: needMoreMoneyThanFound: spendable_balance " << *spendable_balance_string << endl;
 					//
-					optional<string> required_balance_string = ret_tree.get_optional<string>(ret_json_key__send__required_balance());
+					optional<string> required_balance_string = ret_tree.get_optional<string>("required_balance");
 					BOOST_REQUIRE(required_balance_string != none);
 					BOOST_REQUIRE((*required_balance_string).size() > 0);
 					//			uint64_t fee = stoull(*fee_string);
@@ -1811,35 +1811,35 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 				BOOST_REQUIRE_MESSAGE(false, err_msg);
 				// ^--- not expecting anything like needMoreMoneyThanFound errors here
 			}
-			mixin_string = ret_tree.get_optional<string>(ret_json_key__send__mixin());
+			mixin_string = ret_tree.get_optional<string>("mixin");
 			BOOST_REQUIRE(mixin_string != none);
 			BOOST_REQUIRE((*mixin_string).size() > 0);
 			uint64_t mixin = stoull(*mixin_string);
 			BOOST_REQUIRE(mixin == 10);
 			cout << "bridge__transfers__send_stagenet_coinbase: mixin " << *mixin_string << endl;
 			//
-			using_fee_string = ret_tree.get_optional<string>(ret_json_key__send__using_fee()); // save this
+			using_fee_string = ret_tree.get_optional<string>("using_fee"); // save this
 			BOOST_REQUIRE(using_fee_string != none);
 			BOOST_REQUIRE((*using_fee_string).size() > 0);
 			//		uint64_t using_fee = stoull(*using_fee_string);
 			//	BOOST_REQUIRE(using_fee == 10); // TODO:?
 			cout << "bridge__transfers__send_stagenet_coinbase: step1: using_fee " << *using_fee_string << endl;
 			//
-			using_outs = ret_tree.get_child(ret_json_key__send__using_outs()); // save this for step2
+			using_outs = ret_tree.get_child("using_outs"); // save this for step2
 			BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, using_outs)
 			{
 				assert(output_desc.first.empty()); // array elements have no names
 				cout << "bridge__transfers__send_stagenet_coinbase: step1: using_out " << output_desc.second.get<string>("public_key") << endl;
 			}
 			//
-			change_amount_string = ret_tree.get_optional<string>(ret_json_key__send__change_amount());
+			change_amount_string = ret_tree.get_optional<string>("change_amount");
 			BOOST_REQUIRE(change_amount_string != none);
 			BOOST_REQUIRE((*change_amount_string).size() > 0);
 			//		uint64_t change_amount = stoull(*change_amount_string);
 			//	BOOST_REQUIRE(change_amount == 10); // TODO:?
 			cout << "bridge__transfers__send_stagenet_coinbase: step1: change_amount " << *change_amount_string << endl;
 			//
-			final_total_wo_fee_string = ret_tree.get_optional<string>(ret_json_key__send__final_total_wo_fee());
+			final_total_wo_fee_string = ret_tree.get_optional<string>("final_total_wo_fee");
 			BOOST_REQUIRE(final_total_wo_fee_string != none);
 			BOOST_REQUIRE((*final_total_wo_fee_string).size() > 0);
 			//		uint64_t final_total_wo_fee = stoull(*final_total_wo_fee_string);
@@ -1923,17 +1923,17 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 			stringstream ret_stream;
 			ret_stream << ret_string;
 			boost::property_tree::read_json(ret_stream, ret_tree);
-			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>("err_code");
 			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
 				auto err_msg = err_msg_from_err_code__create_transaction((CreateTransactionErrorCode)*err_code);
 				BOOST_REQUIRE_MESSAGE(false, err_msg);
 			}
 			//
-			tx_must_be_reconstructed = ret_tree.get<bool>(ret_json_key__send__tx_must_be_reconstructed());
+			tx_must_be_reconstructed = ret_tree.get<bool>("tx_must_be_reconstructed");
 			cout << "bridge__transfers__send_stagenet_coinbase: step2: must tx be reconstructed? " << tx_must_be_reconstructed << endl;
 			if (tx_must_be_reconstructed) {
 				// declared outside the for-loop so that we can use it for subsequent iterations if needed:
-				fee_actually_needed_string = ret_tree.get_optional<string>(ret_json_key__send__fee_actually_needed());
+				fee_actually_needed_string = ret_tree.get_optional<string>("fee_actually_needed");
 				BOOST_REQUIRE(fee_actually_needed_string != none);
 				BOOST_REQUIRE((*fee_actually_needed_string).size() > 0);
 				//
@@ -1941,9 +1941,9 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 				BOOST_REQUIRE(construction_attempt_n < 3); // not generally expecting to have to do this more than once or twice
 				continue; // proceed to next iteration (re-enter tx construction at step1(II) with fee_actually_needed_string from step2(I))
 			}
-			optional<string> tx_hash = ret_tree.get_optional<string>(ret_json_key__send__tx_hash());
-			optional<string> tx_key_string = ret_tree.get_optional<string>(ret_json_key__send__tx_key());
-			optional<string> serialized_signed_tx = ret_tree.get_optional<string>(ret_json_key__send__serialized_signed_tx());
+			optional<string> tx_hash = ret_tree.get_optional<string>("tx_hash");
+			optional<string> tx_key_string = ret_tree.get_optional<string>("tx_key");
+			optional<string> serialized_signed_tx = ret_tree.get_optional<string>("serialized_signed_tx");
 			BOOST_REQUIRE(serialized_signed_tx != none);
 			BOOST_REQUIRE((*serialized_signed_tx).size() > 0);
 			cout << "bridge__transfers__send_stagenet_coinbase: serialized_signed_tx: " << *serialized_signed_tx << endl;
