@@ -229,9 +229,9 @@ namespace monero_send_routine
 		string sec_viewKey_string;
 		string sec_spendKey_string;
 		string pub_spendKey_string;
-		string to_address_string;
+		vector<string> to_address_strings;
 		optional<string> payment_id_string;
-		uint64_t sending_amount;
+		vector<uint64_t> sending_amounts;
 		bool is_sweeping;
 		uint32_t simple_priority;
 		send__get_unspent_outs_fn_type get_unspent_outs_fn;

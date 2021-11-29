@@ -1993,14 +1993,17 @@ BOOST_AUTO_TEST_CASE(send_routine__sweep)
 	using namespace monero_transfer_utils;
 	//
 	string payment_id_string = "d2f602b240fbe624";
+	vector<uint64_t> amounts{0};
 	Async_SendFunds_Args args = {
 		"43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg",
 		"7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104",
 		"4e6d43cd03812b803c6f3206689f5fcc910005fc7e91d50d79b0776dbefcd803",
 		"3eb884d3440d71326e27cc07a861b873e72abd339feb654660c36a008a0028b3",
-		"4APbcAKxZ2KPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPPXmZxHN",
+		vector<string>{
+ 			"4APbcAKxZ2KPVPMnqa5cPtJK25tr7maE7LrJe67vzumiCtWwjDBvYnHZr18wFexJpih71Mxsjv8b7EpQftpB9NjPPXmZxHN"
+ 		},
 		payment_id_string, // optl
-		0, // sending amount
+		vector<uint64_t>{0}, // sending amount
 		true, // is sweeping
 		1, // priority
 		[] ( // get_unspent_outs

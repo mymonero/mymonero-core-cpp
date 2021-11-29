@@ -229,7 +229,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	Send_Step1_RetVals &retVals,
 	//
 	const optional<string>& payment_id_string,
-	uint64_t sending_amount,
+	const vector<uint64_t>& sending_amount,
 	bool is_sweeping,
 	uint32_t simple_priority,
 	use_fork_rules_fn_type use_fork_rules_fn,
@@ -244,18 +244,17 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	retVals = {};
 	//
 	if (is_sweeping) {
-		if (sending_amount != 0 && sending_amount != UINT64_MAX) {
-			THROW_WALLET_EXCEPTION_IF(
-				sending_amount != 0 && sending_amount != UINT64_MAX,
-				error::wallet_internal_error, "Ambiguous arguments; Pass sending_amount 0 while sweeping"
-			);
-			return;
-		}
+		THROW_WALLET_EXCEPTION_IF(
+ 			sending_amounts.size() != 1 || (sending_amounts[0] != 0 && sending_amounts[0] != UINT64_MAX),
+ 			error::wallet_internal_error, "Ambiguous arguments; Pass sending_amount 0 while sweeping"
+ 		);
 	} else { // not sweeping
-		if (sending_amount == 0) {
-			retVals.errCode = enteredAmountTooLow;
-			return;
-		}
+		for (uint64_t sending_amount : sending_amounts) {
+ 			if (sending_amount == 0) {
+ 				retVals.errCode = enteredAmountTooLow;
+ 				return;
+ 			}
+ 		}
 	}
 	//
 	uint32_t fake_outs_count = monero_fork_rules::fixed_mixinsize();
@@ -282,19 +281,18 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	} else {
 		attempt_at_min_fee = *prior_attempt_size_calcd_fee;
 	}
-	struct Total
-	{
-		static uint64_t with(uint64_t sending_amount, uint64_t fee_amount)
-		{
-			return sending_amount + fee_amount;
-		}
-	};
 	// fee may get changed as follows…
+	uint64_t sum_sending_amounts;
 	uint64_t potential_total; // aka balance_required
+
 	if (is_sweeping) {
-		potential_total = UINT64_MAX; // balance required: all
+		potential_total = sum_sending_amounts = UINT64_MAX; // balance required: all
 	} else {
-		potential_total = Total::with(sending_amount, attempt_at_min_fee);
+		sum_sending_amounts = 0;
+ 		for (uint64_t amount : sending_amounts) {
+ 			sum_sending_amounts += amount;
+ 		}
+ 		potential_total = sum_sending_amounts + attempt_at_min_fee;
 	}
 	//
 	// Gather outputs and amount to use for getting decoy outputs…
@@ -353,7 +351,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	//
 	uint64_t total_wo_fee = is_sweeping
 		? /*now that we know outsAmount>needed_fee*/(using_outs_amount - needed_fee)
-		: sending_amount;
+		: sum_sending_amount;
 	retVals.final_total_wo_fee = total_wo_fee;
 	//
 	uint64_t total_incl_fees;
@@ -364,7 +362,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 		}
 		total_incl_fees = using_outs_amount;
 	} else {
-		total_incl_fees = sending_amount + needed_fee; // because fee changed because using_outs.size() was updated
+		total_incl_fees = sum_sending_amount + needed_fee; // because fee changed because using_outs.size() was updated
 		while (using_outs_amount < total_incl_fees && remaining_unusedOuts.size() > 0) { // add outputs 1 at a time till we either have them all or can meet the fee
 			{
 				auto out = pop_random_value(remaining_unusedOuts);
@@ -380,7 +378,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 				retVals.using_outs.size(), fake_outs_count, /*tx.dsts.size()*/1+1, extra.size(),
 				bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask
 			);
-			total_incl_fees = sending_amount + needed_fee; // because fee changed
+			total_incl_fees = sum_sending_amount + needed_fee; // because fee changed
 		}
 		retVals.required_balance = total_incl_fees; // update required_balance b/c total_incl_fees changed
 	}
@@ -482,9 +480,9 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 	const string &from_address_string,
 	const string &sec_viewKey_string,
 	const string &sec_spendKey_string,
-	const string &to_address_string,
+	const vector<string> &to_address_strings,
 	const optional<string>& payment_id_string,
-	uint64_t final_total_wo_fee,
+	const vector<uint64_t>& sending_amounts,
 	uint64_t change_amount,
 	uint64_t fee_amount,
 	uint32_t simple_priority,
@@ -503,8 +501,8 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 		create_tx__retVals,
 		from_address_string,
 		sec_viewKey_string, sec_spendKey_string,
-		to_address_string, payment_id_string,
-		final_total_wo_fee, change_amount, fee_amount,
+		to_address_strings, payment_id_string,
+		sending_amounts, change_amount, fee_amount,
 		using_outs, mix_outs,
 		use_fork_rules_fn,
 		unlock_time,
@@ -544,8 +542,8 @@ void monero_transfer_utils::create_transaction(
 	const account_keys& sender_account_keys, // this will reference a particular hw::device
 	const uint32_t subaddr_account_idx,
 	const std::unordered_map<crypto::public_key, cryptonote::subaddress_index> &subaddresses,
-	const address_parse_info &to_addr, 
-	uint64_t sending_amount,
+	const vector<address_parse_info> &to_addrs, 
+	const vector<uint64_t> sending_amounts,
 	uint64_t change_amount,
 	uint64_t fee_amount,
 	const vector<SpendableOutput> &outputs,
@@ -589,12 +587,16 @@ void monero_transfer_utils::create_transaction(
 		retVals.errCode = invalidSecretKeys;
 		return;
 	}
-	if (sending_amount > std::numeric_limits<uint64_t>::max() - change_amount
-		|| sending_amount + change_amount > std::numeric_limits<uint64_t>::max() - fee_amount) {
-		retVals.errCode = outputAmountOverflow;
-		return;
-	}
-	uint64_t needed_money = sending_amount + change_amount + fee_amount; // TODO: is this correct?
+// XXX: need overflow check?
+// 	if (sending_amount > std::numeric_limits<uint64_t>::max() - change_amount
+//		|| sending_amount + change_amount > std::numeric_limits<uint64_t>::max() - fee_amount) {
+//		retVals.errCode = outputAmountOverflow;
+//		return;
+//	}
+ 	uint64_t needed_money = fee_amount + change_amount;
+ 	for (uint64_t amount : sending_amounts) {
+ 		needed_money += amount;
+ 	}
 	//
 	uint64_t found_money = 0;
 	std::vector<tx_source_entry> sources;
@@ -731,11 +733,16 @@ void monero_transfer_utils::create_transaction(
 	//
 	// TODO: if this is a multisig wallet, create a list of multisig signers we can use
 	std::vector<cryptonote::tx_destination_entry> splitted_dsts;
-	tx_destination_entry to_dst = AUTO_VAL_INIT(to_dst);
-	to_dst.addr = to_addr.address;
-	to_dst.amount = sending_amount;
-	to_dst.is_subaddress = to_addr.is_subaddress;
-	splitted_dsts.push_back(to_dst);
+	THROW_WALLET_EXCEPTION_IF(to_addrs.size() != sending_amounts.size(),
+ 							  error::wallet_internal_error,
+ 							  "Amounts don't match destinations");
+ 	for (size_t i = 0; i < to_addrs.size(); ++i) {
+ 		tx_destination_entry to_dst = AUTO_VAL_INIT(to_dst);
+ 		to_dst.addr = to_addrs[i].address;
+ 		to_dst.amount = sending_amounts[i];
+ 		to_dst.is_subaddress = to_addrs[i].is_subaddress;
+ 		splitted_dsts.push_back(to_dst);
+ 	}
 	//
 	cryptonote::tx_destination_entry change_dst = AUTO_VAL_INIT(change_dst);
 	change_dst.amount = change_amount;
@@ -803,9 +810,9 @@ void monero_transfer_utils::convenience__create_transaction(
 	const string &from_address_string,
 	const string &sec_viewKey_string,
 	const string &sec_spendKey_string,
-	const string &to_address_string,
+	const vector<string> &to_address_strings,
 	const optional<string>& payment_id_string,
-	uint64_t sending_amount,
+	const vector<uint64_t> sending_amounts,
 	uint64_t change_amount,
 	uint64_t fee_amount,
 	const vector<SpendableOutput> &outputs,
@@ -830,15 +837,18 @@ void monero_transfer_utils::convenience__create_transaction(
 		THROW_WALLET_EXCEPTION_IF(!string_tools::hex_to_pod(sec_spendKey_string, sec_spendKey), error::wallet_internal_error, "Couldn't parse spend key");
 		account_keys.m_spend_secret_key = sec_spendKey;
 	}
-	THROW_WALLET_EXCEPTION_IF(
-		to_address_string.find(".") != std::string::npos, // assumed to be an OA address asXMR addresses do not have periods and OA addrs must
-		error::wallet_internal_error,
-		"Integrators must resolve OA addresses before calling Send"
-	); // This would be an app code fault
-	cryptonote::address_parse_info to_addr_info; // just in case…
-	if (!cryptonote::get_account_address_from_str(to_addr_info, nettype, to_address_string)) {
-		retVals.errCode = couldntDecodeToAddress;
-		return;
+	vector<cryptonote::address_parse_info> to_addr_infos(to_address_strings.size());
+ 	size_t to_addr_idx = 0;
+ 	for (const auto& addr : to_address_strings) {
+ 		THROW_WALLET_EXCEPTION_IF(
+ 			addr.find(".") != std::string::npos, // assumed to be an OA address asXMR addresses do not have periods and OA addrs must
+ 			error::wallet_internal_error,
+ 			"Integrators must resolve OA addresses before calling Send"
+ 		); // This would be an app code fault
+ 		if (!cryptonote::get_account_address_from_str(to_addr_infos[to_addr_idx++], nettype, addr)) {
+ 			retVals.errCode = couldntDecodeToAddress;
+ 			return;
+ 		}
 	}
 	//
 	std::vector<uint8_t> extra;
@@ -848,27 +858,29 @@ void monero_transfer_utils::convenience__create_transaction(
 		return;
 	}
 	bool payment_id_seen = payment_id_string != none; // logically this is true since payment_id_string has passed validation (or we'd have errored)
-	if (to_addr_info.is_subaddress && payment_id_seen) {
-		retVals.errCode = cantUsePIDWithSubAddress; // Never use a subaddress with a payment ID
-		return;
-	}
-	if (to_addr_info.has_payment_id) {
-		if (payment_id_seen) {
-			retVals.errCode = nonZeroPIDWithIntAddress; // can't use int addr at same time as supplying manual pid
-			return;
+	for (const auto& to_addr_info : to_addr_infos) {
+		if (to_addr_info.is_subaddress && payment_id_seen) {
+ 			retVals.errCode = cantUsePIDWithSubAddress; // Never use a subaddress with a payment ID
+ 			return;
 		}
-		if (to_addr_info.is_subaddress) {
-			THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Unexpected is_subaddress && has_payment_id"); // should never happen
-			return;
+		if (to_addr_info.has_payment_id) {
+ 			if (payment_id_seen) {
+ 				retVals.errCode = nonZeroPIDWithIntAddress; // can't use int addr at same time as supplying manual pid
+ 				return;
+ 			}
+ 			if (to_addr_info.is_subaddress) {
+ 				THROW_WALLET_EXCEPTION_IF(false, error::wallet_internal_error, "Unexpected is_subaddress && has_payment_id"); // should never happen
+ 				return;
+ 			}
+ 			std::string extra_nonce;
+ 			cryptonote::set_encrypted_payment_id_to_tx_extra_nonce(extra_nonce, to_addr_info.payment_id);
+ 			bool r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
+ 			if (!r) {
+ 				retVals.errCode = couldntAddPIDNonceToTXExtra;
+ 				return;
+ 			}
+ 			payment_id_seen = true;
 		}
-		std::string extra_nonce;
-		cryptonote::set_encrypted_payment_id_to_tx_extra_nonce(extra_nonce, to_addr_info.payment_id);
-		bool r = cryptonote::add_extra_nonce_to_tx_extra(extra, extra_nonce);
-		if (!r) {
-			retVals.errCode = couldntAddPIDNonceToTXExtra;
-			return;
-		}
-		payment_id_seen = true;
 	}
 	//
 	uint32_t subaddr_account_idx = 0;
@@ -879,8 +891,8 @@ void monero_transfer_utils::convenience__create_transaction(
 	create_transaction(
 		actualCall_retVals,
 		account_keys, subaddr_account_idx, subaddresses,
-		to_addr_info,
-		sending_amount, change_amount, fee_amount,
+		to_addr_infos,
+		sending_amounts, change_amount, fee_amount,
 		outputs, mix_outs,
 		extra, // TODO: move to after address
 		use_fork_rules_fn,
