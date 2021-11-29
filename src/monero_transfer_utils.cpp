@@ -229,7 +229,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	Send_Step1_RetVals &retVals,
 	//
 	const optional<string>& payment_id_string,
-	const vector<uint64_t>& sending_amount,
+	const vector<uint64_t>& sending_amounts,
 	bool is_sweeping,
 	uint32_t simple_priority,
 	use_fork_rules_fn_type use_fork_rules_fn,
@@ -351,7 +351,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	//
 	uint64_t total_wo_fee = is_sweeping
 		? /*now that we know outsAmount>needed_fee*/(using_outs_amount - needed_fee)
-		: sum_sending_amount;
+		: sum_sending_amounts;
 	retVals.final_total_wo_fee = total_wo_fee;
 	//
 	uint64_t total_incl_fees;
@@ -362,7 +362,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 		}
 		total_incl_fees = using_outs_amount;
 	} else {
-		total_incl_fees = sum_sending_amount + needed_fee; // because fee changed because using_outs.size() was updated
+		total_incl_fees = sum_sending_amounts + needed_fee; // because fee changed because using_outs.size() was updated
 		while (using_outs_amount < total_incl_fees && remaining_unusedOuts.size() > 0) { // add outputs 1 at a time till we either have them all or can meet the fee
 			{
 				auto out = pop_random_value(remaining_unusedOuts);
@@ -378,7 +378,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 				retVals.using_outs.size(), fake_outs_count, /*tx.dsts.size()*/1+1, extra.size(),
 				bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask
 			);
-			total_incl_fees = sum_sending_amount + needed_fee; // because fee changed
+			total_incl_fees = sum_sending_amounts + needed_fee; // because fee changed
 		}
 		retVals.required_balance = total_incl_fees; // update required_balance b/c total_incl_fees changed
 	}
@@ -543,7 +543,7 @@ void monero_transfer_utils::create_transaction(
 	const uint32_t subaddr_account_idx,
 	const std::unordered_map<crypto::public_key, cryptonote::subaddress_index> &subaddresses,
 	const vector<address_parse_info> &to_addrs, 
-	const vector<uint64_t> sending_amounts,
+	const vector<uint64_t>& sending_amounts,
 	uint64_t change_amount,
 	uint64_t fee_amount,
 	const vector<SpendableOutput> &outputs,
@@ -812,7 +812,7 @@ void monero_transfer_utils::convenience__create_transaction(
 	const string &sec_spendKey_string,
 	const vector<string> &to_address_strings,
 	const optional<string>& payment_id_string,
-	const vector<uint64_t> sending_amounts,
+	const vector<uint64_t>& sending_amounts,
 	uint64_t change_amount,
 	uint64_t fee_amount,
 	const vector<SpendableOutput> &outputs,

@@ -312,9 +312,9 @@ struct _SendFunds_ConstructAndSendTx_Args
 	const string &from_address_string;
 	const string &sec_viewKey_string;
 	const string &sec_spendKey_string;
-	const vector<string>& to_address_string;
+	const vector<string>& to_address_strings;
 	optional<string> payment_id_string;
-	const vector<uint64_t>& sending_amount;
+	const vector<uint64_t>& sending_amounts;
 	bool is_sweeping;
 	uint32_t simple_priority;
 	const send__get_random_outs_fn_type &get_random_outs_fn;
