@@ -492,7 +492,6 @@ void _reenterable_construct_and_send_tx(
 
  							returning__payment_id = std::move(*(decoded.paymentID_string)); // just preserving this as an original return value - this can probably eventually be removed
  						}
-					}
 				}
 				success_retVals.final_payment_id = returning__payment_id;
 			}
