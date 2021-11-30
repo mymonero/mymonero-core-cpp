@@ -154,10 +154,7 @@ string serial_bridge::mnemonic_from_seed(const string seed, const string wordset
 	if (retVals.err_string != none) {
 		return error_ret_json_from_message(*(retVals.err_string));
 	}
-	root.put(
-		"retVal",
-		std::string((*(retVals.mnemonic_string)).data(), (*(retVals.mnemonic_string)).size())
-	);
+	root.put("retVal", std::string((*(retVals.mnemonic_string)).data(), (*(retVals.mnemonic_string)).size()));
 
 	return ret_json_from_root(root);
 }

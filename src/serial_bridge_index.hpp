@@ -65,19 +65,7 @@ namespace serial_bridge
 	string validate_components_for_login(const string address, const string privateViewKey, const string privateSpendKey, const string seed, const string nettype);
 	//
 	string estimated_tx_network_fee(const string priority, const string feePerb, const string forkVersion);
-	string estimate_fee(const string &args_string);
-	string estimate_tx_weight(const string &args_string);
-	string estimate_rct_tx_size(const string &args_string);
-	//
 	string generate_key_image(const string txPublicKey, const string privateViewKey, const string publicSpendKey, const string privateSpendKey, const string outputIndex);
-	//
-	string generate_key_derivation(const string &args_string);
-	string derive_public_key(const string &args_string);
-	string derive_subaddress_public_key(const string &args_string);
-	string derivation_to_scalar(const string &args_string);
-	string decodeRct(const string &args_string);
-	string decodeRctSimple(const string &args_string);
-	string encrypt_payment_id(const string &args_string);
 }
 
 #endif /* serial_bridge_index_hpp */
