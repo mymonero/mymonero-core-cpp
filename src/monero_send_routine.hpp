@@ -83,10 +83,6 @@ namespace monero_send_routine
 		//
 		return req_params_ss.str();
 	}
-	LightwalletAPI_Req_GetUnspentOuts new__req_params__get_unspent_outs( // used internally and by emscr async send impl
-		string from_address_string,
-		string sec_viewKey_string
-	);
 	typedef std::function<void(
 		LightwalletAPI_Req_GetUnspentOuts, // req_params - use these for making the request
 		api_fetch_cb_fn // fn cb … call this after the request responds (successfully)
@@ -221,30 +217,6 @@ namespace monero_send_routine
 	LightwalletAPI_Res_GetRandomOuts new__parsed_res__get_random_outs(
 		const property_tree::ptree &res
 	);
-	//
-	// - Routine entrypoint
-	struct Async_SendFunds_Args
-	{ // TODO: add a way to pass native structures if available
-		string from_address_string;
-		string sec_viewKey_string;
-		string sec_spendKey_string;
-		string pub_spendKey_string;
-		vector<string> to_address_strings;
-		optional<string> payment_id_string;
-		vector<uint64_t> sending_amounts;
-		bool is_sweeping;
-		uint32_t simple_priority;
-		send__get_unspent_outs_fn_type get_unspent_outs_fn;
-		send__get_random_outs_fn_type get_random_outs_fn;
-		send__submit_raw_tx_fn_type submit_raw_tx_fn;
-		send__status_update_fn_type status_update_fn;
-		send__error_cb_fn_type error_cb_fn;
-		send__success_cb_fn_type success_cb_fn;
-		//
-		optional<uint64_t> unlock_time; // default 0
-		optional<cryptonote::network_type> nettype;
-	};
-	void async__send_funds(Async_SendFunds_Args args);
 }
 
 #endif /* monero_send_routine_hpp */

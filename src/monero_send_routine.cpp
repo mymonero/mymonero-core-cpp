@@ -69,22 +69,7 @@ optional<uint64_t> _possible_uint64_from_json(
 	}
 	return none;
 }
-//
-LightwalletAPI_Req_GetUnspentOuts monero_send_routine::new__req_params__get_unspent_outs(
-	string from_address_string,
-	string sec_viewKey_string
-) {
-	ostringstream dustT_ss;
-	dustT_ss << dust_threshold();
-	return {
-		std::move(from_address_string),
-		std::move(sec_viewKey_string),
-		"0", // amount - always sent as "0"
-		fixed_mixinsize(),
-		true, // use dust
-		dustT_ss.str()
-	};
-}
+
 LightwalletAPI_Req_GetRandomOuts monero_send_routine::new__req_params__get_random_outs(
 	const vector<SpendableOutput> &step1__using_outs,
 	const optional<SpendableOutputToRandomAmountOutputs> &prior_attempt_unspent_outs_to_mix_outs
