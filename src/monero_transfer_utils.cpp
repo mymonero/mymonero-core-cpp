@@ -199,12 +199,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 ) {
 	retVals = {};
 	//
-	if (is_sweeping) {
-		THROW_WALLET_EXCEPTION_IF(
- 			sending_amounts.size() != 1 || (sending_amounts[0] != 0 && sending_amounts[0] != UINT64_MAX),
- 			error::wallet_internal_error, "Ambiguous arguments; Pass sending_amount 0 while sweeping"
- 		);
-	} else { // not sweeping
+	if (!is_sweeping) {
 		for (uint64_t sending_amount : sending_amounts) {
  			if (sending_amount == 0) {
  				retVals.errCode = enteredAmountTooLow;
