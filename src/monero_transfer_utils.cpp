@@ -262,6 +262,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	//
 	bool use_rct = true;
 	bool bulletproof = true;
+	bool clsag = true;
 	//
 	std::vector<uint8_t> extra;
 	CreateTransactionErrorCode tx_extra__code = _add_pid_to_tx_extra(payment_id_string, extra);
@@ -274,9 +275,9 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	//
 	uint64_t attempt_at_min_fee;
 	if (passedIn_attemptAt_fee == none) {
-		attempt_at_min_fee = estimate_fee(true/*use_per_byte_fee*/, true/*use_rct*/, 2/*est num inputs*/, fake_outs_count, 2, extra.size(), bulletproof, base_fee, fee_multiplier, fee_quantization_mask);
-		// opted to do this instead of `const uint64_t min_fee = (fee_multiplier * base_fee * estimate_tx_size(use_rct, 1, fake_outs_count, 2, extra.size(), bulletproof));`
-		// TODO: estimate with 1 input or 2?
+		attempt_at_min_fee = estimate_fee(true/*use_per_byte_fee*/, true/*use_rct*/, 1/*est num inputs*/, fake_outs_count, 2, extra.size(), bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask);
+		// use a minimum viabale estimate_fee() with 1 input. It would be better to under-shoot this estimate, and then need to use a higher fee  from calculate_fee() because the estimate is too low,
+		// versus the worse alternative of over-estimating here and getting stuck using too high of a fee that leads to fingerprinting
 	} else {
 		attempt_at_min_fee = *passedIn_attemptAt_fee;
 	}
@@ -324,10 +325,10 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	uint64_t needed_fee = estimate_fee(
 		true/*use_per_byte_fee*/, use_rct,
 		retVals.using_outs.size(), fake_outs_count, /*tx.dsts.size()*/1+1, extra.size(),
-		bulletproof, base_fee, fee_multiplier, fee_quantization_mask
+		bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask
 	);
 	// if newNeededFee < neededFee, use neededFee instead (should only happen on the 2nd or later times through (due to estimated fee being too low))
-	if (needed_fee < attempt_at_min_fee) {
+	if (passedIn_attemptAt_fee != none && needed_fee < attempt_at_min_fee) {
 		needed_fee = attempt_at_min_fee;
 	}
 	//
@@ -362,7 +363,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 			needed_fee = estimate_fee(
 				true/*use_per_byte_fee*/, use_rct,
 				retVals.using_outs.size(), fake_outs_count, /*tx.dsts.size()*/1+1, extra.size(),
-				bulletproof, base_fee, fee_multiplier, fee_quantization_mask
+				bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask
 			);
 			total_incl_fees = sending_amount + needed_fee; // because fee changed
 		}
