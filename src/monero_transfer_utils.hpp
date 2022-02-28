@@ -80,6 +80,10 @@ namespace monero_transfer_utils
 		uint64_t amount;
 		vector<RandomAmountOutput> outputs;
 	};
+	struct SpendableAndRandomAmountOutputs
+	{
+		std::unordered_map<string, std::vector<RandomAmountOutput>> out_pub_key_to_mix_outs;
+	};
 	//
 	// Types - Return value
 	enum CreateTransactionErrorCode // TODO: switch to enum class to fix namespacing
@@ -107,6 +111,8 @@ namespace monero_transfer_utils
 		invalidPID						= 19,
 		enteredAmountTooLow				= 20,
 		cantGetDecryptedMaskFromRCTHex	= 21,
+		notEnoughUsableDecoysFound		= 22,
+		tooManyDecoysRemaining			= 23,
 		needMoreMoneyThanFound			= 90
 	};
 	static inline const char *err_msg_from_err_code__create_transaction(CreateTransactionErrorCode code)
@@ -156,6 +162,10 @@ namespace monero_transfer_utils
 				return "Invalid payment ID";
 			case enteredAmountTooLow:
 				return "The amount you've entered is too low";
+			case notEnoughUsableDecoysFound:
+				return "Not enough usable decoys returned from server";
+			case tooManyDecoysRemaining:
+				return "Too many unused decoys returned from server";
 			case cantGetDecryptedMaskFromRCTHex:
 				return "Can't get decrypted mask from 'rct' hex";
 		}
@@ -200,7 +210,24 @@ namespace monero_transfer_utils
 		uint64_t fee_per_b, // per v8
 		uint64_t fee_quantization_mask,
 		//
-		optional<uint64_t> passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		optional<uint64_t> passedIn_attemptAt_fee, // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		optional<SpendableAndRandomAmountOutputs> passedIn_outs_to_mix_outs = none // use this to make sure upon re-attempting, the calculated fee will be the result of calculate_fee()
+	);
+	struct Tie_Outs_to_Mix_Outs_RetVals
+	{
+		CreateTransactionErrorCode errCode; // if != noError, abort Send process
+		//
+		// Success parameters
+		vector<RandomAmountOutputs> mix_outs;
+		SpendableAndRandomAmountOutputs passedIn_outs_to_mix_outs_new;
+	};
+	void tie_outs_to_mix_outs(
+		Tie_Outs_to_Mix_Outs_RetVals &retVals,
+		//
+		const vector<SpendableOutput> &using_outs,
+		vector<RandomAmountOutputs> mix_outs_from_server,
+		//
+		const optional<SpendableAndRandomAmountOutputs> &passedIn_outs_to_mix_outs
 	);
 	//
 	struct Send_Step2_RetVals

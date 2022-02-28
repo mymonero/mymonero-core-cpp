@@ -294,7 +294,7 @@ Useful for displaying an estimated fee – To obtain exact fees, see "Creating a
 
 As mentioned, implementing the Send procedure without making use of one of our existing libraries or examples involves two bridge calls surrounded by server API calls, and mandatory reconstruction logic, and is simplified by various opportunities to pass values directly between the steps.
 
-The values which must be passed between functions have (almost entirely) consistent names, simplifying integration. The only current exception is the name of the explicit `fee_actually_needed` which should be passed to step1 as the optional `passedIn_attemptAt_fee` after being received by calling step2 (see below).
+The values which must be passed between functions have (almost entirely) consistent names, simplifying integration. The only current exceptions are the names of the explicit `fee_actually_needed` and `outs_to_mix_outs`, which should be passed to step1 as the optional `passedIn_attemptAt_fee` and `passedIn_outs_to_mix_outs` respectively after calling step2, when the transaction must be reconstructed (see below).
 
 ##### Examples
 * [JS implementation of SendFunds](https://github.com/mymonero/mymonero-core-js/blob/master/monero_utils/monero_sendingFunds_utils.js#L100)
@@ -324,6 +324,7 @@ The values which must be passed between functions have (almost entirely) consist
 	* `unspent_outs: [UnspentOutput]` - fully parsed server response
 	* `payment_id_string: Optional<String>`
 	* `passedIn_attemptAt_fee: Optional<UInt64String>`
+	* `passedIn_outs_to_mix_outs: Optional<Map<String, [RandomAmountOutput]>>` - map of output public keys to mix outs, explained below
 	
 * Returns: 
 	
@@ -345,6 +346,28 @@ The values which must be passed between functions have (almost entirely) consist
 	* `using_outs: [UnspentOutput]` passable directly to step2
 	* `final_total_wo_fee: UInt64String`
 	
+##### `tie_outs_to_mix_outs`
+
+`passedIn_outs_to_mix_outs` functions as a cache, tying used outputs to a constant set of mix outs across construciton attempts. If the transaction construction steps need to be repated, you should re-use the same outs and their respective selected mix outs as used in prior attempts. This has 2 benefits: (1) it ensures the fee calculation is done correctly to prevent leaving transactions on chain that are fingerprintable by their fee, (2) no need to keep re-querying the server for decoys. This step should be called *after* receiving `mix_outs` from an API call, and before step2. The resulting `passedIn_outs_to_mix_outs_new` should become the new `passedIn_outs_to_mix_outs` in future tx construction attempts.
+
+* Args:
+	* `using_outs: [UnspentOutput]` returned by step1
+	* `mix_outs: [MixAmountAndOuts]` defined below
+	* `passedIn_outs_to_mix_outs: Map<String, RandomAmountOutput>`
+
+* Returns:
+
+	* `err_code: CreateTransactionErrorCode`==`notEnoughUsableDecoysFound(22)`
+
+	*OR*
+
+	* `err_code: CreateTransactionErrorCode`==`tooManyDecoysRemaining(23)`
+
+	*OR*
+
+	* `mix_outs: [MixAmountAndOuts]` passable directly to step2
+	* `passedIn_outs_to_mix_outs_new: Optional<Map<String, RandomAmountOutput>`
+
 
 ##### `send_step2__try_create_transaction`
 
@@ -366,7 +389,7 @@ The values which must be passed between functions have (almost entirely) consist
 	* `nettype_string: NettypeString`
 	* `payment_id_string: Optional<String>`
 
-		* `MixAmountAndOuts: Dictionary` decoys obtained from API call with
+		* `MixAmountAndOuts: Dictionary` decoys obtained from API call with, or from `tie_outs_to_mix_outs`
 			* `amount: UInt64String`
 			* `outputs: [MixOut]` where
 				* `MixOut: Dictionary` with 

@@ -238,7 +238,8 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	uint64_t fee_per_b, // per v8
 	uint64_t fee_quantization_mask,
 	//
-	optional<uint64_t> passedIn_attemptAt_fee
+	optional<uint64_t> passedIn_attemptAt_fee,
+	optional<SpendableAndRandomAmountOutputs> passedIn_outs_to_mix_outs
 ) {
 	retVals = {};
 	//
@@ -299,6 +300,20 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	// Gather outputs and amount to use for getting decoy outputs…
 	uint64_t using_outs_amount = 0;
 	vector<SpendableOutput>  remaining_unusedOuts = unspent_outs; // take copy so not to modify original
+
+	// start by using all the passed in outs that were selected in a prior tx construction attempt
+	if (passedIn_outs_to_mix_outs != none) {
+		for (size_t i = 0; i < remaining_unusedOuts.size(); ++i) {
+			SpendableOutput &out = remaining_unusedOuts[i];
+
+			// search for out by public key to see if it should be re-used in an attempt
+			if (passedIn_outs_to_mix_outs->out_pub_key_to_mix_outs.find(out.public_key) != passedIn_outs_to_mix_outs->out_pub_key_to_mix_outs.end()) {
+				using_outs_amount += out.amount;
+				retVals.using_outs.push_back(std::move(pop_index(remaining_unusedOuts, i)));
+			}
+		}
+	}
+
 	// TODO: factor this out to get spendable balance for display in the MM wallet:
 	while (using_outs_amount < potential_total && remaining_unusedOuts.size() > 0) {
 		auto out = pop_random_value(remaining_unusedOuts);
@@ -392,6 +407,75 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 //		// TODO?
 //	}
 }
+//
+//
+void monero_transfer_utils::tie_outs_to_mix_outs(
+	Tie_Outs_to_Mix_Outs_RetVals &retVals,
+	//
+	const vector<SpendableOutput> &using_outs,
+	vector<RandomAmountOutputs> mix_outs_from_server,
+	//
+	const optional<SpendableAndRandomAmountOutputs> &passedIn_outs_to_mix_outs
+) {
+	retVals.errCode = noError;
+	//
+	// combine newly requested mix outs returned from the server, with the already known decoys from prior tx construction attempts,
+	// so that the same decoys will be re-used with the same outputs in all tx construciton attempts. This ensures fee returned
+	// by calculate_fee() will be correct in the final tx, and also reduces number of needed trips to the server during tx construction.
+	SpendableAndRandomAmountOutputs passedIn_outs_to_mix_outs_new;
+	if (passedIn_outs_to_mix_outs) {
+		passedIn_outs_to_mix_outs_new = *passedIn_outs_to_mix_outs;
+	}
+
+	std::vector<RandomAmountOutputs> mix_outs;
+	mix_outs.reserve(using_outs.size());
+
+	for (size_t i = 0; i < using_outs.size(); ++i) {
+		auto out = using_outs[i];
+
+		// if we don't already know of a particular out's mix outs (from a prior attempt),
+		// then tie out to a set of mix outs retrieved from the server
+		if (passedIn_outs_to_mix_outs_new.out_pub_key_to_mix_outs.find(out.public_key) == passedIn_outs_to_mix_outs_new.out_pub_key_to_mix_outs.end()) {
+			for (size_t j = 0; j < mix_outs_from_server.size(); ++j) {
+				if ((out.rct != none && mix_outs_from_server[j].amount != 0) ||
+					(out.rct == none && mix_outs_from_server[j].amount != out.amount)) {
+					continue;
+				}
+
+				RandomAmountOutputs output_mix_outs = pop_index(mix_outs_from_server, j);
+
+				// if we need to retry constructing tx, will remember to use same mix outs for this out on subsequent attempt(s)
+				passedIn_outs_to_mix_outs_new.out_pub_key_to_mix_outs[out.public_key] = output_mix_outs.outputs;
+				mix_outs.push_back(std::move(output_mix_outs));
+
+				break;
+			}
+		} else {
+			RandomAmountOutputs output_mix_outs;
+			output_mix_outs.outputs = passedIn_outs_to_mix_outs_new.out_pub_key_to_mix_outs[out.public_key];
+			output_mix_outs.amount = out.amount;
+			mix_outs.push_back(std::move(output_mix_outs));
+		}
+	}
+
+	// we expect to have a set of mix outs for every output in the tx
+	if (mix_outs.size() != using_outs.size()) {
+		retVals.errCode = notEnoughUsableDecoysFound;
+		return;
+	}
+
+	// we expect to use up all mix outs returned by the server
+	if (!mix_outs_from_server.empty()) {
+		retVals.errCode = tooManyDecoysRemaining;
+		return;
+	}
+
+	retVals.mix_outs = std::move(mix_outs);
+	retVals.passedIn_outs_to_mix_outs_new = std::move(passedIn_outs_to_mix_outs_new);
+}
+//
+//
+//
 void monero_transfer_utils::send_step2__try_create_transaction(
 	Send_Step2_RetVals &retVals,
 	//

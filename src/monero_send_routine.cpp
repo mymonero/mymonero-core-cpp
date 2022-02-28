@@ -86,10 +86,24 @@ LightwalletAPI_Req_GetUnspentOuts monero_send_routine::new__req_params__get_unsp
 	};
 }
 LightwalletAPI_Req_GetRandomOuts monero_send_routine::new__req_params__get_random_outs(
-	vector<SpendableOutput> &step1__using_outs
+	const vector<SpendableOutput> &step1__using_outs,
+	const optional<SpendableAndRandomAmountOutputs> &passedIn_outs_to_mix_outs
 ) {
+	// request decoys for any newly selected inputs
+	std::vector<SpendableOutput> decoy_requests;
+	if (passedIn_outs_to_mix_outs) {
+		for (size_t i = 0; i < step1__using_outs.size(); ++i) {
+			// only need to request decoys for outs that were not already passed in
+			if (passedIn_outs_to_mix_outs->out_pub_key_to_mix_outs.find(step1__using_outs[i].public_key) == passedIn_outs_to_mix_outs->out_pub_key_to_mix_outs.end()) {
+				decoy_requests.push_back(step1__using_outs[i]);
+			}
+		}
+	} else {
+		decoy_requests = step1__using_outs;
+	}
+
 	vector<string> decoy_req__amounts;
-	BOOST_FOREACH(SpendableOutput &using_out, step1__using_outs)
+	BOOST_FOREACH(SpendableOutput &using_out, decoy_requests)
 	{
 		if (using_out.rct != none && (*(using_out.rct)).size() > 0) {
 			decoy_req__amounts.push_back("0");
@@ -321,14 +335,16 @@ struct _SendFunds_ConstructAndSendTx_Args
 	const secret_key &sec_spendKey;
 	//
 	optional<uint64_t> passedIn_attemptAt_fee;
+	optional<SpendableAndRandomAmountOutputs> passedIn_outs_to_mix_outs;
 	size_t constructionAttempt;
 };
 void _reenterable_construct_and_send_tx(
 	const _SendFunds_ConstructAndSendTx_Args &args,
 	//
 	// re-entry params
-	optional<uint64_t> passedIn_attemptAt_fee						= none,
-	size_t constructionAttempt 										= 0
+	optional<uint64_t> passedIn_attemptAt_fee								= none,
+	optional<SpendableAndRandomAmountOutputs> passedIn_outs_to_mix_outs		= none,
+	size_t constructionAttempt												= 0
 ) {
 	args.status_update_fn(calculatingFee);
 	//
@@ -347,7 +363,8 @@ void _reenterable_construct_and_send_tx(
 		args.fee_per_b,
 		args.fee_quantization_mask,
 		//
-		passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		passedIn_attemptAt_fee, // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		passedIn_outs_to_mix_outs // on re-entry, re-use the same outs and requested decoys, in order to land on the correct calculated fee
 	);
 	if (step1_retVals.errCode != noError) {
 		SendFunds_Error_RetVals error_retVals;
@@ -360,6 +377,7 @@ void _reenterable_construct_and_send_tx(
 	api_fetch_cb_fn get_random_outs_fn__cb_fn = [
 		args,
 		step1_retVals,
+		passedIn_outs_to_mix_outs,
 		constructionAttempt,
 		use_fork_rules
 	] (
@@ -412,6 +430,7 @@ void _reenterable_construct_and_send_tx(
 				args,
 				//
 				step2_retVals.fee_actually_needed, // -> reconstruction attempt's step1's passedIn_attemptAt_fee
+				passedIn_outs_to_mix_outs,
 				constructionAttempt+1
 			);
 			return;
@@ -463,7 +482,7 @@ void _reenterable_construct_and_send_tx(
 	args.status_update_fn(fetchingDecoyOutputs);
 	//
 	args.get_random_outs_fn(
-		new__req_params__get_random_outs(step1_retVals.using_outs),
+		new__req_params__get_random_outs(step1_retVals.using_outs, passedIn_outs_to_mix_outs),
 		get_random_outs_fn__cb_fn
 	);
 }
