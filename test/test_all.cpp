@@ -181,8 +181,8 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 			if (fee_actually_needed_string != none) {
 				BOOST_REQUIRE(construction_attempt_n > 1);
 				//
-				// for next round's integration - if it needs to re-enter... arg "passedIn_attemptAt_fee"
-				root.put("passedIn_attemptAt_fee", *fee_actually_needed_string);
+				// for next round's integration - if it needs to re-enter... arg "prior_attempt_size_calcd_fee"
+				root.put("prior_attempt_size_calcd_fee", *fee_actually_needed_string);
 			}
 			auto ret_string = serial_bridge::send_step1__prepare_params_for_get_decoys(args_string_from_root(root));
 			stringstream ret_stream;
@@ -392,8 +392,8 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			if (fee_actually_needed_string != none) {
 				BOOST_REQUIRE(construction_attempt_n > 1);
 				//
-				// for next round's integration - if it needs to re-enter... arg "passedIn_attemptAt_fee"
-				root.put("passedIn_attemptAt_fee", *fee_actually_needed_string);
+				// for next round's integration - if it needs to re-enter... arg "prior_attempt_size_calcd_fee"
+				root.put("prior_attempt_size_calcd_fee", *fee_actually_needed_string);
 			}
 			auto ret_string = serial_bridge::send_step1__prepare_params_for_get_decoys(args_string_from_root(root));
 			stringstream ret_stream;
@@ -1483,8 +1483,8 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 			if (fee_actually_needed_string != none) {
 				BOOST_REQUIRE(construction_attempt_n > 1);
 				//
-				// for next round's integration - if it needs to re-enter... arg "passedIn_attemptAt_fee"
-				root.put("passedIn_attemptAt_fee", *fee_actually_needed_string);
+				// for next round's integration - if it needs to re-enter... arg "prior_attempt_size_calcd_fee"
+				root.put("prior_attempt_size_calcd_fee", *fee_actually_needed_string);
 			}
 			auto ret_string = serial_bridge::send_step1__prepare_params_for_get_decoys(args_string_from_root(root));
 			stringstream ret_stream;

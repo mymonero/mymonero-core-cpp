@@ -470,10 +470,10 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		//
 		unspent_outs.push_back(std::move(out));
 	}
-	optional<string> optl__passedIn_attemptAt_fee_string = json_root.get_optional<string>("passedIn_attemptAt_fee");
-	optional<uint64_t> optl__passedIn_attemptAt_fee = none;
-	if (optl__passedIn_attemptAt_fee_string != none) {
-		optl__passedIn_attemptAt_fee = stoull(*optl__passedIn_attemptAt_fee_string);
+	optional<string> optl__prior_attempt_size_calcd_fee_string = json_root.get_optional<string>("prior_attempt_size_calcd_fee");
+	optional<uint64_t> optl__prior_attempt_size_calcd_fee = none;
+	if (optl__prior_attempt_size_calcd_fee_string != none) {
+		optl__prior_attempt_size_calcd_fee = stoull(*optl__prior_attempt_size_calcd_fee_string);
 	}
 	uint8_t fork_version = 0; // if missing
 	optional<string> optl__fork_version_string = json_root.get_optional<string>("fork_version");
@@ -493,7 +493,7 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		stoull(json_root.get<string>("fee_per_b")), // per v8
 		stoull(json_root.get<string>("fee_mask")),
 		//
-		optl__passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		optl__prior_attempt_size_calcd_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
 	);
 	boost::property_tree::ptree root;
 	if (retVals.errCode != noError) {

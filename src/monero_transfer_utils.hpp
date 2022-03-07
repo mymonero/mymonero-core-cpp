@@ -178,9 +178,11 @@ namespace monero_transfer_utils
 	// Send_Step* functions procedure for integrators:
 	//	1. call GetUnspentOuts endpoint
 	//	2. call step1__prepare_params_for_get_decoys to get params for calling RandomOuts; call GetRandomOuts
-	//	3. call step2__try_… with retVals from Step1 (incl using_outs, RandomOuts)
-	//		3a. While tx must be reconstructed, re-call step1 passing step2 fee_actually_needed as passedIn_attemptAt_fee, then re-request RandomOuts again, and call step2 again
-	//		3b. If good tx constructed, proceed to submit/save the tx
+	//	3. call pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts to use constant set of mix outs for each unpsent out across tx construction attempts
+	//	4. call step2__try_… with retVals from Step1 and pre_Step2 (incl using_outs, RandomOuts)
+	//		4a. While tx must be reconstructed, re-call step1 passing step2 fee_actually_needed as prior_attempt_size_calcd_fee AND
+	// 			passing pre_step2 unspent_outs_to_mix_outs_new as prior_attempt_unspent_outs_to_mix_outs, then repeat steps 2-4
+	//		4b. If good tx constructed, proceed to submit/save the tx
 	// Note: This separation of steps fully encodes SendFunds_ProcessStep
 	//
 	struct Send_Step1_RetVals
@@ -210,8 +212,8 @@ namespace monero_transfer_utils
 		uint64_t fee_per_b, // per v8
 		uint64_t fee_quantization_mask,
 		//
-		optional<uint64_t> passedIn_attemptAt_fee, // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
-		optional<SpendableAndRandomAmountOutputs> passedIn_outs_to_mix_outs = none // use this to make sure upon re-attempting, the calculated fee will be the result of calculate_fee()
+		optional<uint64_t> prior_attempt_size_calcd_fee, // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		optional<SpendableAndRandomAmountOutputs> prior_attempt_unspent_outs_to_mix_outs = none // use this to make sure upon re-attempting, the calculated fee will be the result of calculate_fee()
 	);
 	struct Tie_Outs_to_Mix_Outs_RetVals
 	{
@@ -219,15 +221,15 @@ namespace monero_transfer_utils
 		//
 		// Success parameters
 		vector<RandomAmountOutputs> mix_outs;
-		SpendableAndRandomAmountOutputs passedIn_outs_to_mix_outs_new;
+		SpendableAndRandomAmountOutputs prior_attempt_unspent_outs_to_mix_outs_new;
 	};
-	void tie_outs_to_mix_outs(
+	void pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(
 		Tie_Outs_to_Mix_Outs_RetVals &retVals,
 		//
 		const vector<SpendableOutput> &using_outs,
 		vector<RandomAmountOutputs> mix_outs_from_server,
 		//
-		const optional<SpendableAndRandomAmountOutputs> &passedIn_outs_to_mix_outs
+		const optional<SpendableAndRandomAmountOutputs> &prior_attempt_unspent_outs_to_mix_outs
 	);
 	//
 	struct Send_Step2_RetVals

@@ -238,8 +238,8 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	uint64_t fee_per_b, // per v8
 	uint64_t fee_quantization_mask,
 	//
-	optional<uint64_t> passedIn_attemptAt_fee,
-	optional<SpendableAndRandomAmountOutputs> passedIn_outs_to_mix_outs
+	optional<uint64_t> prior_attempt_size_calcd_fee,
+	optional<SpendableAndRandomAmountOutputs> prior_attempt_unspent_outs_to_mix_outs
 ) {
 	retVals = {};
 	//
@@ -275,12 +275,12 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	const uint64_t fee_multiplier = get_fee_multiplier(simple_priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
 	//
 	uint64_t attempt_at_min_fee;
-	if (passedIn_attemptAt_fee == none) {
+	if (prior_attempt_size_calcd_fee == none) {
 		attempt_at_min_fee = estimate_fee(true/*use_per_byte_fee*/, true/*use_rct*/, 1/*est num inputs*/, fake_outs_count, 2, extra.size(), bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask);
 		// use a minimum viable estimate_fee() with 1 input. It would be better to under-shoot this estimate, and then need to use a higher fee  from calculate_fee() because the estimate is too low,
 		// versus the worse alternative of over-estimating here and getting stuck using too high of a fee that leads to fingerprinting
 	} else {
-		attempt_at_min_fee = *passedIn_attemptAt_fee;
+		attempt_at_min_fee = *prior_attempt_size_calcd_fee;
 	}
 	struct Total
 	{
@@ -302,12 +302,12 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	vector<SpendableOutput>  remaining_unusedOuts = unspent_outs; // take copy so not to modify original
 
 	// start by using all the passed in outs that were selected in a prior tx construction attempt
-	if (passedIn_outs_to_mix_outs != none) {
+	if (prior_attempt_unspent_outs_to_mix_outs != none) {
 		for (size_t i = 0; i < remaining_unusedOuts.size(); ++i) {
 			SpendableOutput &out = remaining_unusedOuts[i];
 
 			// search for out by public key to see if it should be re-used in an attempt
-			if (passedIn_outs_to_mix_outs->out_pub_key_to_mix_outs.find(out.public_key) != passedIn_outs_to_mix_outs->out_pub_key_to_mix_outs.end()) {
+			if (prior_attempt_unspent_outs_to_mix_outs->out_pub_key_to_mix_outs.find(out.public_key) != prior_attempt_unspent_outs_to_mix_outs->out_pub_key_to_mix_outs.end()) {
 				using_outs_amount += out.amount;
 				retVals.using_outs.push_back(std::move(pop_index(remaining_unusedOuts, i)));
 			}
@@ -343,7 +343,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 		bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask
 	);
 	// if newNeededFee < neededFee, use neededFee instead (should only happen on the 2nd or later times through (due to estimated fee being too low))
-	if (passedIn_attemptAt_fee != none && needed_fee < attempt_at_min_fee) {
+	if (prior_attempt_size_calcd_fee != none && needed_fee < attempt_at_min_fee) {
 		needed_fee = attempt_at_min_fee;
 	}
 	//
@@ -409,22 +409,22 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 }
 //
 //
-void monero_transfer_utils::tie_outs_to_mix_outs(
+void monero_transfer_utils::pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(
 	Tie_Outs_to_Mix_Outs_RetVals &retVals,
 	//
 	const vector<SpendableOutput> &using_outs,
 	vector<RandomAmountOutputs> mix_outs_from_server,
 	//
-	const optional<SpendableAndRandomAmountOutputs> &passedIn_outs_to_mix_outs
+	const optional<SpendableAndRandomAmountOutputs> &prior_attempt_unspent_outs_to_mix_outs
 ) {
 	retVals.errCode = noError;
 	//
 	// combine newly requested mix outs returned from the server, with the already known decoys from prior tx construction attempts,
-	// so that the same decoys will be re-used with the same outputs in all tx construciton attempts. This ensures fee returned
+	// so that the same decoys will be re-used with the same outputs in all tx construction attempts. This ensures fee returned
 	// by calculate_fee() will be correct in the final tx, and also reduces number of needed trips to the server during tx construction.
-	SpendableAndRandomAmountOutputs passedIn_outs_to_mix_outs_new;
-	if (passedIn_outs_to_mix_outs) {
-		passedIn_outs_to_mix_outs_new = *passedIn_outs_to_mix_outs;
+	SpendableAndRandomAmountOutputs prior_attempt_unspent_outs_to_mix_outs_new;
+	if (prior_attempt_unspent_outs_to_mix_outs) {
+		prior_attempt_unspent_outs_to_mix_outs_new = *prior_attempt_unspent_outs_to_mix_outs;
 	}
 
 	std::vector<RandomAmountOutputs> mix_outs;
@@ -435,7 +435,7 @@ void monero_transfer_utils::tie_outs_to_mix_outs(
 
 		// if we don't already know of a particular out's mix outs (from a prior attempt),
 		// then tie out to a set of mix outs retrieved from the server
-		if (passedIn_outs_to_mix_outs_new.out_pub_key_to_mix_outs.find(out.public_key) == passedIn_outs_to_mix_outs_new.out_pub_key_to_mix_outs.end()) {
+		if (prior_attempt_unspent_outs_to_mix_outs_new.out_pub_key_to_mix_outs.find(out.public_key) == prior_attempt_unspent_outs_to_mix_outs_new.out_pub_key_to_mix_outs.end()) {
 			for (size_t j = 0; j < mix_outs_from_server.size(); ++j) {
 				if ((out.rct != none && mix_outs_from_server[j].amount != 0) ||
 					(out.rct == none && mix_outs_from_server[j].amount != out.amount)) {
@@ -445,14 +445,14 @@ void monero_transfer_utils::tie_outs_to_mix_outs(
 				RandomAmountOutputs output_mix_outs = pop_index(mix_outs_from_server, j);
 
 				// if we need to retry constructing tx, will remember to use same mix outs for this out on subsequent attempt(s)
-				passedIn_outs_to_mix_outs_new.out_pub_key_to_mix_outs[out.public_key] = output_mix_outs.outputs;
+				prior_attempt_unspent_outs_to_mix_outs_new.out_pub_key_to_mix_outs[out.public_key] = output_mix_outs.outputs;
 				mix_outs.push_back(std::move(output_mix_outs));
 
 				break;
 			}
 		} else {
 			RandomAmountOutputs output_mix_outs;
-			output_mix_outs.outputs = passedIn_outs_to_mix_outs_new.out_pub_key_to_mix_outs[out.public_key];
+			output_mix_outs.outputs = prior_attempt_unspent_outs_to_mix_outs_new.out_pub_key_to_mix_outs[out.public_key];
 			output_mix_outs.amount = out.amount;
 			mix_outs.push_back(std::move(output_mix_outs));
 		}
@@ -471,7 +471,7 @@ void monero_transfer_utils::tie_outs_to_mix_outs(
 	}
 
 	retVals.mix_outs = std::move(mix_outs);
-	retVals.passedIn_outs_to_mix_outs_new = std::move(passedIn_outs_to_mix_outs_new);
+	retVals.prior_attempt_unspent_outs_to_mix_outs_new = std::move(prior_attempt_unspent_outs_to_mix_outs_new);
 }
 //
 //
