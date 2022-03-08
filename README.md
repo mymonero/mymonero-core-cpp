@@ -352,8 +352,8 @@ The values which must be passed between functions have (almost entirely) consist
 
 * Args:
 	* `using_outs: [UnspentOutput]` returned by step1
-	* `mix_outs: [MixAmountAndOuts]` defined below
-	* `prior_attempt_unspent_outs_to_mix_outs: Map<String, RandomAmountOutput>`
+	* `mix_outs_from_server: [MixAmountAndOuts]` defined below
+	* `prior_attempt_unspent_outs_to_mix_outs: Optional<Map<String, [RandomAmountOutput]>>`
 
 * Returns:
 
@@ -366,7 +366,7 @@ The values which must be passed between functions have (almost entirely) consist
 	*OR*
 
 	* `mix_outs: [MixAmountAndOuts]` passable directly to step2
-	* `prior_attempt_unspent_outs_to_mix_outs_new: Optional<Map<String, RandomAmountOutput>>`
+	* `prior_attempt_unspent_outs_to_mix_outs_new: Map<String, [RandomAmountOutput]>`
 
 
 ##### `send_step2__try_create_transaction`
@@ -389,7 +389,7 @@ The values which must be passed between functions have (almost entirely) consist
 	* `nettype_string: NettypeString`
 	* `payment_id_string: Optional<String>`
 
-		* `MixAmountAndOuts: Dictionary` decoys obtained from API call with, or from `tie_outs_to_mix_outs`
+		* `MixAmountAndOuts: Dictionary` decoys obtained from API call with, or from `pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts`
 			* `amount: UInt64String`
 			* `outputs: [MixOut]` where
 				* `MixOut: Dictionary` with 
