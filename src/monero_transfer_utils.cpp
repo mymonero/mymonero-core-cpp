@@ -276,7 +276,7 @@ void monero_transfer_utils::send_step1__prepare_params_for_get_decoys(
 	uint64_t attempt_at_min_fee;
 	if (passedIn_attemptAt_fee == none) {
 		attempt_at_min_fee = estimate_fee(true/*use_per_byte_fee*/, true/*use_rct*/, 1/*est num inputs*/, fake_outs_count, 2, extra.size(), bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask);
-		// use a minimum viabale estimate_fee() with 1 input. It would be better to under-shoot this estimate, and then need to use a higher fee  from calculate_fee() because the estimate is too low,
+		// use a minimum viable estimate_fee() with 1 input. It would be better to under-shoot this estimate, and then need to use a higher fee  from calculate_fee() because the estimate is too low,
 		// versus the worse alternative of over-estimating here and getting stuck using too high of a fee that leads to fingerprinting
 	} else {
 		attempt_at_min_fee = *passedIn_attemptAt_fee;
