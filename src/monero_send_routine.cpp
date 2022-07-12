@@ -383,13 +383,32 @@ void _reenterable_construct_and_send_tx(
 	] (
 		const property_tree::ptree &res
 	) -> void {
-		auto parsed_res = new__parsed_res__get_random_outs(res);
+		auto parsed_res = (res != boost::property_tree::ptree{})
+			? new__parsed_res__get_random_outs(res)
+			: LightwalletAPI_Res_GetRandomOuts{ boost::none/*err_msg*/, vector<RandomAmountOutputs>{}/*mix_outs*/ };
 		if (parsed_res.err_msg != none) {
 			SendFunds_Error_RetVals error_retVals;
 			error_retVals.explicit_errMsg = std::move(*(parsed_res.err_msg));
 			args.error_cb_fn(error_retVals);
 			return;
 		}
+
+		Tie_Outs_to_Mix_Outs_RetVals tie_outs_to_mix_outs_retVals;
+		monero_transfer_utils::pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(
+			tie_outs_to_mix_outs_retVals,
+			//
+			step1_retVals.using_outs,
+			*(parsed_res.mix_outs),
+			//
+			prior_attempt_unspent_outs_to_mix_outs
+		);
+		if (tie_outs_to_mix_outs_retVals.errCode != noError) {
+			SendFunds_Error_RetVals error_retVals;
+			error_retVals.errCode = tie_outs_to_mix_outs_retVals.errCode;
+			args.error_cb_fn(error_retVals);
+			return;
+		}
+
 		Send_Step2_RetVals step2_retVals;
 		monero_transfer_utils::send_step2__try_create_transaction(
 			step2_retVals,
@@ -406,7 +425,7 @@ void _reenterable_construct_and_send_tx(
 			step1_retVals.using_outs,
 			args.fee_per_b,
 			args.fee_quantization_mask,
-			*(parsed_res.mix_outs),
+			tie_outs_to_mix_outs_retVals.mix_outs,
 			std::move(use_fork_rules),
 			args.unlock_time,
 			args.nettype
@@ -430,7 +449,7 @@ void _reenterable_construct_and_send_tx(
 				args,
 				//
 				step2_retVals.fee_actually_needed, // -> reconstruction attempt's step1's prior_attempt_size_calcd_fee
-				prior_attempt_unspent_outs_to_mix_outs,
+				tie_outs_to_mix_outs_retVals.prior_attempt_unspent_outs_to_mix_outs_new,
 				constructionAttempt+1
 			);
 			return;
@@ -481,10 +500,16 @@ void _reenterable_construct_and_send_tx(
 	//
 	args.status_update_fn(fetchingDecoyOutputs);
 	//
-	args.get_random_outs_fn(
-		new__req_params__get_random_outs(step1_retVals.using_outs, prior_attempt_unspent_outs_to_mix_outs),
-		get_random_outs_fn__cb_fn
+	// we won't need to make request for random outs every tx construction attempt, if already passed in out for all outs
+	auto req_params = new__req_params__get_random_outs(
+		step1_retVals.using_outs,
+		prior_attempt_unspent_outs_to_mix_outs
 	);
+	if (req_params.amounts.size() > 0) {
+		args.get_random_outs_fn(req_params, get_random_outs_fn__cb_fn);
+	} else {
+		get_random_outs_fn__cb_fn(boost::property_tree::ptree{});
+	}
 }
 //
 //
