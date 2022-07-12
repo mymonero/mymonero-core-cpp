@@ -80,10 +80,7 @@ namespace monero_transfer_utils
 		uint64_t amount;
 		vector<RandomAmountOutput> outputs;
 	};
-	struct SpendableAndRandomAmountOutputs
-	{
-		std::unordered_map<string, std::vector<RandomAmountOutput>> out_pub_key_to_mix_outs;
-	};
+	typedef std::unordered_map<string/*public_key*/, std::vector<RandomAmountOutput>> SpendableOutputToRandomAmountOutputs;
 	//
 	// Types - Return value
 	enum CreateTransactionErrorCode // TODO: switch to enum class to fix namespacing
@@ -163,9 +160,9 @@ namespace monero_transfer_utils
 			case enteredAmountTooLow:
 				return "The amount you've entered is too low";
 			case notEnoughUsableDecoysFound:
-				return "Not enough usable decoys returned from server";
+				return "Not enough usable decoys found";
 			case tooManyDecoysRemaining:
-				return "Too many unused decoys returned from server";
+				return "Too many unused decoys remaining";
 			case cantGetDecryptedMaskFromRCTHex:
 				return "Can't get decrypted mask from 'rct' hex";
 		}
@@ -213,7 +210,7 @@ namespace monero_transfer_utils
 		uint64_t fee_quantization_mask,
 		//
 		optional<uint64_t> prior_attempt_size_calcd_fee, // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
-		optional<SpendableAndRandomAmountOutputs> prior_attempt_unspent_outs_to_mix_outs = none // use this to make sure upon re-attempting, the calculated fee will be the result of calculate_fee()
+		optional<SpendableOutputToRandomAmountOutputs> prior_attempt_unspent_outs_to_mix_outs = none // use this to make sure upon re-attempting, the calculated fee will be the result of calculate_fee()
 	);
 	struct Tie_Outs_to_Mix_Outs_RetVals
 	{
@@ -221,7 +218,7 @@ namespace monero_transfer_utils
 		//
 		// Success parameters
 		vector<RandomAmountOutputs> mix_outs;
-		SpendableAndRandomAmountOutputs prior_attempt_unspent_outs_to_mix_outs_new;
+		SpendableOutputToRandomAmountOutputs prior_attempt_unspent_outs_to_mix_outs_new;
 	};
 	void pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(
 		Tie_Outs_to_Mix_Outs_RetVals &retVals,
@@ -229,7 +226,7 @@ namespace monero_transfer_utils
 		const vector<SpendableOutput> &using_outs,
 		vector<RandomAmountOutputs> mix_outs_from_server,
 		//
-		const optional<SpendableAndRandomAmountOutputs> &prior_attempt_unspent_outs_to_mix_outs
+		const optional<SpendableOutputToRandomAmountOutputs> &prior_attempt_unspent_outs_to_mix_outs
 	);
 	//
 	struct Send_Step2_RetVals
