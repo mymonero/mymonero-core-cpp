@@ -64,7 +64,7 @@ uint64_t monero_fee_utils::estimated_tx_network_fee(
 ) {
 	uint64_t fee_multiplier = get_fee_multiplier(priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
 	std::vector<uint8_t> extra; // blank extra
-	size_t est_tx_size = estimate_rct_tx_size(2, fixed_mixinsize(), 2, extra.size(), true/*bulletproof*/); // typically ~14kb post-rct, pre-bulletproofs
+	size_t est_tx_size = estimate_rct_tx_size(2, fixed_mixinsize(), 2, extra.size(), true/*bulletproof*/, true/*clsag*/); // typically ~14kb post-rct, pre-bulletproofs
 	uint64_t estimated_fee = calculate_fee_from_size(base_fee, est_tx_size, fee_multiplier);
 	//
 	return estimated_fee;
@@ -137,7 +137,7 @@ int monero_fee_utils::get_fee_algorithm(use_fork_rules_fn_type use_fork_rules_fn
 		return 1;
 	return 0;
 }
-size_t monero_fee_utils::estimate_rct_tx_size(int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof)
+size_t monero_fee_utils::estimate_rct_tx_size(int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag)
 {
 	size_t size = 0;
 	
@@ -171,8 +171,11 @@ size_t monero_fee_utils::estimate_rct_tx_size(int n_inputs, int mixin, int n_out
 	else
 		size += (2*64*32+32+64*32) * n_outputs;
 	
-	// MGs
-	size += n_inputs * (64 * (mixin+1) + 32);
+	// MGs/CLSAGs
+	if (clsag)
+		size += n_inputs * (32 * (mixin+1) + 64);
+	else
+		size += n_inputs * (64 * (mixin+1) + 32);
 	
 	// mixRing - not serialized, can be reconstructed
 	/* size += 2 * 32 * (mixin+1) * n_inputs; */
@@ -180,7 +183,7 @@ size_t monero_fee_utils::estimate_rct_tx_size(int n_inputs, int mixin, int n_out
 	// pseudoOuts
 	size += 32 * n_inputs;
 	// ecdhInfo
-	size += 2 * 32 * n_outputs;
+	size += 8 * n_outputs;
 	// outPk - only commitment is saved
 	size += 32 * n_outputs;
 	// txnFee
@@ -189,16 +192,16 @@ size_t monero_fee_utils::estimate_rct_tx_size(int n_inputs, int mixin, int n_out
 	LOG_PRINT_L2("estimated " << (bulletproof ? "bulletproof" : "borromean") << " rct tx size for " << n_inputs << " inputs with ring size " << (mixin+1) << " and " << n_outputs << " outputs: " << size << " (" << ((32 * n_inputs/*+1*/) + 2 * 32 * (mixin+1) * n_inputs + 32 * n_outputs) << " saved)");
 	return size;
 }
-size_t monero_fee_utils::estimate_tx_size(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof)
+size_t monero_fee_utils::estimate_tx_size(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag)
 {
 	if (use_rct)
-		return estimate_rct_tx_size(n_inputs, mixin, n_outputs, extra_size, bulletproof);
+		return estimate_rct_tx_size(n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag);
 	else
 		return n_inputs * (mixin+1) * APPROXIMATE_INPUT_BYTES + extra_size;
 }
-uint64_t monero_fee_utils::estimate_tx_weight(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof)
+uint64_t monero_fee_utils::estimate_tx_weight(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag)
 {
-	size_t size = estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof);
+	size_t size = estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag);
 	if (use_rct && bulletproof && n_outputs > 2)
 	{
 		const uint64_t bp_base = 368;
@@ -213,16 +216,16 @@ uint64_t monero_fee_utils::estimate_tx_weight(bool use_rct, int n_inputs, int mi
 	}
 	return size;
 }
-uint64_t monero_fee_utils::estimate_fee(bool use_per_byte_fee, bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, uint64_t base_fee, uint64_t fee_multiplier, uint64_t fee_quantization_mask)
+uint64_t monero_fee_utils::estimate_fee(bool use_per_byte_fee, bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag, uint64_t base_fee, uint64_t fee_multiplier, uint64_t fee_quantization_mask)
 {
 	if (use_per_byte_fee)
 	{
-		const size_t estimated_tx_weight = estimate_tx_weight(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof);
+		const size_t estimated_tx_weight = estimate_tx_weight(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag);
 		return calculate_fee_from_weight(base_fee, estimated_tx_weight, fee_multiplier, fee_quantization_mask);
 	}
 	else
 	{
-		const size_t estimated_tx_size = estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof);
+		const size_t estimated_tx_size = estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag);
 		return calculate_fee_from_size(base_fee, estimated_tx_size, fee_multiplier);
 	}
 }

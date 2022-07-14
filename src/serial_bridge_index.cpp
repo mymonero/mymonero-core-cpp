@@ -343,6 +343,7 @@ string serial_bridge::estimate_fee(const string &args_string)
 	int n_outputs = stoul(json_root.get<string>("n_outputs"));
 	size_t extra_size = stoul(json_root.get<string>("extra_size"));
 	bool bulletproof = json_root.get<bool>("bulletproof");
+	bool clsag = json_root.get<bool>("clsag");
 	uint64_t base_fee = stoull(json_root.get<string>("base_fee"));
 	uint64_t fee_quantization_mask = stoull(json_root.get<string>("fee_quantization_mask"));
 	uint32_t priority = stoul(json_root.get<string>("priority"));
@@ -350,7 +351,7 @@ string serial_bridge::estimate_fee(const string &args_string)
 	use_fork_rules_fn_type use_fork_rules_fn = monero_fork_rules::make_use_fork_rules_fn(fork_version);
 	uint64_t fee_multiplier = monero_fee_utils::get_fee_multiplier(priority, monero_fee_utils::default_priority(), monero_fee_utils::get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn);
 	//
-	uint64_t fee = monero_fee_utils::estimate_fee(use_per_byte_fee, use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, base_fee, fee_multiplier, fee_quantization_mask);
+	uint64_t fee = monero_fee_utils::estimate_fee(use_per_byte_fee, use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag, base_fee, fee_multiplier, fee_quantization_mask);
 	//
 	std::ostringstream o;
 	o << fee;
@@ -372,8 +373,9 @@ string serial_bridge::estimate_tx_weight(const string &args_string)
 	int n_outputs = stoul(json_root.get<string>("n_outputs"));
 	size_t extra_size = stoul(json_root.get<string>("extra_size"));
 	bool bulletproof = json_root.get<bool>("bulletproof");
+	bool clsag = json_root.get<bool>("clsag");
 	//
-	uint64_t weight = monero_fee_utils::estimate_tx_weight(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof);
+	uint64_t weight = monero_fee_utils::estimate_tx_weight(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag);
 	//
 	std::ostringstream o;
 	o << weight;
@@ -394,7 +396,8 @@ string serial_bridge::estimate_rct_tx_size(const string &args_string)
 		stoul(json_root.get<string>("mixin")),
 		stoul(json_root.get<string>("n_outputs")),
 		stoul(json_root.get<string>("extra_size")),
-		json_root.get<bool>("bulletproof")
+		json_root.get<bool>("bulletproof"),
+		json_root.get<bool>("clsag")
 	);
 	std::ostringstream o;
 	o << size;

@@ -285,6 +285,7 @@ Useful for displaying an estimated fee – To obtain exact fees, see "Creating a
 	* `n_outputs: UInt32String`
 	* `extra_size: UInt32String`
 	* `bulletproof: BoolString`
+	* `clsag: BoolString`
 
 * Returns: `retVal: UInt32String`
 

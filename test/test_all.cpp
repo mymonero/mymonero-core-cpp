@@ -338,7 +338,7 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amountWOnlyDusty)
 	boost::property_tree::read_json(ret_stream, ret_tree);
 	optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
 	BOOST_REQUIRE_MESSAGE(err_code == none, "Expected no error");
-	BOOST_REQUIRE_MESSAGE(ret_tree.get<string>("using_fee") == string("66290000"), "Expected using_fee of 66290000");
+	BOOST_REQUIRE_MESSAGE(ret_tree.get<string>("using_fee") == string("35190000"), "Expected using_fee of 35190000");
 	BOOST_REQUIRE_MESSAGE(ret_tree.get<string>("final_total_wo_fee") == string("1000000"), "Expected final_total_wo_fee of 1000000");
 }
 string DG_postsweep__unspent_outs_json = "{\"unspent_outs\":[{\"amount\":\"3000000000\",\"public_key\":\"41be1978f58cabf69a9bed5b6cb3c8d588621ef9b67602328da42a213ee42271\",\"index\":1,\"global_index\":7611174,\"rct\":\"86a2c9f1f8e66848cd99bfda7a14d4ac6c3525d06947e21e4e55fe42a368507eb5b234ccdd70beca8b1fc8de4f2ceb1374e0f1fd8810849e7f11316c2cc063060008ffa5ac9827b776993468df21af8c963d12148622354f950cbe1369a92a0c\",\"tx_id\":5334971,\"tx_hash\":\"9d37c7fdeab91abfd1e7e120f5c49eac17b7ac04a97a0c93b51c172115df21ea\",\"tx_pub_key\":\"bd703d7f37995cc7071fb4d2929594b5e2a4c27d2b7c68a9064500ca7bc638b8\"}]}";
@@ -895,7 +895,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimated_tx_network_fee)
 	BOOST_REQUIRE(fee_string != none);
 	BOOST_REQUIRE((*fee_string).size() > 0);
 	uint64_t fee = stoull(*fee_string);
-	BOOST_REQUIRE(fee == 330047330);
+	BOOST_REQUIRE(fee == 237333250);
 	cout << "bridged__estimated_tx_network_fee: " << fee << endl;
 }
 BOOST_AUTO_TEST_CASE(bridged__estimate_fee)
@@ -910,6 +910,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_fee)
 	root.put("n_outputs", "2");
 	root.put("extra_size", "0");
 	root.put("bulletproof", "true");
+	root.put("clsag", "true");
 	root.put("base_fee", "24658");
 	root.put("fee_quantization_mask", "10000");
 	root.put("priority", "2");
@@ -928,7 +929,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_fee)
 	BOOST_REQUIRE(fee_string != none);
 	BOOST_REQUIRE((*fee_string).size() > 0);
 	uint64_t fee = stoull(*fee_string);
-	BOOST_REQUIRE(fee == 330050000);
+	BOOST_REQUIRE(fee == 237340000);
 	cout << "bridged__estimate_fee: " << fee << endl;
 }
 BOOST_AUTO_TEST_CASE(bridged__estimate_tx_weight)
@@ -942,6 +943,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_tx_weight)
 	root.put("n_outputs", "2");
 	root.put("extra_size", "0");
 	root.put("bulletproof", "true");
+	root.put("clsag", "true");
 	//
 	auto ret_string = serial_bridge::estimate_tx_weight(args_string_from_root(root));
 	stringstream ret_stream;
@@ -956,7 +958,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_tx_weight)
 	BOOST_REQUIRE(weight_string != none);
 	BOOST_REQUIRE((*weight_string).size() > 0);
 	uint64_t weight = stoull(*weight_string);
-	BOOST_REQUIRE(weight == 2677);
+	BOOST_REQUIRE(weight == 1925);
 	cout << "bridged__estimate_tx_weight: " << weight << endl;
 }
 BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
@@ -969,6 +971,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
 	root.put("n_outputs", "2");
 	root.put("extra_size", "0");
 	root.put("bulletproof", "true");
+	root.put("clsag", "true");
 	//
 	auto ret_string = serial_bridge::estimate_rct_tx_size(args_string_from_root(root));
 	stringstream ret_stream;
@@ -983,7 +986,7 @@ BOOST_AUTO_TEST_CASE(bridged__estimate_rct_tx_size)
 	BOOST_REQUIRE(size_string != none);
 	BOOST_REQUIRE((*size_string).size() > 0);
 	size_t size = stoul(*size_string);
-	BOOST_REQUIRE(size == 1848);
+	BOOST_REQUIRE(size == 1416);
 	cout << "bridged__estimate_rct_tx_size: " << size << endl;
 }
 BOOST_AUTO_TEST_CASE(bridged__generate_key_image)
