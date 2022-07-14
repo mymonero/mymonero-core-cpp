@@ -30,7 +30,7 @@
 //
 //
 #include "monero_paymentID_utils.hpp"
-#import <regex>
+#include <regex>
 #include "cryptonote_basic.h"
 #include "cryptonote_basic/blobdatatype.h"
 #include "string_tools.h"

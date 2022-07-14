@@ -109,7 +109,7 @@ namespace monero_transfer_utils
 		cantGetDecryptedMaskFromRCTHex	= 21,
 		needMoreMoneyThanFound			= 90
 	};
-	static inline string err_msg_from_err_code__create_transaction(CreateTransactionErrorCode code)
+	static inline const char *err_msg_from_err_code__create_transaction(CreateTransactionErrorCode code)
 	{
 		switch (code) {
 			case noError:
@@ -159,6 +159,7 @@ namespace monero_transfer_utils
 			case cantGetDecryptedMaskFromRCTHex:
 				return "Can't get decrypted mask from 'rct' hex";
 		}
+        return "Unknown error";
 	}
 	//
 	// See monero_send_routine for actual app-lvl interface used by lightwallets 
