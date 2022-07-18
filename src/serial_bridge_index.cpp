@@ -470,10 +470,32 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		//
 		unspent_outs.push_back(std::move(out));
 	}
-	optional<string> optl__passedIn_attemptAt_fee_string = json_root.get_optional<string>("passedIn_attemptAt_fee");
-	optional<uint64_t> optl__passedIn_attemptAt_fee = none;
-	if (optl__passedIn_attemptAt_fee_string != none) {
-		optl__passedIn_attemptAt_fee = stoull(*optl__passedIn_attemptAt_fee_string);
+	optional<string> optl__prior_attempt_size_calcd_fee_string = json_root.get_optional<string>("prior_attempt_size_calcd_fee");
+	optional<uint64_t> optl__prior_attempt_size_calcd_fee = none;
+	if (optl__prior_attempt_size_calcd_fee_string != none) {
+		optl__prior_attempt_size_calcd_fee = stoull(*optl__prior_attempt_size_calcd_fee_string);
+	}
+	optional<SpendableOutputToRandomAmountOutputs> optl__prior_attempt_unspent_outs_to_mix_outs;
+	SpendableOutputToRandomAmountOutputs prior_attempt_unspent_outs_to_mix_outs;
+	optional<boost::property_tree::ptree &> optl__prior_attempt_unspent_outs_to_mix_outs_json = json_root.get_child_optional("prior_attempt_unspent_outs_to_mix_outs");
+	if (optl__prior_attempt_unspent_outs_to_mix_outs_json != none)
+	{
+		BOOST_FOREACH(boost::property_tree::ptree::value_type &outs_to_mix_outs_desc, *optl__prior_attempt_unspent_outs_to_mix_outs_json)
+		{
+			string out_pub_key = outs_to_mix_outs_desc.first;
+			RandomAmountOutputs amountAndOuts{};
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_output_desc, outs_to_mix_outs_desc.second)
+			{
+				assert(mix_out_output_desc.first.empty()); // array elements have no names
+				auto amountOutput = monero_transfer_utils::RandomAmountOutput{};
+				amountOutput.global_index = stoull(mix_out_output_desc.second.get<string>("global_index"));
+				amountOutput.public_key = mix_out_output_desc.second.get<string>("public_key");
+				amountOutput.rct = mix_out_output_desc.second.get_optional<string>("rct");
+				amountAndOuts.outputs.push_back(std::move(amountOutput));
+			}
+			prior_attempt_unspent_outs_to_mix_outs[out_pub_key] = std::move(amountAndOuts.outputs);
+		}
+		optl__prior_attempt_unspent_outs_to_mix_outs = std::move(prior_attempt_unspent_outs_to_mix_outs);
 	}
 	uint8_t fork_version = 0; // if missing
 	optional<string> optl__fork_version_string = json_root.get_optional<string>("fork_version");
@@ -493,7 +515,8 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 		stoull(json_root.get<string>("fee_per_b")), // per v8
 		stoull(json_root.get<string>("fee_mask")),
 		//
-		optl__passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		optl__prior_attempt_size_calcd_fee, // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		optl__prior_attempt_unspent_outs_to_mix_outs // on re-entry, re-use the same outs and requested decoys, in order to land on the correct calculated fee
 	);
 	boost::property_tree::ptree root;
 	if (retVals.errCode != noError) {
@@ -529,6 +552,139 @@ string serial_bridge::send_step1__prepare_params_for_get_decoys(const string &ar
 	}
 	return ret_json_from_root(root);
 }
+//
+string serial_bridge::pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(const string &args_string)
+{
+	boost::property_tree::ptree json_root;
+	if (!parsed_json_root(args_string, json_root)) {
+		// it will already have thrown an exception
+		return error_ret_json_from_message("Invalid JSON");
+	}
+	//
+	vector<SpendableOutput> using_outs;
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, json_root.get_child("using_outs"))
+	{
+		assert(output_desc.first.empty()); // array elements have no names
+		SpendableOutput out{};
+		out.amount = stoull(output_desc.second.get<string>("amount"));
+		out.public_key = output_desc.second.get<string>("public_key");
+		out.rct = output_desc.second.get_optional<string>("rct");
+		if (out.rct != none && (*out.rct).empty() == true) {
+			out.rct = none; // just in case it's an empty string, send to 'none' (even though receiving code now handles empty strs)
+		}
+		out.global_index = stoull(output_desc.second.get<string>("global_index"));
+		out.index = stoull(output_desc.second.get<string>("index"));
+		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
+		//
+		using_outs.push_back(std::move(out));
+	}
+	//
+	vector<RandomAmountOutputs> mix_outs_from_server;
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_desc, json_root.get_child("mix_outs"))
+	{
+		assert(mix_out_desc.first.empty()); // array elements have no names
+		auto amountAndOuts = RandomAmountOutputs{};
+		amountAndOuts.amount = stoull(mix_out_desc.second.get<string>("amount"));
+		BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_output_desc, mix_out_desc.second.get_child("outputs"))
+		{
+			assert(mix_out_output_desc.first.empty()); // array elements have no names
+			auto amountOutput = RandomAmountOutput{};
+			amountOutput.global_index = stoull(mix_out_output_desc.second.get<string>("global_index"));
+			amountOutput.public_key = mix_out_output_desc.second.get<string>("public_key");
+			amountOutput.rct = mix_out_output_desc.second.get_optional<string>("rct");
+			amountAndOuts.outputs.push_back(std::move(amountOutput));
+		}
+		mix_outs_from_server.push_back(std::move(amountAndOuts));
+	}
+	//
+	optional<SpendableOutputToRandomAmountOutputs> optl__prior_attempt_unspent_outs_to_mix_outs;
+	SpendableOutputToRandomAmountOutputs prior_attempt_unspent_outs_to_mix_outs;
+	optional<boost::property_tree::ptree &> optl__prior_attempt_unspent_outs_to_mix_outs_json = json_root.get_child_optional("prior_attempt_unspent_outs_to_mix_outs");
+	if (optl__prior_attempt_unspent_outs_to_mix_outs_json != none)
+	{
+		BOOST_FOREACH(boost::property_tree::ptree::value_type &outs_to_mix_outs_desc, *optl__prior_attempt_unspent_outs_to_mix_outs_json)
+		{
+			string out_pub_key = outs_to_mix_outs_desc.first;
+			RandomAmountOutputs amountAndOuts{};
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_output_desc, outs_to_mix_outs_desc.second)
+			{
+				assert(mix_out_output_desc.first.empty()); // array elements have no names
+				auto amountOutput = monero_transfer_utils::RandomAmountOutput{};
+				amountOutput.global_index = stoull(mix_out_output_desc.second.get<string>("global_index"));
+				amountOutput.public_key = mix_out_output_desc.second.get<string>("public_key");
+				amountOutput.rct = mix_out_output_desc.second.get_optional<string>("rct");
+				amountAndOuts.outputs.push_back(std::move(amountOutput));
+			}
+			prior_attempt_unspent_outs_to_mix_outs[out_pub_key] = std::move(amountAndOuts.outputs);
+		}
+		optl__prior_attempt_unspent_outs_to_mix_outs = std::move(prior_attempt_unspent_outs_to_mix_outs);
+	}
+	//
+	Tie_Outs_to_Mix_Outs_RetVals retVals;
+	monero_transfer_utils::pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(
+		retVals,
+		//
+		using_outs,
+		mix_outs_from_server,
+		//
+		optl__prior_attempt_unspent_outs_to_mix_outs
+	);
+	boost::property_tree::ptree root;
+	if (retVals.errCode != noError) {
+		root.put(ret_json_key__any__err_code(), retVals.errCode);
+		root.put(ret_json_key__any__err_msg(), err_msg_from_err_code__create_transaction(retVals.errCode));
+	} else {
+		{
+			boost::property_tree::ptree mix_outs_ptree;
+			BOOST_FOREACH(RandomAmountOutputs &mix_outs, retVals.mix_outs)
+			{
+				auto mix_outs_amount_ptree_pair = std::make_pair("", boost::property_tree::ptree{});
+				auto& mix_outs_amount_ptree = mix_outs_amount_ptree_pair.second;
+				mix_outs_amount_ptree.put("amount", RetVals_Transforms::str_from(mix_outs.amount));
+				auto outputs_ptree_pair = std::make_pair("", boost::property_tree::ptree{});
+				auto& outputs_ptree = outputs_ptree_pair.second;
+				BOOST_FOREACH(RandomAmountOutput &out, mix_outs.outputs)
+				{
+					auto mix_out_ptree_pair = std::make_pair("", boost::property_tree::ptree{});
+					auto& mix_out_ptree = mix_out_ptree_pair.second;
+					mix_out_ptree.put("global_index", RetVals_Transforms::str_from(out.global_index));
+					mix_out_ptree.put("public_key", out.public_key);
+					if (out.rct != none && (*out.rct).empty() == false) {
+						mix_out_ptree.put("rct", *out.rct);
+					}
+					outputs_ptree.push_back(mix_out_ptree_pair);
+				}
+				mix_outs_amount_ptree.add_child("outputs", outputs_ptree);
+				mix_outs_ptree.push_back(mix_outs_amount_ptree_pair);
+			}
+			root.add_child(ret_json_key__send__mix_outs(), mix_outs_ptree);
+		}
+		//
+		{
+			boost::property_tree::ptree prior_attempt_unspent_outs_to_mix_outs_new_ptree;
+			for (const auto &out_pub_key_to_mix_outs : retVals.prior_attempt_unspent_outs_to_mix_outs_new)
+			{
+				auto outs_ptree_pair = std::make_pair(out_pub_key_to_mix_outs.first, boost::property_tree::ptree{});
+				auto& outs_ptree = outs_ptree_pair.second;
+				for (const auto &mix_out : out_pub_key_to_mix_outs.second)
+				{
+					auto mix_out_ptree_pair = std::make_pair("", boost::property_tree::ptree{});
+					auto& mix_out_ptree = mix_out_ptree_pair.second;
+					mix_out_ptree.put("global_index", RetVals_Transforms::str_from(mix_out.global_index));
+					mix_out_ptree.put("public_key", mix_out.public_key);
+					if (mix_out.rct != none && (*mix_out.rct).empty() == false) {
+						mix_out_ptree.put("rct", *mix_out.rct);
+					}
+					outs_ptree.push_back(mix_out_ptree_pair);
+				}
+				prior_attempt_unspent_outs_to_mix_outs_new_ptree.push_back(outs_ptree_pair);
+			}
+			root.add_child(ret_json_key__send__prior_attempt_unspent_outs_to_mix_outs_new(), prior_attempt_unspent_outs_to_mix_outs_new_ptree);
+		}
+	}
+	return ret_json_from_root(root);
+}
+//
 string serial_bridge::send_step2__try_create_transaction(const string &args_string)
 {
 	boost::property_tree::ptree json_root;

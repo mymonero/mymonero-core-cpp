@@ -102,6 +102,11 @@ BOOST_AUTO_TEST_CASE(wallet)
 //
 #include "../src/monero_transfer_utils.hpp"
 #include "../src/monero_fork_rules.hpp"
+//
+string pre_step2__unspent_outs_json = "{\"unspent_outs\":[{\"amount\":\"210000000\",\"public_key\":\"89eb08cf704d4473a17646331d2c425307ef03477e5f18ee6a31a3601ba9cdd0\",\"index\":0,\"global_index\":7510705,\"rct\":\"befe623ad1dcae239e4d9d31e3080db5c339ea8c5c2894444966967a051f27839f1f713d6f6bdc13fec3c20f78bbae6cf08ce185273fa6c913db6ae1f44e270ea9dcfa48ecbae364125e0c4b0cb7a11fe6c250ec9aca1a668a0708e821d6550b\",\"tx_id\":5292354,\"tx_hash\":\"22fa4aaee9399901ece7d9521067aa7791a727ade2dfe9d5e17481800ccbc625\",\"tx_pub_key\":\"4f151192723d3d45372b43e4bf93df8ad7ba5283513c09226fd0603c60683e00\",\"tx_prefix_hash\":\"689580f0804eff0fd9bd76587ed9656e4cda8e70a33f065b5461206bcf9051b7\",\"height\":1681636},{\"amount\":\"230000000\",\"public_key\":\"f659694299d97fc93db504122d40dea1681a896567933635dc6337abc4339c10\",\"index\":1,\"global_index\":7551823,\"rct\":\"dd06d546553044cda0f083fd189cd8ad93ebeca557169eefe1e34dc48c6fac27110a3ff8dc24a61b595a03a034009a6d1f0ced61f19fb6e0d7c2b1a67bb39d06c7d5713e0a394551ec978b64927802f9307ac29c8ddec3857f551b945ef6a407\",\"tx_id\":5309604,\"tx_hash\":\"05704e7402d1373d14dccd383e4071bfae0c2af6eb075e67075b43fd7d26b4c4\",\"tx_pub_key\":\"3511d9117fdeac0423314827188aa187f1eb742a44ab0c01390053b68b00909c\",\"tx_prefix_hash\":\"1b89ac0c818454806686073cd2d6bd501923d6eec2c0e54e300e3ae68a2c5344\",\"height\":1684479}]}";
+//
+string pre_step2__mix_outs_from_server_json = "{\"mix_outs\":[{\"amount\":\"0\",\"outputs\":[{\"global_index\":\"6986524\",\"public_key\":\"3ce9f1231ecebf100a8d0e9c165a2b88a766249cb03eac2c6dbe7587a1f0e9ae\",\"rct\":\"c3b81a937c12c017b4c4eee0ab9acbd10d83f28c1586971b13791c7b475e469b\"},{\"global_index\":\"7282304\",\"public_key\":\"278450b855e4d66dbc1a9ae2801a2f101a10afd22c27466c3cfcc3b434a25047\",\"rct\":\"dd05d1d973be19b4e754c24c6d21e9252a9b99db52ff291930d4cd8c1cd344df\"},{\"global_index\":\"7386837\",\"public_key\":\"0d3cf94dd4e9059900f14bd8d5b71ce43e444efd2b8a1a63a1f9705851d195a1\",\"rct\":\"5c124e0c007e8a2f6371a6d35d50165178667fa9470270e8d7a95ffda34df30d\"},{\"global_index\":\"7459325\",\"public_key\":\"badabeeb71f08917b0cb76ae128e869dab7291d58c7a6b2fbd31d3eed0f003df\",\"rct\":\"a5ca005346fad19624c185dfefb2c4013f6b769f0f0de4b2c8f507ede1cb46a5\"},{\"global_index\":\"7507948\",\"public_key\":\"6f08278bc9d064cfdaa6d896ef70d28fbb3dca84e0a99ea21325f9aaef3bd783\",\"rct\":\"4a70f95a4cc19d9e43cc6b60f30f60571029240df21fb06188766bf92e8d8738\"},{\"global_index\":\"7529692\",\"public_key\":\"8b13f88507f5ca60c72c076ce6bc8ee142abc6e5115ab0c08e10a919c93f912a\",\"rct\":\"6055a2a847938471bd6f00a4d9789e6dc9d70962bb1dc2f51879d04211aaa0b7\"},{\"global_index\":\"7563051\",\"public_key\":\"d44a722cdca3c372081af6e32b758a2bbab9f2534f68a08b71d38c3540209c50\",\"rct\":\"b5ebd41d0c75877cdf109d6b5939072c22a84aee4c46a8299bec8eafc82789e9\"},{\"global_index\":\"7564143\",\"public_key\":\"c12f9e3c53dee0d1327dbca66129b27f8c6174a777976615ee442278960ba369\",\"rct\":\"a8423b9491162813589d3af5e18677f2f38050c10cb5074c097f101ccef089c5\"},{\"global_index\":\"7567982\",\"public_key\":\"9e4347089b0e1cb065cb443899d77b4bd4d61598e80a8946336440920c8a6731\",\"rct\":\"00fc0e9c631a4a2538785b647e6146ba39743d9dc987059f850d1c5a4f97bd2b\"},{\"global_index\":\"7570259\",\"public_key\":\"1be949046425c646a86ac37961a6301ea3d25711426d80a48b11e9282acd222b\",\"rct\":\"7db9d60ac0286189a1833f39db7f3e5372763c557fe2240b4537bf580a902798\"},{\"global_index\":\"7570451\",\"public_key\":\"82a27a521340220805de27aae18a4663b81067145c0b0c3e7ec42341067bf270\",\"rct\":\"a3f46fdc3e4a252604e3f3d082ab1d2cbc3ce34bf62b641b76849c5382199a32\"}]},{\"amount\":\"0\",\"outputs\":[{\"global_index\":\"7442603\",\"public_key\":\"ba89de37e26056629c89b14b3b05a73400c62149fa0de2794d3876f17faeb28f\",\"rct\":\"aa2edfca6622db354add0813ff2b471f6dc20f0d9e56d1f9b6c04b1369ceb1a9\"},{\"global_index\":\"7445670\",\"public_key\":\"a0c3a8bd0d6fa37e7bd514a10ebe6970609919e2f781dc489b771f305f1da4cc\",\"rct\":\"eb78b914307a54cd95481ba8844df3dd2d12cd14cee07de441c2c607b9cfcb24\"},{\"global_index\":\"7474646\",\"public_key\":\"3d325a1222b77d82192e1c051b241e0f79e1cc731c5f03749df33cf1a7165be8\",\"rct\":\"821bfcb255fc815aeab23d890ba252dc590c743c5733bcd278dbd1763e921e4d\"},{\"global_index\":\"7545722\",\"public_key\":\"ec62838ef1ab75055940fd8f31126698af9ff2128a53def09bdaa0d315174d80\",\"rct\":\"547de3a10658167afee6aaf8f3481921d2b1ee3014d40fa4cacc86940b244985\"},{\"global_index\":\"7556262\",\"public_key\":\"4dab027c001473b775f70503b9d68c156d2a8bfa0d7534aaff12a2ab1d8d5f89\",\"rct\":\"5aa838a2f5450408932b53181899861600d3cac864dee8197ac7e9543fbab148\"},{\"global_index\":\"7557709\",\"public_key\":\"bd1813a780e4df3c8ba25b825c3d7be12ce8c5d05f6731384e0d2d8cb8bf3134\",\"rct\":\"49ce757933cdca4a51f77ae41b951a2175d0a0a0378c10c3a02432e5aeb9f79f\"},{\"global_index\":\"7560040\",\"public_key\":\"ea53143df34ccba3c29743964ddc14094f224fa92d45c8fa8e86d7ff1394e51a\",\"rct\":\"455a6083ab6c3d4f026d2b4e1545467666f7affa0cdec365a295c097eefeac46\"},{\"global_index\":\"7563671\",\"public_key\":\"9af80a727bdb148851e79a9a11f55e97435daf65b3d57b54f4d64833cd483f2b\",\"rct\":\"622855010cd03a04d66d71a20d6113cb0507276b4c6ef050297a12e0a6767004\"},{\"global_index\":\"7564234\",\"public_key\":\"404aedc1c299e9a1538bdf7619f42cbf92cb3bb556e0356dce275945e318633d\",\"rct\":\"a1978e496622c2fac054939227a4edb31c4a50215cf8db74b0f1a7ce3477e3cf\"},{\"global_index\":\"7565705\",\"public_key\":\"070c5adc791d0a33390fecb02376e8953e46661a0173a64c003b5ae5709eea3c\",\"rct\":\"09f6c3c9139eefa0ed9ff9613e57bf3fc1b7d2bc42bad4caeb9118cc768cc52f\"},{\"global_index\":\"7566892\",\"public_key\":\"76c03aad2fae21aa7d36bbda699c462b222a76359d92813c06e4ccf4508e77e2\",\"rct\":\"9905946004a01e2884aedfa41b2482ca309226166519c558b5c794eeae109f98\"}]}]}";
+//
 BOOST_AUTO_TEST_CASE(transfers__fee)
 {
 	uint8_t fork_version = 10;
@@ -111,6 +116,201 @@ BOOST_AUTO_TEST_CASE(transfers__fee)
 	uint64_t est_fee = monero_fee_utils::estimated_tx_network_fee(fee_per_b, priority, use_fork_rules_fn);
 	std::cout << "transfers__fee: est_fee with fee_per_b " << fee_per_b << ": " << est_fee << std::endl;
 	BOOST_REQUIRE(est_fee > 0);
+}
+BOOST_AUTO_TEST_CASE(pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts__use_all_server_mix_outs)
+{
+	// *** START SETUP ***
+	// this being input as JSON merely for convenience
+	boost::property_tree::ptree pt;
+	stringstream ss;
+	ss << pre_step2__unspent_outs_json;
+	boost::property_tree::json_parser::read_json(ss, pt);
+	//
+	vector<monero_transfer_utils::SpendableOutput> unspent_outs;
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, pt.get_child("unspent_outs"))
+	{
+		assert(output_desc.first.empty()); // array elements have no names
+		monero_transfer_utils::SpendableOutput out{};
+		out.amount = stoull(output_desc.second.get<string>("amount"));
+		out.public_key = output_desc.second.get<string>("public_key");
+		out.rct = output_desc.second.get_optional<string>("rct");
+		if (out.rct != none && (*out.rct).empty() == true) {
+			out.rct = none;
+		}
+		out.global_index = stoull(output_desc.second.get<string>("global_index"));
+		out.index = stoull(output_desc.second.get<string>("index"));
+		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
+		//
+		unspent_outs.push_back(std::move(out));
+	}
+	//
+	vector<monero_transfer_utils::RandomAmountOutputs> mix_outs_from_server;
+	{
+		boost::property_tree::ptree pt;
+		stringstream ss;
+		ss << pre_step2__mix_outs_from_server_json;
+		boost::property_tree::json_parser::read_json(ss, pt);
+
+		BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_desc, pt.get_child("mix_outs"))
+		{
+			assert(mix_out_desc.first.empty()); // array elements have no names
+			auto amountAndOuts = monero_transfer_utils::RandomAmountOutputs{};
+			amountAndOuts.amount = stoull(mix_out_desc.second.get<string>("amount"));
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_output_desc, mix_out_desc.second.get_child("outputs"))
+			{
+				assert(mix_out_output_desc.first.empty()); // array elements have no names
+				auto amountOutput = monero_transfer_utils::RandomAmountOutput{};
+				amountOutput.global_index = stoull(mix_out_output_desc.second.get<string>("global_index"));
+				amountOutput.public_key = mix_out_output_desc.second.get<string>("public_key");
+				amountOutput.rct = mix_out_output_desc.second.get_optional<string>("rct");
+				amountAndOuts.outputs.push_back(std::move(amountOutput));
+			}
+			mix_outs_from_server.push_back(std::move(amountAndOuts));
+		}
+	}
+	assert(unspent_outs.size() == mix_outs_from_server.size());
+	// *** END SETUP ***
+	//
+	monero_transfer_utils::Tie_Outs_to_Mix_Outs_RetVals tie_outs_to_mix_outs_retVals;
+	monero_transfer_utils::pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(
+		tie_outs_to_mix_outs_retVals,
+		unspent_outs,
+		mix_outs_from_server,
+		boost::none/*prior_attempt_unspent_outs_to_mix_outs*/
+	);
+	//
+	BOOST_REQUIRE_MESSAGE(tie_outs_to_mix_outs_retVals.errCode == monero_transfer_utils::noError, "expected no error");
+	BOOST_REQUIRE_MESSAGE(tie_outs_to_mix_outs_retVals.mix_outs.size() == mix_outs_from_server.size(), "expected resulting mix outs to use for step 2 to be same as server response");
+	//
+	for (size_t i = 0; i < unspent_outs.size(); ++i)
+	{
+		const vector<monero_transfer_utils::RandomAmountOutput> &mix_outs = tie_outs_to_mix_outs_retVals.mix_outs[i].outputs;
+		const monero_transfer_utils::SpendableOutput &unspent_out = unspent_outs[i];
+		const vector<monero_transfer_utils::RandomAmountOutput> &tied_mix_outs = tie_outs_to_mix_outs_retVals.prior_attempt_unspent_outs_to_mix_outs_new[unspent_out.public_key];
+		//
+		BOOST_REQUIRE_MESSAGE(mix_outs.size() == tied_mix_outs.size(), "mix outs from server size does not match tied mix outs size");
+		for (size_t j = 0; j < mix_outs.size(); ++j)
+		{
+			BOOST_REQUIRE_MESSAGE(mix_outs[j].global_index == tied_mix_outs[j].global_index, "new outs to mix outs did not tie as expected: global index");
+			BOOST_REQUIRE_MESSAGE(mix_outs[j].public_key == tied_mix_outs[j].public_key, "new outs to mix outs did not tie as expected: public key");
+			BOOST_REQUIRE_MESSAGE(mix_outs[j].rct == tied_mix_outs[j].rct, "new outs to mix outs did not tie as expected: rct");
+			//
+			BOOST_REQUIRE_MESSAGE(mix_outs[j].global_index == mix_outs_from_server[i].outputs[j].global_index, "mix outs to mix outs from server did not tie as expected: global index");
+			BOOST_REQUIRE_MESSAGE(mix_outs[j].public_key == mix_outs_from_server[i].outputs[j].public_key, "mix outs to mix outs from server did not tie as expected: public key");
+			BOOST_REQUIRE_MESSAGE(mix_outs[j].rct == mix_outs_from_server[i].outputs[j].rct, "mix outs to mix outs from server did not tie as expected: rct");
+		}
+	}
+}
+//
+BOOST_AUTO_TEST_CASE(pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts__use_prior_attempt_mix_outs)
+{
+	// *** START SETUP ***
+	// this being input as JSON merely for convenience
+	boost::property_tree::ptree pt;
+	stringstream ss;
+	ss << pre_step2__unspent_outs_json;
+	boost::property_tree::json_parser::read_json(ss, pt);
+	//
+	vector<monero_transfer_utils::SpendableOutput> unspent_outs;
+	BOOST_FOREACH(boost::property_tree::ptree::value_type &output_desc, pt.get_child("unspent_outs"))
+	{
+		assert(output_desc.first.empty()); // array elements have no names
+		monero_transfer_utils::SpendableOutput out{};
+		out.amount = stoull(output_desc.second.get<string>("amount"));
+		out.public_key = output_desc.second.get<string>("public_key");
+		out.rct = output_desc.second.get_optional<string>("rct");
+		if (out.rct != none && (*out.rct).empty() == true) {
+			out.rct = none;
+		}
+		out.global_index = stoull(output_desc.second.get<string>("global_index"));
+		out.index = stoull(output_desc.second.get<string>("index"));
+		out.tx_pub_key = output_desc.second.get<string>("tx_pub_key");
+		//
+		unspent_outs.push_back(std::move(out));
+	}
+	//
+	std::vector<monero_transfer_utils::RandomAmountOutputs> mix_outs_from_server;
+	monero_transfer_utils::SpendableOutputToRandomAmountOutputs prior_attempt_unspent_outs_to_mix_outs;
+	size_t index_of_unspent_out_used_in_prior_attempt = 0;
+	{
+		boost::property_tree::ptree pt;
+		stringstream ss;
+		ss << pre_step2__mix_outs_from_server_json;
+		boost::property_tree::json_parser::read_json(ss, pt);
+		//
+		size_t i = 0;
+		BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_desc, pt.get_child("mix_outs"))
+		{
+			assert(mix_out_desc.first.empty()); // array elements have no names
+			auto amountAndOuts = monero_transfer_utils::RandomAmountOutputs{};
+			amountAndOuts.amount = stoull(mix_out_desc.second.get<string>("amount"));
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_output_desc, mix_out_desc.second.get_child("outputs"))
+			{
+				assert(mix_out_output_desc.first.empty()); // array elements have no names
+				auto amountOutput = monero_transfer_utils::RandomAmountOutput{};
+				amountOutput.global_index = stoull(mix_out_output_desc.second.get<string>("global_index"));
+				amountOutput.public_key = mix_out_output_desc.second.get<string>("public_key");
+				amountOutput.rct = mix_out_output_desc.second.get_optional<string>("rct");
+				amountAndOuts.outputs.push_back(std::move(amountOutput));
+			}
+			if (i == index_of_unspent_out_used_in_prior_attempt)
+			{
+				// will tie the first unspent output to the first set of mix outs returned from the server
+				prior_attempt_unspent_outs_to_mix_outs[unspent_outs[i].public_key] = std::move(amountAndOuts.outputs);
+			}
+			else
+			{
+				mix_outs_from_server.push_back(std::move(amountAndOuts));
+			}
+			++i;
+		}
+	}
+	assert(unspent_outs.size() == (1 + mix_outs_from_server.size()));
+	// *** END SETUP ***
+	//
+	monero_transfer_utils::Tie_Outs_to_Mix_Outs_RetVals tie_outs_to_mix_outs_retVals;
+	monero_transfer_utils::pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(
+		tie_outs_to_mix_outs_retVals,
+		unspent_outs,
+		mix_outs_from_server,
+		prior_attempt_unspent_outs_to_mix_outs
+	);
+	//
+	BOOST_REQUIRE_MESSAGE(tie_outs_to_mix_outs_retVals.errCode == monero_transfer_utils::noError, "expected no error");
+	BOOST_REQUIRE_MESSAGE(tie_outs_to_mix_outs_retVals.mix_outs.size() == unspent_outs.size(), "expected resulting mix outs to use for step 2 to be same as unspent_outs");
+	//
+	for (size_t i = 0; i < unspent_outs.size(); ++i)
+	{
+		const vector<monero_transfer_utils::RandomAmountOutput> &mix_outs = tie_outs_to_mix_outs_retVals.mix_outs[i].outputs;
+		const monero_transfer_utils::SpendableOutput &unspent_out = unspent_outs[i];
+		const vector<monero_transfer_utils::RandomAmountOutput> &tied_mix_outs = tie_outs_to_mix_outs_retVals.prior_attempt_unspent_outs_to_mix_outs_new[unspent_out.public_key];
+		//
+		vector<monero_transfer_utils::RandomAmountOutput> prior_tied_mix_outs;
+		if (i == index_of_unspent_out_used_in_prior_attempt)
+			prior_tied_mix_outs = prior_attempt_unspent_outs_to_mix_outs[unspent_out.public_key];
+		//
+		BOOST_REQUIRE_MESSAGE(mix_outs.size() == tied_mix_outs.size(), "mix outs from server size does not match tied mix outs size");
+		for (size_t j = 0; j < mix_outs.size(); ++j)
+		{
+			BOOST_REQUIRE_MESSAGE(mix_outs[j].global_index == tied_mix_outs[j].global_index, "new outs to mix outs did not tie as expected: global index");
+			BOOST_REQUIRE_MESSAGE(mix_outs[j].public_key == tied_mix_outs[j].public_key, "new outs to mix outs did not tie as expected: public key");
+			BOOST_REQUIRE_MESSAGE(mix_outs[j].rct == tied_mix_outs[j].rct, "new outs to mix outs did not tie as expected: rct");
+			//
+			if (i == index_of_unspent_out_used_in_prior_attempt)
+			{
+				BOOST_REQUIRE_MESSAGE(prior_tied_mix_outs[j].global_index == tied_mix_outs[j].global_index, "prior tied mix outs to tied mix outs from server did not tie as expected: global index");
+				BOOST_REQUIRE_MESSAGE(prior_tied_mix_outs[j].public_key == tied_mix_outs[j].public_key, "prior tied mix outs to tied mix outs from server did not tie as expected: public key");
+				BOOST_REQUIRE_MESSAGE(prior_tied_mix_outs[j].rct == tied_mix_outs[j].rct, "prior tied mix outs to tied mix outs from server did not tie as expected: rct");
+			}
+			else
+			{
+				monero_transfer_utils::RandomAmountOutput server_mix_out = mix_outs_from_server[i - 1].outputs[j];
+				BOOST_REQUIRE_MESSAGE(mix_outs[j].global_index == server_mix_out.global_index, "mix outs to mix outs from server did not tie as expected: global index");
+				BOOST_REQUIRE_MESSAGE(mix_outs[j].public_key == server_mix_out.public_key, "mix outs to mix outs from server did not tie as expected: public key");
+				BOOST_REQUIRE_MESSAGE(mix_outs[j].rct == server_mix_out.rct, "mix outs to mix outs from server did not tie as expected: rct");
+			}
+		}
+	}
 }
 //
 //
@@ -143,17 +343,8 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 	ss << DG_presweep__unspent_outs_json;
 	boost::property_tree::json_parser::read_json(ss, pt);
 	boost::property_tree::ptree unspent_outs = pt.get_child("unspent_outs");
+	optional<boost::property_tree::ptree> prior_attempt_unspent_outs_to_mix_outs = none;
 	//
-	// NOTE: in the real algorithm you should re-request this _each time step2 must be called_
-	// this being input as JSON merely for convenience
-	boost::property_tree::ptree mix_outs;
-	{
-		boost::property_tree::ptree pt;
-		stringstream ss;
-		ss << DG_presweep__rand_outs_json;
-		boost::property_tree::json_parser::read_json(ss, pt);
-		mix_outs = pt.get_child("mix_outs");
-	}
 	//
 	// Send algorithm:
 	// (Not implemented in C++ b/c the algorithm is split at the points (function interfaces) where requests must be done in e.g. JS-land, and implementing the retry integration in C++ would effectively be emscripten-only since it'd have to call out to C++. Plus this lets us retain the choice to retain synchrony
@@ -180,9 +371,17 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 			root.add_child("unspent_outs", unspent_outs);
 			if (fee_actually_needed_string != none) {
 				BOOST_REQUIRE(construction_attempt_n > 1);
+				BOOST_REQUIRE(prior_attempt_unspent_outs_to_mix_outs != none);
 				//
-				// for next round's integration - if it needs to re-enter... arg "passedIn_attemptAt_fee"
-				root.put("passedIn_attemptAt_fee", *fee_actually_needed_string);
+				// for next round's integration - if it needs to re-enter... arg "prior_attempt_size_calcd_fee" and "prior_attempt_unspent_outs_to_mix_outs"
+				root.put("prior_attempt_size_calcd_fee", *fee_actually_needed_string);
+				BOOST_FOREACH(boost::property_tree::ptree::value_type &outs_to_mix_outs_desc, *prior_attempt_unspent_outs_to_mix_outs)
+				{
+					string out_pub_key = outs_to_mix_outs_desc.first;
+					cout << "bridge__transfers__send__sweepDust: step1: prior output " << out_pub_key << endl;
+					BOOST_REQUIRE(outs_to_mix_outs_desc.second.size() == 11);
+				}
+				root.add_child("prior_attempt_unspent_outs_to_mix_outs", *prior_attempt_unspent_outs_to_mix_outs);
 			}
 			auto ret_string = serial_bridge::send_step1__prepare_params_for_get_decoys(args_string_from_root(root));
 			stringstream ret_stream;
@@ -245,6 +444,57 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__sweepDust)
 			//	BOOST_REQUIRE(final_total_wo_fee == 10); // TODO:?
 			cout << "bridge__transfers__send__sweepDust: step1: final_total_wo_fee " << *final_total_wo_fee_string << endl;
 			//
+		}
+		boost::property_tree::ptree mix_outs;
+		{
+			boost::property_tree::ptree root;
+			root.add_child("using_outs", using_outs); // from step1
+			// NOTE: in the real algorithm you should request _previously unseen
+			// mixouts from prior attempts each time pre_step2 must be called_
+			// this being input as JSON merely for convenience
+			boost::property_tree::ptree mix_outs_from_server;
+			if (construction_attempt_n == 1)
+			{
+				boost::property_tree::ptree pt;
+				stringstream ss;
+				ss << DG_presweep__rand_outs_json;
+				boost::property_tree::json_parser::read_json(ss, pt);
+				mix_outs_from_server = pt.get_child("mix_outs");
+			}
+			else
+			{
+				root.add_child("prior_attempt_unspent_outs_to_mix_outs", *prior_attempt_unspent_outs_to_mix_outs);
+			}
+			root.add_child("mix_outs", mix_outs_from_server);
+			//
+			boost::property_tree::ptree ret_tree;
+			auto ret_string = serial_bridge::pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(args_string_from_root(root));
+			stringstream ret_stream;
+			ret_stream << ret_string;
+			boost::property_tree::read_json(ret_stream, ret_tree);
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
+				auto err_msg = err_msg_from_err_code__create_transaction((CreateTransactionErrorCode)*err_code);
+				BOOST_REQUIRE_MESSAGE(false, err_msg);
+			}
+			mix_outs = ret_tree.get_child(ret_json_key__send__mix_outs());
+			BOOST_REQUIRE(mix_outs.size() == using_outs.size());
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_desc, mix_outs)
+			{
+				assert(mix_out_desc.first.empty()); // array elements have no names
+				cout << "bridge__transfers__send__sweepDust: pre_step2: amount " << mix_out_desc.second.get<string>("amount") << endl;
+				BOOST_REQUIRE(mix_out_desc.second.get_child("outputs").size() == 11);
+			}
+			prior_attempt_unspent_outs_to_mix_outs = ret_tree.get_child(ret_json_key__send__prior_attempt_unspent_outs_to_mix_outs_new());
+			size_t outs_to_mix_outs_count = 0;
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &outs_to_mix_outs_desc, *prior_attempt_unspent_outs_to_mix_outs)
+			{
+				++outs_to_mix_outs_count;
+				string out_pub_key = outs_to_mix_outs_desc.first;
+				cout << "bridge__transfers__send__sweepDust: pre_step2: output " << out_pub_key << endl;
+				BOOST_REQUIRE(outs_to_mix_outs_desc.second.size() == 11);
+			}
+			BOOST_REQUIRE(outs_to_mix_outs_count == using_outs.size());
 		}
 		{
 			boost::property_tree::ptree root;
@@ -355,17 +605,8 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 	ss << DG_postsweep__unspent_outs_json;
 	boost::property_tree::json_parser::read_json(ss, pt);
 	boost::property_tree::ptree unspent_outs = pt.get_child("unspent_outs");
+	optional<boost::property_tree::ptree> prior_attempt_unspent_outs_to_mix_outs = none;
 	//
-	// NOTE: in the real algorithm you should re-request this _each time step2 must be called_
-	// this being input as JSON merely for convenience
-	boost::property_tree::ptree mix_outs;
-	{
-		boost::property_tree::ptree pt;
-		stringstream ss;
-		ss << DG_postsweep__rand_outs_json;
-		boost::property_tree::json_parser::read_json(ss, pt);
-		mix_outs = pt.get_child("mix_outs");
-	}
 	//
 	// Send algorithm:
 	bool tx_must_be_reconstructed = true; // for ease of writing this code, start this off true & structure whole thing as while loop
@@ -391,9 +632,17 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			root.add_child("unspent_outs", unspent_outs);
 			if (fee_actually_needed_string != none) {
 				BOOST_REQUIRE(construction_attempt_n > 1);
+				BOOST_REQUIRE(prior_attempt_unspent_outs_to_mix_outs != none);
 				//
-				// for next round's integration - if it needs to re-enter... arg "passedIn_attemptAt_fee"
-				root.put("passedIn_attemptAt_fee", *fee_actually_needed_string);
+				// for next round's integration - if it needs to re-enter... arg "prior_attempt_size_calcd_fee" and "prior_attempt_unspent_outs_to_mix_outs"
+				root.put("prior_attempt_size_calcd_fee", *fee_actually_needed_string);
+				BOOST_FOREACH(boost::property_tree::ptree::value_type &outs_to_mix_outs_desc, *prior_attempt_unspent_outs_to_mix_outs)
+				{
+					string out_pub_key = outs_to_mix_outs_desc.first;
+					cout << "bridge__transfers__send__sweepDust: step1: prior output " << out_pub_key << endl;
+					BOOST_REQUIRE(outs_to_mix_outs_desc.second.size() == 11);
+				}
+				root.add_child("prior_attempt_unspent_outs_to_mix_outs", *prior_attempt_unspent_outs_to_mix_outs);
 			}
 			auto ret_string = serial_bridge::send_step1__prepare_params_for_get_decoys(args_string_from_root(root));
 			stringstream ret_stream;
@@ -456,6 +705,57 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send__amount)
 			//	BOOST_REQUIRE(final_total_wo_fee == 10); // TODO:?
 			cout << "bridge__transfers__send__amount: step1: final_total_wo_fee " << *final_total_wo_fee_string << endl;
 			//
+		}
+		boost::property_tree::ptree mix_outs;
+		{
+			boost::property_tree::ptree root;
+			root.add_child("using_outs", using_outs); // from step1
+			// NOTE: in the real algorithm you should request _previously unseen
+			// mixouts from prior attempts each time pre_step2 must be called_
+			// this being input as JSON merely for convenience
+			boost::property_tree::ptree mix_outs_from_server;
+			if (construction_attempt_n == 1)
+			{
+				boost::property_tree::ptree pt;
+				stringstream ss;
+				ss << DG_postsweep__rand_outs_json;
+				boost::property_tree::json_parser::read_json(ss, pt);
+				mix_outs_from_server = pt.get_child("mix_outs");
+			}
+			else
+			{
+				root.add_child("prior_attempt_unspent_outs_to_mix_outs", *prior_attempt_unspent_outs_to_mix_outs);
+			}
+			root.add_child("mix_outs", mix_outs_from_server);
+			//
+			boost::property_tree::ptree ret_tree;
+			auto ret_string = serial_bridge::pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(args_string_from_root(root));
+			stringstream ret_stream;
+			ret_stream << ret_string;
+			boost::property_tree::read_json(ret_stream, ret_tree);
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
+				auto err_msg = err_msg_from_err_code__create_transaction((CreateTransactionErrorCode)*err_code);
+				BOOST_REQUIRE_MESSAGE(false, err_msg);
+			}
+			mix_outs = ret_tree.get_child(ret_json_key__send__mix_outs());
+			BOOST_REQUIRE(mix_outs.size() == using_outs.size());
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_desc, mix_outs)
+			{
+				assert(mix_out_desc.first.empty()); // array elements have no names
+				cout << "bridge__transfers__send__amount: pre_step2: amount " << mix_out_desc.second.get<string>("amount") << endl;
+				BOOST_REQUIRE(mix_out_desc.second.get_child("outputs").size() == 11);
+			}
+			prior_attempt_unspent_outs_to_mix_outs = ret_tree.get_child(ret_json_key__send__prior_attempt_unspent_outs_to_mix_outs_new());
+			size_t outs_to_mix_outs_count = 0;
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &outs_to_mix_outs_desc, *prior_attempt_unspent_outs_to_mix_outs)
+			{
+				++outs_to_mix_outs_count;
+				string out_pub_key = outs_to_mix_outs_desc.first;
+				cout << "bridge__transfers__send__amount: pre_step2: output " << out_pub_key << endl;
+				BOOST_REQUIRE(outs_to_mix_outs_desc.second.size() == 11);
+			}
+			BOOST_REQUIRE(outs_to_mix_outs_count == using_outs.size());
 		}
 		{
 			boost::property_tree::ptree root;
@@ -1446,17 +1746,8 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 	ss << OM_stagenet__unspent_outs_json;
 	boost::property_tree::json_parser::read_json(ss, pt);
 	boost::property_tree::ptree unspent_outs = pt.get_child("unspent_outs");
+	optional<boost::property_tree::ptree> prior_attempt_unspent_outs_to_mix_outs = none;
 	//
-	// NOTE: in the real algorithm you should re-request this _each time step2 must be called_
-	// this being input as JSON merely for convenience
-	boost::property_tree::ptree mix_outs;
-	{
-		boost::property_tree::ptree pt;
-		stringstream ss;
-		ss << OM_stagenet__rand_outs_json;
-		boost::property_tree::json_parser::read_json(ss, pt);
-		mix_outs = pt.get_child("mix_outs");
-	}
 	//
 	// Send algorithm:
 	bool tx_must_be_reconstructed = true; // for ease of writing this code, start this off true & structure whole thing as while loop
@@ -1482,9 +1773,17 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 			root.add_child("unspent_outs", unspent_outs);
 			if (fee_actually_needed_string != none) {
 				BOOST_REQUIRE(construction_attempt_n > 1);
+				BOOST_REQUIRE(prior_attempt_unspent_outs_to_mix_outs != none);
 				//
-				// for next round's integration - if it needs to re-enter... arg "passedIn_attemptAt_fee"
-				root.put("passedIn_attemptAt_fee", *fee_actually_needed_string);
+				// for next round's integration - if it needs to re-enter... arg "prior_attempt_size_calcd_fee" and "prior_attempt_unspent_outs_to_mix_outs"
+				root.put("prior_attempt_size_calcd_fee", *fee_actually_needed_string);
+				BOOST_FOREACH(boost::property_tree::ptree::value_type &outs_to_mix_outs_desc, *prior_attempt_unspent_outs_to_mix_outs)
+				{
+					string out_pub_key = outs_to_mix_outs_desc.first;
+					cout << "bridge__transfers__send__sweepDust: step1: prior output " << out_pub_key << endl;
+					BOOST_REQUIRE(outs_to_mix_outs_desc.second.size() == 11);
+				}
+				root.add_child("prior_attempt_unspent_outs_to_mix_outs", *prior_attempt_unspent_outs_to_mix_outs);
 			}
 			auto ret_string = serial_bridge::send_step1__prepare_params_for_get_decoys(args_string_from_root(root));
 			stringstream ret_stream;
@@ -1547,6 +1846,57 @@ BOOST_AUTO_TEST_CASE(bridge__transfers__send_stagenet_coinbase)
 			//	BOOST_REQUIRE(final_total_wo_fee == 10); // TODO:?
 			cout << "bridge__transfers__send_stagenet_coinbase: step1: final_total_wo_fee " << *final_total_wo_fee_string << endl;
 			//
+		}
+		boost::property_tree::ptree mix_outs;
+		{
+			boost::property_tree::ptree root;
+			root.add_child("using_outs", using_outs); // from step1
+			// NOTE: in the real algorithm you should request _previously unseen
+			// mixouts from prior attempts each time pre_step2 must be called_
+			// this being input as JSON merely for convenience
+			boost::property_tree::ptree mix_outs_from_server;
+			if (construction_attempt_n == 1)
+			{
+				boost::property_tree::ptree pt;
+				stringstream ss;
+				ss << DG_postsweep__rand_outs_json;
+				boost::property_tree::json_parser::read_json(ss, pt);
+				mix_outs_from_server = pt.get_child("mix_outs");
+			}
+			else
+			{
+				root.add_child("prior_attempt_unspent_outs_to_mix_outs", *prior_attempt_unspent_outs_to_mix_outs);
+			}
+			root.add_child("mix_outs", mix_outs_from_server);
+			//
+			boost::property_tree::ptree ret_tree;
+			auto ret_string = serial_bridge::pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(args_string_from_root(root));
+			stringstream ret_stream;
+			ret_stream << ret_string;
+			boost::property_tree::read_json(ret_stream, ret_tree);
+			optional<uint32_t> err_code = ret_tree.get_optional<uint32_t>(ret_json_key__any__err_code());
+			if (err_code != none && (CreateTransactionErrorCode)*err_code != monero_transfer_utils::noError) {
+				auto err_msg = err_msg_from_err_code__create_transaction((CreateTransactionErrorCode)*err_code);
+				BOOST_REQUIRE_MESSAGE(false, err_msg);
+			}
+			mix_outs = ret_tree.get_child(ret_json_key__send__mix_outs());
+			BOOST_REQUIRE(mix_outs.size() == using_outs.size());
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &mix_out_desc, mix_outs)
+			{
+				assert(mix_out_desc.first.empty()); // array elements have no names
+				cout << "bridge__transfers__send__amount: pre_step2: amount " << mix_out_desc.second.get<string>("amount") << endl;
+				BOOST_REQUIRE(mix_out_desc.second.get_child("outputs").size() == 11);
+			}
+			prior_attempt_unspent_outs_to_mix_outs = ret_tree.get_child(ret_json_key__send__prior_attempt_unspent_outs_to_mix_outs_new());
+			size_t outs_to_mix_outs_count = 0;
+			BOOST_FOREACH(boost::property_tree::ptree::value_type &outs_to_mix_outs_desc, *prior_attempt_unspent_outs_to_mix_outs)
+			{
+				++outs_to_mix_outs_count;
+				string out_pub_key = outs_to_mix_outs_desc.first;
+				cout << "bridge__transfers__send__amount: pre_step2: output " << out_pub_key << endl;
+				BOOST_REQUIRE(outs_to_mix_outs_desc.second.size() == 11);
+			}
+			BOOST_REQUIRE(outs_to_mix_outs_count == using_outs.size());
 		}
 		{
 			boost::property_tree::ptree root;
