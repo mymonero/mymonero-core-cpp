@@ -473,12 +473,12 @@ void monero_transfer_utils::send_step2__try_create_transaction(
 		get_fee_multiplier(simple_priority, default_priority(), get_fee_algorithm(use_fork_rules_fn), use_fork_rules_fn),
 		fee_quantization_mask
 	);
-	if (fee_actually_needed > fee_amount) {
+//	if (fee_actually_needed > fee_amount) {
 //		cout << "Need to reconstruct tx with fee of at least " << fee_actually_needed << "." << endl;
-		retVals.tx_must_be_reconstructed = true;
-		retVals.fee_actually_needed = fee_actually_needed;
-		return;
-	}
+//		retVals.tx_must_be_reconstructed = true;
+//		retVals.fee_actually_needed = fee_actually_needed;
+//		return;
+//	}
 	retVals.signed_serialized_tx_string = std::move(*(create_tx__retVals.signed_serialized_tx_string));
 	retVals.tx_hash_string = std::move(*(create_tx__retVals.tx_hash_string));
 	retVals.tx_key_string = std::move(*(create_tx__retVals.tx_key_string));
