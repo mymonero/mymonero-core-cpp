@@ -115,7 +115,8 @@ namespace monero_send_routine
 		return req_params_ss.str();
 	}
 	LightwalletAPI_Req_GetRandomOuts new__req_params__get_random_outs( // used internally and by emscr async send impl
-		vector<SpendableOutput> &step1__using_outs
+		const vector<SpendableOutput> &step1__using_outs,
+		const optional<SpendableOutputToRandomAmountOutputs> &prior_attempt_unspent_outs_to_mix_outs
 	);
 	typedef std::function<void(
 		LightwalletAPI_Req_GetRandomOuts, // req_params - use these for making the request
@@ -155,7 +156,7 @@ namespace monero_send_routine
 		submittingTransaction = 5
 	};
 	typedef std::function<void(SendFunds_ProcessStep code)> send__status_update_fn_type;
-	static inline string err_msg_from_err_code__send_funds_step(SendFunds_ProcessStep code)
+	static inline const char *err_msg_from_err_code__send_funds_step(SendFunds_ProcessStep code)
 	{
 		switch (code) {
 			case fetchingLatestBalance:
@@ -169,6 +170,7 @@ namespace monero_send_routine
 			case submittingTransaction:
 				return "Submitted transaction.";
 		}
+        return "Unknown error.";
 	}
 	// - Accessory types - Callbacks - Routine completions
 	struct SendFunds_Error_RetVals

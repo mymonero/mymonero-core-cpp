@@ -80,6 +80,7 @@ namespace monero_transfer_utils
 		uint64_t amount;
 		vector<RandomAmountOutput> outputs;
 	};
+	typedef std::unordered_map<string/*public_key*/, std::vector<RandomAmountOutput>> SpendableOutputToRandomAmountOutputs;
 	//
 	// Types - Return value
 	enum CreateTransactionErrorCode // TODO: switch to enum class to fix namespacing
@@ -107,9 +108,11 @@ namespace monero_transfer_utils
 		invalidPID						= 19,
 		enteredAmountTooLow				= 20,
 		cantGetDecryptedMaskFromRCTHex	= 21,
+		notEnoughUsableDecoysFound		= 22,
+		tooManyDecoysRemaining			= 23,
 		needMoreMoneyThanFound			= 90
 	};
-	static inline string err_msg_from_err_code__create_transaction(CreateTransactionErrorCode code)
+	static inline const char *err_msg_from_err_code__create_transaction(CreateTransactionErrorCode code)
 	{
 		switch (code) {
 			case noError:
@@ -156,9 +159,14 @@ namespace monero_transfer_utils
 				return "Invalid payment ID";
 			case enteredAmountTooLow:
 				return "The amount you've entered is too low";
+			case notEnoughUsableDecoysFound:
+				return "Not enough usable decoys found";
+			case tooManyDecoysRemaining:
+				return "Too many unused decoys remaining";
 			case cantGetDecryptedMaskFromRCTHex:
 				return "Can't get decrypted mask from 'rct' hex";
 		}
+        return "Unknown error";
 	}
 	//
 	// See monero_send_routine for actual app-lvl interface used by lightwallets 
@@ -167,9 +175,11 @@ namespace monero_transfer_utils
 	// Send_Step* functions procedure for integrators:
 	//	1. call GetUnspentOuts endpoint
 	//	2. call step1__prepare_params_for_get_decoys to get params for calling RandomOuts; call GetRandomOuts
-	//	3. call step2__try_… with retVals from Step1 (incl using_outs, RandomOuts)
-	//		3a. While tx must be reconstructed, re-call step1 passing step2 fee_actually_needed as passedIn_attemptAt_fee, then re-request RandomOuts again, and call step2 again
-	//		3b. If good tx constructed, proceed to submit/save the tx
+	//	3. call pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts to use constant set of mix outs for each unpsent out across tx construction attempts
+	//	4. call step2__try_… with retVals from Step1 and pre_Step2 (incl using_outs, RandomOuts)
+	//		4a. While tx must be reconstructed, re-call step1 passing step2 fee_actually_needed as prior_attempt_size_calcd_fee AND
+	// 			passing pre_step2 unspent_outs_to_mix_outs_new as prior_attempt_unspent_outs_to_mix_outs, then repeat steps 2-4
+	//		4b. If good tx constructed, proceed to submit/save the tx
 	// Note: This separation of steps fully encodes SendFunds_ProcessStep
 	//
 	struct Send_Step1_RetVals
@@ -199,7 +209,24 @@ namespace monero_transfer_utils
 		uint64_t fee_per_b, // per v8
 		uint64_t fee_quantization_mask,
 		//
-		optional<uint64_t> passedIn_attemptAt_fee // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		optional<uint64_t> prior_attempt_size_calcd_fee, // use this for passing step2 "must-reconstruct" return values back in, i.e. re-entry; when nil, defaults to attempt at network min
+		optional<SpendableOutputToRandomAmountOutputs> prior_attempt_unspent_outs_to_mix_outs = none // use this to make sure upon re-attempting, the calculated fee will be the result of calculate_fee()
+	);
+	struct Tie_Outs_to_Mix_Outs_RetVals
+	{
+		CreateTransactionErrorCode errCode; // if != noError, abort Send process
+		//
+		// Success parameters
+		vector<RandomAmountOutputs> mix_outs;
+		SpendableOutputToRandomAmountOutputs prior_attempt_unspent_outs_to_mix_outs_new;
+	};
+	void pre_step2_tie_unspent_outs_to_mix_outs_for_all_future_tx_attempts(
+		Tie_Outs_to_Mix_Outs_RetVals &retVals,
+		//
+		const vector<SpendableOutput> &using_outs,
+		vector<RandomAmountOutputs> mix_outs_from_server,
+		//
+		const optional<SpendableOutputToRandomAmountOutputs> &prior_attempt_unspent_outs_to_mix_outs
 	);
 	//
 	struct Send_Step2_RetVals

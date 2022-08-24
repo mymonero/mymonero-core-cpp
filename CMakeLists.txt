@@ -66,6 +66,7 @@ set(
     ${MONERO_SRC}/cryptonote_basic/cryptonote_basic_impl.cpp
     ${MONERO_SRC}/cryptonote_basic/account.cpp
     ${MONERO_SRC}/cryptonote_basic/cryptonote_format_utils.cpp
+    ${MONERO_SRC}/cryptonote_basic/cryptonote_format_utils_basic.cpp
     ${MONERO_SRC}/crypto/crypto.cpp
     ${MONERO_SRC}/crypto/hash.c
     ${MONERO_SRC}/crypto/slow-hash-dummied.cpp
@@ -102,6 +103,7 @@ set(
     ${MONERO_SRC}/ringct/rctCryptoOps.c
     ${MONERO_SRC}/ringct/rctSigs.cpp
     ${MONERO_SRC}/ringct/bulletproofs.cc
+    ${MONERO_SRC}/ringct/bulletproofs_plus.cc
     ${MONERO_SRC}/ringct/multiexp.cc
     ${MONERO_SRC}/mnemonics/electrum-words.cpp
     ${MONERO_SRC}/vtlogger/logger.cpp
@@ -109,6 +111,8 @@ set(
 )
 # needed for slow-hash
 add_compile_options(-maes)
+
+add_compile_definitions(MYMONERO_CORE_CUSTOM)
 
 #Run through each source
 foreach(testSrc ${TEST_SRCS})
