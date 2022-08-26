@@ -590,3 +590,7 @@ string serial_bridge::send_step2__try_create_transaction(const string &args_stri
 	}
 	return ret_json_from_root(root);
 }
+	} else if (rv_type_int == rct::RCTTypeBulletproofPlus) {
+		rv.type = rct::RCTTypeBulletproofPlus;
+	} else if (rv_type_int == rct::RCTTypeBulletproofPlus) {
+		rv.type = rct::RCTTypeBulletproofPlus;
