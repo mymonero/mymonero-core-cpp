@@ -512,7 +512,10 @@ void monero_transfer_utils::create_transaction(
 	uint32_t fake_outputs_count = fixed_mixinsize();
 	rct::RangeProofType range_proof_type = rct::RangeProofPaddedBulletproof;
 	int bp_version = 1;
-	if (use_fork_rules_fn(HF_VERSION_CLSAG, -10)) {
+	if (use_fork_rules_fn(HF_VERSION_BULLETPROOF_PLUS, -10)) {
+		bp_version = 4;
+	}
+	else if (use_fork_rules_fn(HF_VERSION_CLSAG, -10)) {
 		bp_version = 3;
 	}
 	else if (use_fork_rules_fn(HF_VERSION_SMALLER_BP, -10)) {
@@ -734,9 +737,8 @@ void monero_transfer_utils::create_transaction(
 		sender_account_keys, subaddresses,
 		sources, splitted_dsts, change_dst.addr, extra,
 		tx, unlock_time, tx_key, additional_tx_keys,
-		true, rct_config,
-		/*m_multisig ? &msout : */NULL
-	);
+		true, rct_config, true);
+
 	LOG_PRINT_L2("constructed tx, r="<<r);
 	if (!r) {
 		// TODO: return error::tx_not_constructed, sources, dsts, unlock_time, nettype
@@ -748,7 +750,7 @@ void monero_transfer_utils::create_transaction(
 		retVals.errCode = transactionTooBig;
 		return;
 	}
-	bool use_bulletproofs = !tx.rct_signatures.p.bulletproofs.empty();
+	bool use_bulletproofs = !tx.rct_signatures.p.bulletproofs_plus.empty();
 	THROW_WALLET_EXCEPTION_IF(use_bulletproofs != true, error::wallet_internal_error, "Expected tx use_bulletproofs to equal bulletproof flag");
 	//
 	retVals.tx = tx;
