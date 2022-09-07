@@ -83,6 +83,10 @@ namespace monero_send_routine
 		//
 		return req_params_ss.str();
 	}
+	LightwalletAPI_Req_GetUnspentOuts new__req_params__get_unspent_outs( // used internally and by emscr async send impl
+		string from_address_string,
+		string sec_viewKey_string
+	);
 	typedef std::function<void(
 		LightwalletAPI_Req_GetUnspentOuts, // req_params - use these for making the request
 		api_fetch_cb_fn // fn cb … call this after the request responds (successfully)
