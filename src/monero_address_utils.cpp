@@ -124,8 +124,5 @@ string address_utils::new_integratedAddrFromStdAddr(const string &std_address_st
 		info.address,
 		payment_id_short
 	);
-	boost::property_tree::ptree root;
-	root.put("retVal", int_address_string);
-	
-	return ret_json_from_root(root);
+	return int_address_string;	
 }
