@@ -31,14 +31,11 @@
 //
 //
 #include "serial_bridge_utils.hpp"
-//
 #include <boost/foreach.hpp>
-//
 #include "wallet_errors.h"
-using namespace tools;
 #include "string_tools.h"
-//
-//
+
+using namespace tools;
 using namespace std;
 using namespace boost;
 using namespace cryptonote;
@@ -135,16 +132,16 @@ string serial_bridge_utils::ret_json_from_root(const boost::property_tree::ptree
 string serial_bridge_utils::error_ret_json_from_message(const string &err_msg)
 {
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__any__err_msg(), err_msg);
+	root.put("err_msg", err_msg);
 	//
 	return ret_json_from_root(root);
 }
 string serial_bridge_utils::error_ret_json_from_code(int code, optional<string> err_msg)
 {
 	boost::property_tree::ptree root;
-	root.put(ret_json_key__any__err_code(), code);
+	root.put("err_code", code);
 	if (err_msg != none) {
-		root.put(ret_json_key__any__err_msg(), *err_msg);
+		root.put("err_msg", *err_msg);
 	}
 	//
 	return ret_json_from_root(root);
